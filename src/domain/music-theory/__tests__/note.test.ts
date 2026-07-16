@@ -6,6 +6,7 @@ import {
   midiPitchClass,
   noteToMidi,
   pitchClassOf,
+  sameNoteName,
   spellPitchClass,
   transpose,
 } from '../note';
@@ -77,6 +78,15 @@ describe('formato', () => {
 
   it('formatNote incluye la octava', () => {
     expect(formatNote({ name: { letter: 'E', accidental: -1 }, octave: 4 })).toBe('E♭4');
+  });
+});
+
+describe('sameNoteName', () => {
+  it('compara por deletreo, no por sonido: E♭ ≠ D♯', () => {
+    const eFlat = { letter: 'E', accidental: -1 } as const;
+    const dSharp = { letter: 'D', accidental: 1 } as const;
+    expect(sameNoteName(eFlat, { ...eFlat })).toBe(true);
+    expect(sameNoteName(eFlat, dSharp)).toBe(false);
   });
 });
 

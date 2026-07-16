@@ -94,6 +94,11 @@ export function formatNote(note: Note): string {
   return formatNoteName(note.name) + note.octave;
 }
 
+/** Igualdad de deletreo (E♭ ≠ D♯ aunque suenen igual). */
+export function sameNoteName(a: NoteName, b: NoteName): boolean {
+  return a.letter === b.letter && a.accidental === b.accidental;
+}
+
 export type AccidentalPreference = 'sharp' | 'flat';
 
 /** Deletreos con sostenidos por clase de altura (índice 0–11). */
