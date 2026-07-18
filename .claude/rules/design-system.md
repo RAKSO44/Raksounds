@@ -20,7 +20,12 @@ suelto en un feature).
 - **`GroupedOptionList`** — lista agrupada (una tarjeta con filas + divisores,
   fila activa resaltada con el **acento secundario**). Es una jerarquía **por
   debajo** de los `PushButton`. Úsala para opciones relacionadas entre sí de
-  nivel secundario.
+  nivel secundario. La fila activa es **full-bleed, integrada al grupo** (como
+  Duolingo, no un recuadro flotando con margen interno): la tarjeta no lleva
+  padding y recorta con `overflow: 'hidden'`; las filas van a ras del borde sin
+  radio propio y los extremos redondean sus esquinas exteriores para seguir la
+  curva del grupo; el divisor que toca la fila activa se oculta para que el borde
+  de color se funda con la agrupación.
 - **`Header`** — cabecera morada que pinta el área de la status bar.
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
   redondeados y juguetones (`MaterialCommunityIcons`).
