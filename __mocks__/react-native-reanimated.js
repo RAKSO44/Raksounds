@@ -1,0 +1,44 @@
+// Mock manual y autocontenido de react-native-reanimated para Jest.
+//
+// El mock oficial de la librería importa react-native-worklets, que requiere
+// JSI y falla en Node. Aquí solo reproducimos la API que usa la app: el objeto
+// Animated (con componentes = componentes RN normales), los hooks básicos y los
+// constructores de animaciones de layout como no-ops encadenables.
+const React = require('react');
+const { View, Text, ScrollView, Image } = require('react-native');
+
+// Constructor de animaciones (FadeIn, LinearTransition, …): cualquier método
+// encadenado (.duration().delay().springify()…) devuelve el mismo objeto.
+const animationBuilder = new Proxy(
+  {},
+  {
+    get: () => () => animationBuilder,
+  },
+);
+
+const Animated = {
+  View,
+  Text,
+  ScrollView,
+  Image,
+  createAnimatedComponent: (Component) => Component,
+};
+
+module.exports = {
+  __esModule: true,
+  default: Animated,
+  useSharedValue: (initial) => ({ value: initial }),
+  useAnimatedStyle: () => ({}),
+  withTiming: (toValue) => toValue,
+  withSpring: (toValue) => toValue,
+  runOnJS: (fn) => fn,
+  FadeIn: animationBuilder,
+  FadeInDown: animationBuilder,
+  FadeInUp: animationBuilder,
+  FadeOut: animationBuilder,
+  FadeOutUp: animationBuilder,
+  FadeOutDown: animationBuilder,
+  LinearTransition: animationBuilder,
+  // Algunos consumidores esperan también estos helpers de React.
+  useAnimatedRef: () => React.createRef(),
+};
