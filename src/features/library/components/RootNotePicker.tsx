@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 
 import { CHROMATIC_ROOTS, formatNoteName, NoteName, sameNoteName } from '@/domain/music-theory';
-import { SelectableChip } from '@/shared/design-system';
+import { PushButton } from '@/shared/design-system';
 import { spacing } from '@/shared/theme';
 
 interface RootNotePickerProps {
@@ -14,11 +14,13 @@ export function RootNotePicker({ selected, onSelect }: RootNotePickerProps) {
   return (
     <View style={styles.container}>
       {CHROMATIC_ROOTS.map((root) => (
-        <SelectableChip
+        <PushButton
           key={formatNoteName(root)}
+          variant="selectable"
           label={formatNoteName(root)}
           selected={sameNoteName(root, selected)}
           onPress={() => onSelect(root)}
+          minWidth={56}
         />
       ))}
     </View>

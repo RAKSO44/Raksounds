@@ -1,53 +1,63 @@
-import { ScrollView, StyleSheet, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { colors, spacing, typography } from '@/shared/theme';
+import { Header } from '@/shared/design-system';
+import { spacing, typography, useTheme } from '@/shared/theme';
 
-import { RootNotePicker, ScaleDegreeButtons, ScaleTypeSelector } from '../components';
+import {
+  RootNotePicker,
+  ScaleDegreeButtons,
+  ScaleFamilySelector,
+  ScaleSubtypeSelector,
+} from '../components';
 import { useScalePlayer } from '../hooks/useScalePlayer';
 
 export function LibraryScreen() {
-  const { root, setRoot, scaleType, setScaleType, scale, ready, playDegree } = useScalePlayer();
+  const { colors } = useTheme();
+  const { root, setRoot, family, setFamily, scaleType, setScaleType, scale, ready, playDegree } =
+    useScalePlayer();
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Librería</Text>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <Header title="Librería" />
 
-        <Text style={styles.sectionLabel}>Nota base</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <SectionLabel>Nota base</SectionLabel>
         <RootNotePicker selected={root} onSelect={setRoot} />
 
-        <Text style={styles.sectionLabel}>Tipo</Text>
-        <ScaleTypeSelector selected={scaleType} onSelect={setScaleType} />
+        <SectionLabel>Tipo</SectionLabel>
+        <ScaleFamilySelector selected={family} onSelect={setFamily} />
+        <ScaleSubtypeSelector family={family} selected={scaleType} onSelect={setScaleType} />
 
-        <Text style={styles.sectionLabel}>Notas</Text>
+        <SectionLabel>Notas</SectionLabel>
         <ScaleDegreeButtons degrees={scale.degrees} onPressDegree={playDegree} disabled={!ready} />
-        {!ready && <Text style={styles.hint}>Cargando sonidos…</Text>}
+        {!ready && (
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
+        )}
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
+/** Rótulo de sección reutilizado dentro de la pantalla. */
+function SectionLabel({ children }: { children: string }) {
+  const { colors } = useTheme();
+  return <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{children}</Text>;
+}
+
 const styles = StyleSheet.create({
-  safeArea: {
+  root: {
     flex: 1,
-    backgroundColor: colors.background,
   },
   content: {
     padding: spacing.md,
+    paddingBottom: spacing.xl,
     gap: spacing.md,
-  },
-  title: {
-    ...typography.title,
-    color: colors.textPrimary,
   },
   sectionLabel: {
     ...typography.sectionLabel,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
   },
   hint: {
     ...typography.caption,
-    color: colors.textSecondary,
   },
 });
