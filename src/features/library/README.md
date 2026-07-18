@@ -2,7 +2,7 @@
 
 **La Librería — único feature activo del MVP.** Exploración libre de escalas y arpegios:
 
-- `components/` — `RootNotePicker`, `ScaleTypeSelector`, `ScaleDegreeButtons`.
+- `components/` — `RootNotePicker`, `ScaleFamilySelector`, `ScaleSubtypeSelector`, `ScaleDegreeButtons`.
 - `screens/` — pantalla principal de la Librería.
 - `hooks/` — `useScalePlayer` (conecta dominio musical + reproductor de audio).
 

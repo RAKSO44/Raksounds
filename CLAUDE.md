@@ -59,7 +59,7 @@ src/
     audio/               # ExpoAudioPlayer.ts (implementación real con expo-audio)
   features/
     library/
-      components/        # RootNotePicker, ScaleTypeSelector, ScaleDegreeButtons
+      components/        # RootNotePicker, ScaleFamilySelector, ScaleSubtypeSelector, ScaleDegreeButtons
       screens/
       hooks/              # useScalePlayer
     home/                 # placeholder, NO implementar lógica todavía
@@ -93,6 +93,10 @@ está mal — detente y avísame en vez de continuar.
 - Zustand para estado global (liviano, suficiente para el alcance actual; instalar cuando se use)
 - **Sin framework de estilos** (ni NativeWind ni similares): componentes 100% propios con
   `StyleSheet` y tokens en `shared/theme/`
+- **Estética Duolingo + modo oscuro** obligatorios: la referencia visual es siempre
+  Duolingo (nunca UI genérica), con morado de marca y azul secundario, y tema
+  claro/oscuro según el sistema. Detalle y componentes reutilizables en
+  `.claude/rules/design-system.md`
 - Jest + React Native Testing Library (v14: `render` es **async**, siempre `await render(...)`)
 
 ## Estilo de código
