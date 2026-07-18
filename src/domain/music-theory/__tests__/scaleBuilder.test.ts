@@ -18,43 +18,45 @@ function midis(root: NoteName, octave: number, type: Parameters<typeof buildScal
 }
 
 describe('buildScale — escalas', () => {
-  it('C mayor: solo notas naturales', () => {
-    expect(names(C, 4, 'major')).toEqual(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4']);
-    expect(midis(C, 4, 'major')).toEqual([60, 62, 64, 65, 67, 69, 71]);
+  it('C mayor: solo notas naturales, cerrando en la octava', () => {
+    expect(names(C, 4, 'major')).toEqual(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5']);
+    expect(midis(C, 4, 'major')).toEqual([60, 62, 64, 65, 67, 69, 71, 72]);
   });
 
   it('E♭ mayor se deletrea con bemoles (B♭, no A♯)', () => {
-    expect(names(E_FLAT, 4, 'major')).toEqual(['E♭4', 'F4', 'G4', 'A♭4', 'B♭4', 'C5', 'D5']);
+    expect(names(E_FLAT, 4, 'major')).toEqual([
+      'E♭4', 'F4', 'G4', 'A♭4', 'B♭4', 'C5', 'D5', 'E♭5',
+    ]);
   });
 
-  it('C♯ mayor produce E♯ y B♯ (cada letra una vez)', () => {
+  it('C♯ mayor produce E♯ y B♯ (cada letra una vez) y cierra en C♯5', () => {
     expect(names(C_SHARP, 4, 'major')).toEqual([
-      'C♯4', 'D♯4', 'E♯4', 'F♯4', 'G♯4', 'A♯4', 'B♯4',
+      'C♯4', 'D♯4', 'E♯4', 'F♯4', 'G♯4', 'A♯4', 'B♯4', 'C♯5',
     ]);
     // B♯4 se escribe en la octava 4 pero suena una octava sobre la tónica menos un semitono
-    expect(midis(C_SHARP, 4, 'major')).toEqual([61, 63, 65, 66, 68, 70, 72]);
+    expect(midis(C_SHARP, 4, 'major')).toEqual([61, 63, 65, 66, 68, 70, 72, 73]);
   });
 
-  it('A menor natural: solo notas naturales', () => {
-    expect(names(A, 3, 'naturalMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4']);
+  it('A menor natural: solo notas naturales, cerrando en la octava', () => {
+    expect(names(A, 3, 'naturalMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G4', 'A4']);
   });
 
   it('A menor armónica eleva el 7.º grado (G♯)', () => {
-    expect(names(A, 3, 'harmonicMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G♯4']);
+    expect(names(A, 3, 'harmonicMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F4', 'G♯4', 'A4']);
   });
 
   it('A menor melódica eleva 6.º y 7.º (F♯, G♯)', () => {
-    expect(names(A, 3, 'melodicMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F♯4', 'G♯4']);
+    expect(names(A, 3, 'melodicMinor')).toEqual(['A3', 'B3', 'C4', 'D4', 'E4', 'F♯4', 'G♯4', 'A4']);
   });
 
   it('G♯ menor melódica requiere doble sostenido (F♯♯)', () => {
     expect(names(G_SHARP, 3, 'melodicMinor')).toEqual([
-      'G♯3', 'A♯3', 'B3', 'C♯4', 'D♯4', 'E♯4', 'F♯♯4',
+      'G♯3', 'A♯3', 'B3', 'C♯4', 'D♯4', 'E♯4', 'F♯♯4', 'G♯4',
     ]);
   });
 
   it('la octava sube cuando el ciclo de letras pasa de B a C', () => {
-    expect(names(B, 3, 'major')).toEqual(['B3', 'C♯4', 'D♯4', 'E4', 'F♯4', 'G♯4', 'A♯4']);
+    expect(names(B, 3, 'major')).toEqual(['B3', 'C♯4', 'D♯4', 'E4', 'F♯4', 'G♯4', 'A♯4', 'B4']);
   });
 });
 

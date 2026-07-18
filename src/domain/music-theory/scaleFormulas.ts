@@ -28,33 +28,35 @@ export interface ScaleFormula {
   readonly letterSteps: readonly number[];
 }
 
-const SCALE_LETTER_STEPS: readonly number[] = [0, 1, 2, 3, 4, 5, 6];
+// Las escalas cierran con la octava de la tónica (grado 8 = "1" superior):
+// una letra más allá del ciclo (7) y +12 semitonos sobre la tónica.
+const SCALE_LETTER_STEPS: readonly number[] = [0, 1, 2, 3, 4, 5, 6, 7];
 const ARPEGGIO_LETTER_STEPS: readonly number[] = [0, 2, 4, 7];
 
 export const SCALE_FORMULAS: Record<ScaleType, ScaleFormula> = {
   major: {
     type: 'major',
     kind: 'scale',
-    semitones: [0, 2, 4, 5, 7, 9, 11],
+    semitones: [0, 2, 4, 5, 7, 9, 11, 12],
     letterSteps: SCALE_LETTER_STEPS,
   },
   naturalMinor: {
     type: 'naturalMinor',
     kind: 'scale',
-    semitones: [0, 2, 3, 5, 7, 8, 10],
+    semitones: [0, 2, 3, 5, 7, 8, 10, 12],
     letterSteps: SCALE_LETTER_STEPS,
   },
   harmonicMinor: {
     type: 'harmonicMinor',
     kind: 'scale',
-    semitones: [0, 2, 3, 5, 7, 8, 11],
+    semitones: [0, 2, 3, 5, 7, 8, 11, 12],
     letterSteps: SCALE_LETTER_STEPS,
   },
   // Variante ascendente; la descendente coincide con la menor natural.
   melodicMinor: {
     type: 'melodicMinor',
     kind: 'scale',
-    semitones: [0, 2, 3, 5, 7, 9, 11],
+    semitones: [0, 2, 3, 5, 7, 9, 11, 12],
     letterSteps: SCALE_LETTER_STEPS,
   },
   majorArpeggio: {
