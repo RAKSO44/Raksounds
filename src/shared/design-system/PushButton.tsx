@@ -1,16 +1,21 @@
-import { useCallback } from 'react';
+import { ComponentProps, useCallback } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { hapticPressIn, hapticPressOut } from '@/shared/haptics';
 import { elevation, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 export type PushButtonVariant = 'solid' | 'selectable';
 
+type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
 interface PushButtonProps {
   label: string;
   /** Segunda línea opcional (p. ej. el número de grado bajo la nota). */
   sublabel?: string;
+  /** Ícono opcional encima del label (toma el color del texto del botón). */
+  icon?: IconName;
   onPress: () => void;
   /**
    * `solid` = botón "entero" de Duolingo: color fijo (aun en oscuro), sin
@@ -41,6 +46,7 @@ interface PushButtonProps {
 export function PushButton({
   label,
   sublabel,
+  icon,
   onPress,
   variant = 'solid',
   selected = false,
@@ -111,6 +117,7 @@ export function PushButton({
           faceAnimatedStyle,
         ]}
       >
+        {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
         <Text style={[typography.chip, labelStyle, { color: labelColor }]} numberOfLines={1}>
           {label}
         </Text>
