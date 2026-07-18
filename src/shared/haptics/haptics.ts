@@ -1,6 +1,8 @@
 import { Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 
+import { useSettingsStore } from '@/shared/settings';
+
 /**
  * Envoltorio fino sobre expo-haptics. expo-haptics delega en el mejor actuador
  * disponible del dispositivo (Taptic Engine en iOS, motor lineal LRA en Android
@@ -13,6 +15,9 @@ import * as Haptics from 'expo-haptics';
 
 function safe(run: () => Promise<unknown>): void {
   if (Platform.OS === 'web') return;
+  // Interruptor global: si el usuario apagó la háptica en Configuración, ninguna
+  // interacción vibra. Se lee del store (no-hook) para gatear en el punto único.
+  if (!useSettingsStore.getState().hapticsEnabled) return;
   try {
     run().catch(() => {
       /* dispositivo sin háptica: ignorar */

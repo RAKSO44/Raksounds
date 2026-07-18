@@ -1,6 +1,8 @@
 import { createContext, ReactNode, useContext, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
 
+import { useSettingsStore } from '@/shared/settings';
+
 import { darkColors, lightColors, ThemeColors } from './colors';
 
 export interface Theme {
@@ -11,13 +13,14 @@ export interface Theme {
 const ThemeContext = createContext<Theme | null>(null);
 
 /**
- * Provee el tema activo derivado de la preferencia del sistema
- * (`userInterfaceStyle: automatic` en app.json). Un único punto de decisión
- * claro/oscuro para toda la app.
+ * Provee el tema activo. La preferencia del usuario (`themeMode`) manda: en
+ * `system` sigue al SO (`useColorScheme`), y en `light`/`dark` fuerza ese modo.
+ * Un único punto de decisión claro/oscuro para toda la app.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const scheme = useColorScheme();
-  const isDark = scheme === 'dark';
+  const themeMode = useSettingsStore((state) => state.themeMode);
+  const isDark = themeMode === 'system' ? scheme === 'dark' : themeMode === 'dark';
 
   const value = useMemo<Theme>(
     () => ({ colors: isDark ? darkColors : lightColors, isDark }),
