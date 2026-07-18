@@ -30,6 +30,21 @@ suelto en un feature).
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
   redondeados y juguetones (`MaterialCommunityIcons`).
 
+`PushButton` acepta un `icon` opcional (nombre de `MaterialCommunityIcons`) que
+se pinta encima del label con el color del texto del botón. Para un **selector
+tipo segmento donde el elegido va "a color entero"** (p. ej. el modo de
+apariencia en Configuración), no uses el estado `selected` tenue: renderiza el
+botón activo con `variant="solid"` y los inactivos con `variant="selectable"`.
+Así el seleccionado queda morado pleno con texto blanco y el resto neutros, sin
+perder el relieve 3D ni el snap instantáneo.
+
+Para un **interruptor on/off** usa el `Switch` nativo tematizado con tokens
+(`trackColor` en `colors.brand` al estar activo, `thumbColor` en
+`colors.textOnBrand`), agrandado con `transform: scale`, y dispara
+`hapticPressIn` al cambiar. Va a la altura del título de su sección, pegado al
+extremo derecho (no en una fila aparte debajo). No hay toggle propio en el
+design system todavía; si se repite en otra feature, se extrae aquí.
+
 Jerarquía visual: **PushButton (primario)** > **GroupedOptionList (secundario)**.
 No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
 
