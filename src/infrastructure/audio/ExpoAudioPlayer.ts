@@ -31,6 +31,15 @@ export function createExpoAudioPlayer(): IAudioPlayer {
     // Queremos que el cambio de rate SÍ desplace la altura (así afinamos
     // notas intermedias entre muestras); la corrección de pitch lo impediría.
     player.shouldCorrectPitch = false;
+    // "Calentamos" el player: en expo-audio, setPlaybackRate se ignora en el
+    // PRIMER play() de un player nuevo (suena la muestra sin afinar y recién
+    // se corrige en la 2.ª reproducción). Hacemos ese primer play() aquí, en
+    // mudo, para que la primera nota real que oiga el usuario ya salga afinada.
+    player.volume = 0;
+    player.play();
+    player.pause();
+    player.seekTo(0);
+    player.volume = 1;
     return player;
   }
 

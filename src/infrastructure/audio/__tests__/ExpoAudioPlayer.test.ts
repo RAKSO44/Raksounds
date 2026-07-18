@@ -7,6 +7,7 @@ jest.mock('expo-audio', () => {
   const createMockPlayer = () => ({
     playing: false,
     shouldCorrectPitch: true,
+    volume: 1,
     setPlaybackRate: jest.fn(),
     seekTo: jest.fn(),
     play: jest.fn(function (this: { playing: boolean }) {
