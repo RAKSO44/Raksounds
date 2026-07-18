@@ -23,13 +23,19 @@ interface GroupedOptionListProps {
 export function GroupedOptionList({ options, selectedKey, onSelect }: GroupedOptionListProps) {
   const { colors } = useTheme();
 
+  const selectedIndex = options.findIndex((option) => option.key === selectedKey);
+
   return (
     <View style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]}>
       {options.map((option, index) => {
         const selected = option.key === selectedKey;
+        // El divisor entre esta fila y la anterior se oculta si cualquiera de
+        // las dos está seleccionada: así el borde de color de la fila activa se
+        // integra con la agrupación en vez de convivir con una línea gris.
+        const showDivider = index > 0 && index !== selectedIndex && index - 1 !== selectedIndex;
         return (
           <View key={option.key}>
-            {index > 0 && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
+            {showDivider && <View style={[styles.divider, { backgroundColor: colors.border }]} />}
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ selected }}
@@ -38,6 +44,8 @@ export function GroupedOptionList({ options, selectedKey, onSelect }: GroupedOpt
               onPressOut={hapticPressOut}
               style={[
                 styles.row,
+                index === 0 && styles.rowFirst,
+                index === options.length - 1 && styles.rowLast,
                 selected && { backgroundColor: colors.secondaryTint, borderColor: colors.secondary },
               ]}
             >
@@ -58,21 +66,32 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: radii.lg,
     borderWidth: 2,
-    padding: spacing.xs,
+    // Sin padding y con recorte: las filas van a ras del borde del grupo y el
+    // resaltado de la fila activa llega hasta las esquinas redondeadas.
+    overflow: 'hidden',
   },
   divider: {
     height: 1.5,
-    marginHorizontal: spacing.sm,
   },
   row: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.md,
     // Borde transparente en reposo: reserva el espacio para que al seleccionar
-    // el borde de color no desplace el layout.
+    // el borde de color no desplace el layout. Sin radio: la fila activa queda
+    // integrada a ras de la agrupación (estilo Duolingo).
     borderWidth: 2,
     borderColor: 'transparent',
     alignItems: 'center',
+  },
+  // Redondea las esquinas exteriores de los extremos para que el borde de la
+  // fila activa siga la curva del grupo (radio del grupo menos el borde).
+  rowFirst: {
+    borderTopLeftRadius: radii.lg - 2,
+    borderTopRightRadius: radii.lg - 2,
+  },
+  rowLast: {
+    borderBottomLeftRadius: radii.lg - 2,
+    borderBottomRightRadius: radii.lg - 2,
   },
   label: {
     ...typography.chip,
