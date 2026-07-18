@@ -22,9 +22,7 @@ export function LibraryScreen() {
 
         <Text style={styles.sectionLabel}>Notas</Text>
         <ScaleDegreeButtons degrees={scale.degrees} onPressDegree={playDegree} disabled={!ready} />
-        <Text style={styles.hint}>
-          {ready ? 'Toca una nota para escucharla' : 'Cargando sonidos…'}
-        </Text>
+        {!ready && <Text style={styles.hint}>Cargando sonidos…</Text>}
       </ScrollView>
     </SafeAreaView>
   );
