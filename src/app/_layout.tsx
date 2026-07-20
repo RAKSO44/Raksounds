@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SystemUI from 'expo-system-ui';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ThemeProvider, useTheme } from '@/shared/theme';
@@ -31,12 +33,22 @@ function ThemedApp() {
   );
 }
 
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+});
+
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <ThemeProvider>
-        <ThemedApp />
-      </ThemeProvider>
-    </SafeAreaProvider>
+    // Raíz obligatoria de gesture-handler: sin ella los gestos de PushButton
+    // (y con ellos la pulsación simultánea de varias notas) no se registran.
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <ThemedApp />
+        </ThemeProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
