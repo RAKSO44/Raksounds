@@ -7,7 +7,7 @@ app/            → wrappers finos de Expo Router. Solo importan de features/.
 features/       → pantallas, componentes y hooks de cada feature.
                   Importan de domain/, shared/ y (solo en hooks de
                   composición, ej. useScalePlayer) de infrastructure/.
-infrastructure/ → implementaciones concretas (expo-audio, etc.).
+infrastructure/ → implementaciones concretas (react-native-audio-api, etc.).
                   Solo importan interfaces/tipos de domain/.
 shared/         → design-system y theme. No importan de ninguna otra capa.
 domain/         → TypeScript puro. NO importa NADA: ni react, ni react-native,

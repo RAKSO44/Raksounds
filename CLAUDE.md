@@ -56,7 +56,7 @@ src/
     music-theory/       # note.ts, scale-formulas.ts, scale-builder.ts (puro TS)
     audio/               # IAudioPlayer.ts (interfaz, sin implementación)
   infrastructure/
-    audio/               # ExpoAudioPlayer.ts (implementación real con expo-audio)
+    audio/               # PianoSamplerPlayer.ts (motor real con react-native-audio-api)
   features/
     library/
       components/        # RootNotePicker, ScaleFamilySelector, ScaleSubtypeSelector, ScaleDegreeButtons
@@ -88,8 +88,16 @@ está mal — detente y avísame en vez de continuar.
 - **Expo con Development Build** (no Expo Go — necesitamos módulos nativos de audio)
 - TypeScript en modo `strict`
 - **Expo Router** (file-based routing) para la navegación
-- **expo-audio** para reproducción de sonido (`expo-av` fue eliminado en SDK 55)
-- Muestras de piano multi-sampleadas (ej. banco tipo Salamander Grand Piano, de uso libre)
+- **react-native-audio-api** (Web Audio API nativa) como motor de sonido. NO un
+  reproductor de medios: cada pulsación crea un `AudioBufferSourceNode` nuevo, que
+  es como funcionan las apps de piano. Se probó `expo-audio` y no sirve para
+  disparar muestras — ver `src/infrastructure/audio/README.md`
+- Muestras de piano **Salamander Grand Piano** (Yamaha C5, CC BY). Los originales
+  están en `assets/audio/piano/`; el banco cromático que consume la app se genera
+  con `scripts/build-piano-samples.mjs`
+- **react-native-gesture-handler** para las pulsaciones: el sistema de responders
+  de React Native solo concede el toque a un componente a la vez, así que con
+  `Pressable` era imposible pulsar varias notas a la vez
 - Zustand para estado global (liviano, suficiente para el alcance actual; instalar cuando se use)
 - **Sin framework de estilos** (ni NativeWind ni similares): componentes 100% propios con
   `StyleSheet` y tokens en `shared/theme/`

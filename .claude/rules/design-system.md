@@ -56,6 +56,14 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   son INSTANTÁNEOS** — sin animación de presionado ni de soltado.
 - Háptica firme al presionar (`hapticPressIn`) y al soltar (`hapticPressOut`),
   vía `shared/haptics/` (expo-haptics; usa el mejor actuador del equipo).
+- El gesto va con **react-native-gesture-handler**, NO con `Pressable`. El
+  sistema de responders de React Native concede el toque a un solo componente a
+  la vez, así que con `Pressable` era imposible mantener dos botones pulsados
+  (las notas no se podían tocar simultáneamente). No lo reviertas.
+- Tres callbacks: `onPressIn` (el dedo toca), `onPress` (tap completo, solo si
+  el gesto no se canceló) y `onPressOut` (siempre, incluso al cancelarse). Para
+  algo que debe sentirse inmediato —una tecla de piano— usa `onPressIn`, no
+  `onPress`.
 
 ## 3. Colores — usa SIEMPRE los tokens del tema
 
