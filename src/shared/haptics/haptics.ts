@@ -4,10 +4,21 @@ import * as Haptics from 'expo-haptics';
 import { useSettingsStore } from '@/shared/settings';
 
 /**
- * Envoltorio fino sobre expo-haptics. expo-haptics delega en el mejor actuador
- * disponible del dispositivo (Taptic Engine en iOS, motor lineal LRA en Android
- * moderno; cae a vibración ERM en equipos antiguos), así que aquí solo elegimos
- * la *intensidad* y dejamos que la plataforma resuelva el hardware.
+ * Envoltorio fino sobre expo-haptics.
+ *
+ * IMPORTANTE — por qué NO usamos `impactAsync` en Android:
+ * en Android, `impactAsync` NO llega al motor háptico afinado por el fabricante;
+ * construye a mano un `VibrationEffect.createWaveform(timings, amplitudes)`. Para
+ * `Rigid` eso son 43 ms de vibración a amplitud 50/255 — un zumbido largo y flojo,
+ * no un click. Por eso se sentía "feo" por más que subiéramos el estilo: `Medium`
+ * y `Rigid` son literalmente la MISMA waveform, y `Heavy` solo la alarga a 60 ms.
+ *
+ * `performAndroidHapticsAsync` sí pasa por `View.performHapticFeedback(...)`, que
+ * delega en la capa háptica del sistema y por tanto en la curva que el fabricante
+ * afinó para su LRA (en HyperOS/POCO es la misma ruta que usan el teclado y apps
+ * como Duolingo). De ahí salen los golpes SECOS y FUERTES.
+ *
+ * En iOS `impactAsync` ya va al Taptic Engine, así que ahí se mantiene.
  *
  * Todas las llamadas son "dispara y olvida" y nunca propagan errores: en web o
  * en equipos sin motor háptico simplemente no hacen nada.
@@ -28,32 +39,41 @@ function safe(run: () => Promise<unknown>): void {
 }
 
 /**
- * Golpe seco: la única textura háptica de la app. Como Duolingo, buscamos un
- * "click" firme y CORTO (nada de vibrado prolongado). `Rigid` es la variante
- * más seca de expo-haptics; `Medium`/`Heavy` se sienten más como un zumbido en
- * los motores LRA de Android, por eso no se usan.
+ * Golpe seco del sistema. `type` es la constante Android a usar; en iOS todas
+ * caen en el impacto `Rigid`, que allí ya es un click corto del Taptic Engine.
  */
-function dryHit(): void {
+function dryHit(type: Haptics.AndroidHaptics): void {
+  if (Platform.OS === 'android') {
+    safe(() => Haptics.performAndroidHapticsAsync(type));
+    return;
+  }
   safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid));
 }
 
 /**
  * Un único golpe seco. Para botones NO alzados (filas de listas, toggles):
  * no tienen relieve 3D, así que dan un solo impacto en vez de un par.
+ *
+ * `Virtual_Key` es el click estándar de "pulsé un control" del sistema.
  */
 export function hapticTap(): void {
-  dryHit();
+  dryHit(Haptics.AndroidHaptics.Virtual_Key);
 }
 
 /**
  * Golpe seco al PRESIONAR un botón alzado (relieve 3D). Junto con
  * `hapticPressOut` forma el par "baja / sube" característico de Duolingo.
+ *
+ * `Keyboard_Press`/`Keyboard_Release` son justamente el par que el sistema afina
+ * para tecla-abajo / tecla-arriba: dos golpes DISTINTOS y secos, en vez de dos
+ * vibraciones idénticas (que era lo que hacía que el par se sintiera "brrr-brrr"
+ * en lugar de "tac-tac").
  */
 export function hapticPressIn(): void {
-  dryHit();
+  dryHit(Haptics.AndroidHaptics.Keyboard_Press);
 }
 
 /** Golpe seco al SOLTAR un botón alzado (el segundo impacto del par). */
 export function hapticPressOut(): void {
-  dryHit();
+  dryHit(Haptics.AndroidHaptics.Keyboard_Release);
 }
