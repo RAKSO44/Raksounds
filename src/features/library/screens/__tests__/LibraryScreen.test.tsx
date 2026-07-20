@@ -7,11 +7,13 @@ import { ThemeProvider } from '@/shared/theme';
 import { LibraryScreen } from '../LibraryScreen';
 
 // Se mockea solo la frontera nativa: el flujo UI → dominio → IAudioPlayer es real.
-const mockPlayNote = jest.fn();
-jest.mock('@/infrastructure/audio/ExpoAudioPlayer', () => ({
-  createExpoAudioPlayer: () => ({
+const mockNoteOn = jest.fn<number, [number]>();
+const mockNoteOff = jest.fn();
+jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
+  createPianoSamplerPlayer: () => ({
     load: jest.fn().mockResolvedValue(undefined),
-    playNote: (midi: number) => mockPlayNote(midi),
+    noteOn: (midi: number) => mockNoteOn(midi),
+    noteOff: (handle: number) => mockNoteOff(handle),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
   }),
@@ -33,8 +35,16 @@ function Providers({ children }: { children: ReactNode }) {
 
 const renderScreen = () => render(<LibraryScreen />, { wrapper: Providers });
 
+let nextVoice = 0;
 beforeEach(() => {
-  mockPlayNote.mockClear();
+  nextVoice = 0;
+  mockNoteOn.mockReset();
+  // Cada nota iniciada devuelve una voz distinta, como el motor real.
+  mockNoteOn.mockImplementation(() => {
+    nextVoice += 1;
+    return nextVoice;
+  });
+  mockNoteOff.mockClear();
 });
 
 describe('LibraryScreen', () => {
@@ -54,7 +64,30 @@ describe('LibraryScreen', () => {
 
     await user.press(screen.getByText('E4'));
 
-    expect(mockPlayNote).toHaveBeenCalledWith(64);
+    expect(mockNoteOn).toHaveBeenCalledWith(64);
+  });
+
+  it('al soltar el grado se libera la MISMA voz que se inició', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByText('E4'));
+
+    // La voz devuelta por noteOn es la que debe soltarse: si se soltara otra
+    // (o la altura MIDI), una tecla apagaría la nota de otra tecla.
+    expect(mockNoteOff).toHaveBeenCalledWith(mockNoteOn.mock.results[0].value);
+  });
+
+  it('varias teclas suenan a la vez: cada una libera solo su voz', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByText('C4'));
+    await user.press(screen.getByText('G4'));
+
+    const [firstVoice, secondVoice] = mockNoteOn.mock.results.map((r) => r.value);
+    expect(firstVoice).not.toBe(secondVoice);
+    expect(mockNoteOff.mock.calls).toEqual([[firstVoice], [secondVoice]]);
   });
 
   it('cambiar la nota base recalcula la escala con el deletreo correcto', async () => {
@@ -81,7 +114,7 @@ describe('LibraryScreen', () => {
     }
     // La octava repetida del arpegio suena una octava arriba
     await user.press(screen.getByText('C5'));
-    expect(mockPlayNote).toHaveBeenCalledWith(72);
+    expect(mockNoteOn).toHaveBeenCalledWith(72);
   });
 
   it('combinación completa: A + Mayor + Arpegio = arpegio mayor de A', async () => {

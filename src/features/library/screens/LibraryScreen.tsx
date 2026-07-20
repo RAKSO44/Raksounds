@@ -13,8 +13,18 @@ import { useScalePlayer } from '../hooks/useScalePlayer';
 
 export function LibraryScreen() {
   const { colors } = useTheme();
-  const { root, setRoot, family, setFamily, scaleType, setScaleType, scale, ready, playDegree } =
-    useScalePlayer();
+  const {
+    root,
+    setRoot,
+    family,
+    setFamily,
+    scaleType,
+    setScaleType,
+    scale,
+    ready,
+    pressDegree,
+    releaseDegree,
+  } = useScalePlayer();
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -29,7 +39,12 @@ export function LibraryScreen() {
         <ScaleSubtypeSelector family={family} selected={scaleType} onSelect={setScaleType} />
 
         <SectionLabel>Notas</SectionLabel>
-        <ScaleDegreeButtons degrees={scale.degrees} onPressDegree={playDegree} disabled={!ready} />
+        <ScaleDegreeButtons
+          degrees={scale.degrees}
+          onPressDegree={pressDegree}
+          onReleaseDegree={releaseDegree}
+          disabled={!ready}
+        />
         {!ready && (
           <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
         )}

@@ -1,15 +1,21 @@
 /**
- * Banco de muestras de piano CROMÁTICO: una grabación real por semitono
+ * Banco de muestras de piano CROMÁTICO: un archivo por semitono, C4–C6
  * (ver assets/audio/piano-chromatic/ y CREDITS.md).
  *
- * Por qué cromático y no muestreado en terceras menores:
- * el banco anterior (Salamander) traía una muestra cada 3 semitonos y las notas
- * intermedias se afinaban con `setPlaybackRate`. Ese rate NO se aplica desde la
- * muestra 0 — ExoPlayer lo propaga de forma asíncrona en su hilo de
- * reproducción —, así que las notas intermedias arrancaban con la altura de la
- * muestra cruda y "se corregían solas" a mitad del ataque. Con una muestra por
- * semitono el rate es SIEMPRE 1 y nunca se llama a `setPlaybackRate`: esa clase
- * de bug desaparece por construcción, no se parchea.
+ * Origen: Salamander Grand Piano (Yamaha C5), que viene muestreado cada 3
+ * semitonos. Los semitonos intermedios se generan OFFLINE resampleando la
+ * muestra más cercana como máximo ±1 semitono —práctica normal de un sampler—
+ * con `scripts/build-piano-samples.mjs`.
+ *
+ * Por qué offline y no en el dispositivo:
+ * transponer en caliente (`setPlaybackRate` de expo-audio) no se aplica desde la
+ * muestra 0 —ExoPlayer lo propaga de forma asíncrona en su hilo—, así que las
+ * notas intermedias arrancaban con la altura de la muestra cruda y "se corregían
+ * solas" a mitad del ataque. Con el banco ya resampleado, el motor reproduce
+ * SIEMPRE a rate 1 y esa clase de bug desaparece por construcción.
+ *
+ * Las muestras llevan además +7 dB y están recortadas a 4 s (con fundido final),
+ * que es todo lo que la app puede llegar a usar.
  *
  * Metro exige `require()` con rutas literales, por eso la lista es explícita.
  */

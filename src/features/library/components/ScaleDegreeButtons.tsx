@@ -7,13 +7,26 @@ import { spacing, typography } from '@/shared/theme';
 
 interface ScaleDegreeButtonsProps {
   degrees: readonly ScaleDegree[];
+  /** El dedo toca la tecla. La nota debe empezar aquí, no al soltar. */
   onPressDegree: (degree: ScaleDegree) => void;
+  /** El dedo suelta la tecla (o el gesto se cancela). */
+  onReleaseDegree: (degree: ScaleDegree) => void;
   /** Deshabilita los botones mientras cargan las muestras de audio. */
   disabled?: boolean;
 }
 
-/** Cada grado de la escala/arpegio como botón sólido que suena al presionarlo. */
-export function ScaleDegreeButtons({ degrees, onPressDegree, disabled }: ScaleDegreeButtonsProps) {
+/**
+ * Cada grado de la escala/arpegio como botón sólido que suena al presionarlo.
+ *
+ * Se comportan como teclas de piano: suenan al TOCARLAS (no al soltarlas),
+ * siguen sonando mientras el dedo aguanta y se pueden pulsar varias a la vez.
+ */
+export function ScaleDegreeButtons({
+  degrees,
+  onPressDegree,
+  onReleaseDegree,
+  disabled,
+}: ScaleDegreeButtonsProps) {
   return (
     <View style={styles.container}>
       {degrees.map((degree) => {
@@ -33,7 +46,8 @@ export function ScaleDegreeButtons({ degrees, onPressDegree, disabled }: ScaleDe
               labelStyle={typography.note}
               accessibilityLabel={`Nota ${name}`}
               disabled={disabled}
-              onPress={() => onPressDegree(degree)}
+              onPressIn={() => onPressDegree(degree)}
+              onPressOut={() => onReleaseDegree(degree)}
               minWidth={64}
             />
           </Animated.View>
