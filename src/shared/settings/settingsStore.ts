@@ -1,4 +1,7 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+import { mmkvStorage } from './mmkvStorage';
 
 /** Preferencia de apariencia: forzar claro/oscuro o seguir al sistema. */
 export type ThemeMode = 'light' | 'dark' | 'system';
@@ -15,14 +18,27 @@ interface SettingsState {
 /**
  * Estado global de ajustes de la app. Es el primer uso de Zustand del proyecto:
  * estas preferencias cruzan features (tema y háptica afectan a toda la UI) y
- * deben sobrevivir a la navegación, justo el caso que el store liviano cubre.
+ * deben sobrevivir a la navegación.
  *
- * De momento vive solo en memoria (se reinicia al cerrar la app); la
- * persistencia entre sesiones llegará junto con el resto de almacenamiento.
+ * Se persisten en disco con MMKV (`persist` + `mmkvStorage`): lo que el usuario
+ * configure se conserva entre sesiones, incluso tras cerrar la app. Solo se
+ * guardan las preferencias (no las acciones), vía `partialize`.
  */
-export const useSettingsStore = create<SettingsState>()((set) => ({
-  hapticsEnabled: true,
-  themeMode: 'system',
-  setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
-  setThemeMode: (themeMode) => set({ themeMode }),
-}));
+export const useSettingsStore = create<SettingsState>()(
+  persist(
+    (set) => ({
+      hapticsEnabled: true,
+      themeMode: 'system',
+      setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
+      setThemeMode: (themeMode) => set({ themeMode }),
+    }),
+    {
+      name: 'settings',
+      storage: createJSONStorage(() => mmkvStorage),
+      partialize: (state) => ({
+        hapticsEnabled: state.hapticsEnabled,
+        themeMode: state.themeMode,
+      }),
+    },
+  ),
+);
