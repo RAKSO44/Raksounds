@@ -27,12 +27,33 @@ function safe(run: () => Promise<unknown>): void {
   }
 }
 
-/** Golpe firme al presionar un botón (sensación de "click" fuerte). */
-export function hapticPressIn(): void {
-  safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium));
+/**
+ * Golpe seco: la única textura háptica de la app. Como Duolingo, buscamos un
+ * "click" firme y CORTO (nada de vibrado prolongado). `Rigid` es la variante
+ * más seca de expo-haptics; `Medium`/`Heavy` se sienten más como un zumbido en
+ * los motores LRA de Android, por eso no se usan.
+ */
+function dryHit(): void {
+  safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid));
 }
 
-/** Golpe seco y breve al soltar (el "pop" de retorno). */
+/**
+ * Un único golpe seco. Para botones NO alzados (filas de listas, toggles):
+ * no tienen relieve 3D, así que dan un solo impacto en vez de un par.
+ */
+export function hapticTap(): void {
+  dryHit();
+}
+
+/**
+ * Golpe seco al PRESIONAR un botón alzado (relieve 3D). Junto con
+ * `hapticPressOut` forma el par "baja / sube" característico de Duolingo.
+ */
+export function hapticPressIn(): void {
+  dryHit();
+}
+
+/** Golpe seco al SOLTAR un botón alzado (el segundo impacto del par). */
 export function hapticPressOut(): void {
-  safe(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid));
+  dryHit();
 }

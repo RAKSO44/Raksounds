@@ -1,6 +1,6 @@
 import { Switch } from 'react-native';
 
-import { hapticPressIn } from '@/shared/haptics';
+import { hapticTap } from '@/shared/haptics';
 import { useTheme } from '@/shared/theme';
 
 interface SettingToggleProps {
@@ -20,7 +20,7 @@ export function SettingToggle({ accessibilityLabel, value, onValueChange }: Sett
   const { colors } = useTheme();
 
   const handleChange = (next: boolean) => {
-    hapticPressIn();
+    hapticTap();
     onValueChange(next);
   };
 

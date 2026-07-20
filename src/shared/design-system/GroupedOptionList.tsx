@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { hapticPressIn, hapticPressOut } from '@/shared/haptics';
+import { hapticTap } from '@/shared/haptics';
 import { radii, spacing, typography, useTheme } from '@/shared/theme';
 
 export interface GroupedOption {
@@ -40,8 +40,8 @@ export function GroupedOptionList({ options, selectedKey, onSelect }: GroupedOpt
               accessibilityRole="button"
               accessibilityState={{ selected }}
               onPress={() => onSelect(option.key)}
-              onPressIn={hapticPressIn}
-              onPressOut={hapticPressOut}
+              // Botón NO alzado: un solo golpe seco al presionar (sin par baja/sube).
+              onPressIn={hapticTap}
               style={[
                 styles.row,
                 index === 0 && styles.rowFirst,
