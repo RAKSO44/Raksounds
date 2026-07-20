@@ -4,20 +4,19 @@ import { IAudioPlayer } from '@/domain/audio/IAudioPlayer';
 import {
   MAX_PLAYABLE_MIDI,
   MIN_PLAYABLE_MIDI,
-  nearestSample,
   PIANO_SAMPLES,
-  playbackRateFor,
+  sampleFor,
 } from './pianoSampleMap';
 
 /**
- * Voces (players) por muestra. Cada muestra cubre ±1 semitono, así que dos
- * grados consecutivos pueden compartirla (D4 y E4 usan D♯4): con varias voces
- * un acorde que comparte muestra suena completo y el usuario puede "spamear"
- * la misma tecla sin que una pulsación corte a la anterior. Se precargan TODAS
- * en load() (nunca se crean durante la reproducción: crear un player en caliente
- * hacía que la nota arrancara a mitad del ataque).
+ * Voces (players) por nota. Con el banco cromático cada nota tiene su propio
+ * pool, así que dos notas distintas NUNCA compiten por un player: la polifonía
+ * entre notas es total. Estas voces solo sirven para solapar la MISMA nota
+ * repetida ("spam"), donde 2 bastan para alternar sin cortar el ataque previo.
+ *
+ * 25 notas × 2 = 50 players, menos que los 63 del banco anterior.
  */
-const VOICES_PER_SAMPLE = 3;
+const VOICES_PER_NOTE = 2;
 
 /**
  * Duración máxima de una nota. Las apps de práctica de oído/canto no dejan sonar
@@ -33,42 +32,47 @@ interface Voice {
   readonly player: AudioPlayer;
   /** Timer del corte/fundido programado; se cancela si la voz se re-dispara. */
   timer?: ReturnType<typeof setTimeout>;
+  /**
+   * Se incrementa en CADA disparo. El trabajo asíncrono (seekTo, fundido) lleva
+   * el valor que tenía al programarse y se descarta si ya no coincide: así una
+   * pulsación nueva nunca es pisada por el fundido de la anterior.
+   */
+  generation: number;
+  /**
+   * true si el player quedó en una posición distinta de 0 (ya reprodujo algo).
+   * Una voz limpia puede sonar con `play()` directo, sin esperar un `seekTo`.
+   */
+  dirty: boolean;
 }
 
 interface Pool {
   readonly voices: Voice[];
-  /** Cursor round-robin: reparte pulsaciones entre las voces de la muestra. */
+  /** Cursor round-robin: reparte pulsaciones entre las voces de la nota. */
   cursor: number;
 }
 
 /**
  * Implementación real de IAudioPlayer con expo-audio y muestras de piano
  * (ver pianoSampleMap.ts). Única capa del proyecto que conoce expo-audio.
+ *
+ * Dos reglas que NO hay que romper, porque cada una arregla un bug real:
+ *
+ * 1. Nunca se llama a `setPlaybackRate`. El banco es cromático, así que toda
+ *    nota suena a rate 1. Cambiar el rate justo antes de `play()` no se aplica
+ *    desde la muestra 0 (ExoPlayer lo propaga async en su hilo), y eso hacía que
+ *    D4/F4/B4 arrancaran con la altura de la muestra cruda y "se corrigieran
+ *    solas" a mitad del ataque.
+ *
+ * 2. `seekTo()` devuelve una Promise y hay que ESPERARLA antes de `play()`.
+ *    Encadenarlos sin esperar hacía que la voz arrancara desde donde había
+ *    quedado, y la nota sonaba "incompleta" (sin ataque) al pulsar dos teclas
+ *    seguidas muy rápido.
  */
 export function createExpoAudioPlayer(): IAudioPlayer {
-  // Un pool de voces por MIDI de muestra. Todas se precargan en load().
+  // Un pool de voces por nota. Todas se precargan en load(): crear un player en
+  // caliente hacía que la nota arrancara a mitad del ataque.
   const pools = new Map<number, Pool>();
   let loaded = false;
-
-  function makeVoice(source: number): Voice {
-    const player = createAudioPlayer(source);
-    // Queremos que el cambio de rate SÍ desplace la altura (así afinamos notas
-    // intermedias entre muestras); la corrección de pitch lo impediría.
-    player.shouldCorrectPitch = false;
-    // "Calentamos" el player consumiendo la rareza de expo-audio: el PRIMER
-    // setPlaybackRate de un player nuevo se aplica una reproducción tarde (la
-    // muestra suena sin afinar y recién se corrige en la 2.ª). Disparamos ese
-    // primer setPlaybackRate + play() aquí, EN MUDO, con un rate distinto de 1
-    // para que la primera nota real que oiga el usuario ya salga afinada.
-    player.volume = 0;
-    player.setPlaybackRate(2 ** (1 / 12));
-    player.play();
-    player.pause();
-    player.seekTo(0);
-    player.setPlaybackRate(1);
-    player.volume = 1;
-    return { player };
-  }
 
   function clearTimer(voice: Voice) {
     if (voice.timer) {
@@ -77,25 +81,29 @@ export function createExpoAudioPlayer(): IAudioPlayer {
     }
   }
 
-  /** Reinicia una voz a su estado de reposo (parada, al inicio, a volumen pleno). */
-  function reset(voice: Voice) {
-    clearTimer(voice);
-    voice.player.pause();
-    voice.player.seekTo(0);
-    voice.player.volume = 1;
+  /** `seekTo` es asíncrono; se normaliza a Promise para poder encadenarlo. */
+  function seekToStart(voice: Voice): Promise<void> {
+    return Promise.resolve(voice.player.seekTo(0)).catch(() => {
+      /* el player pudo ser liberado mientras tanto: ignorar */
+    });
   }
 
   /** Programa el fundido + corte para acotar la duración de la nota. */
-  function scheduleFade(voice: Voice) {
+  function scheduleFade(voice: Voice, generation: number) {
     let step = 0;
     const tick = () => {
+      // Llegó una pulsación más nueva a esta voz: este fundido ya no aplica.
+      if (voice.generation !== generation) return;
       step += 1;
       voice.player.volume = Math.max(0, 1 - step / FADE_STEPS);
       if (step >= FADE_STEPS) {
-        voice.player.pause();
-        voice.player.seekTo(0);
-        voice.player.volume = 1;
         voice.timer = undefined;
+        voice.player.pause();
+        voice.player.volume = 1;
+        void seekToStart(voice).then(() => {
+          // Solo se marca limpia si nadie la re-disparó mientras rebobinaba.
+          if (voice.generation === generation) voice.dirty = false;
+        });
       } else {
         voice.timer = setTimeout(tick, FADE_MS / FADE_STEPS);
       }
@@ -113,8 +121,12 @@ export function createExpoAudioPlayer(): IAudioPlayer {
       });
       for (const sample of PIANO_SAMPLES) {
         const voices: Voice[] = [];
-        for (let i = 0; i < VOICES_PER_SAMPLE; i += 1) {
-          voices.push(makeVoice(sample.source));
+        for (let i = 0; i < VOICES_PER_NOTE; i += 1) {
+          voices.push({
+            player: createAudioPlayer(sample.source),
+            generation: 0,
+            dirty: false,
+          });
         }
         pools.set(sample.midi, { voices, cursor: 0 });
       }
@@ -125,36 +137,50 @@ export function createExpoAudioPlayer(): IAudioPlayer {
       if (!loaded) {
         throw new Error('ExpoAudioPlayer: llama a load() antes de playNote().');
       }
-      if (midi < MIN_PLAYABLE_MIDI || midi > MAX_PLAYABLE_MIDI) {
+      if (midi < MIN_PLAYABLE_MIDI || midi > MAX_PLAYABLE_MIDI || !sampleFor(midi)) {
         throw new Error(
           `ExpoAudioPlayer: MIDI ${midi} fuera del rango reproducible ` +
             `[${MIN_PLAYABLE_MIDI}, ${MAX_PLAYABLE_MIDI}].`,
         );
       }
 
-      const sample = nearestSample(midi);
-      const pool = pools.get(sample.midi)!;
-
-      // Round-robin: repartimos entre las voces para dar polifonía y absorber
-      // el "spam". La voz elegida puede seguir sonando de un toque anterior;
-      // por eso se para antes de re-disparar (en expo-audio, play() sobre un
-      // player que ya está sonando es no-op y no reinicia el ataque).
+      const pool = pools.get(midi)!;
       const voice = pool.voices[pool.cursor];
       pool.cursor = (pool.cursor + 1) % pool.voices.length;
 
+      const generation = (voice.generation += 1);
       clearTimer(voice);
-      voice.player.pause();
-      voice.player.setPlaybackRate(playbackRateFor(midi, sample));
-      voice.player.seekTo(0);
       voice.player.volume = 1;
-      voice.player.play();
-      scheduleFade(voice);
+
+      if (!voice.dirty) {
+        // Camino rápido: la voz está en reposo y en la posición 0, así que puede
+        // sonar ya. Sin seekTo de por medio no hay latencia ni riesgo de perder
+        // el ataque.
+        voice.dirty = true;
+        voice.player.play();
+        scheduleFade(voice, generation);
+        return;
+      }
+
+      // La voz venía sonando: hay que rebobinarla ANTES de volver a reproducir,
+      // y el rebobinado es asíncrono.
+      voice.player.pause();
+      void seekToStart(voice).then(() => {
+        if (voice.generation !== generation) return;
+        voice.player.play();
+        scheduleFade(voice, generation);
+      });
     },
 
     stopAll() {
       for (const pool of pools.values()) {
         for (const voice of pool.voices) {
-          reset(voice);
+          clearTimer(voice);
+          voice.generation += 1;
+          voice.player.pause();
+          voice.player.volume = 1;
+          voice.dirty = false;
+          void seekToStart(voice);
         }
       }
     },
@@ -163,6 +189,7 @@ export function createExpoAudioPlayer(): IAudioPlayer {
       for (const pool of pools.values()) {
         for (const voice of pool.voices) {
           clearTimer(voice);
+          voice.generation += 1;
           voice.player.remove();
         }
       }
