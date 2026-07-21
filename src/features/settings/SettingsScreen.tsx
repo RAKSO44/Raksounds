@@ -1,24 +1,28 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
 
-import { Header } from '@/shared/design-system';
+import { Header, PushButton, SectionCard } from '@/shared/design-system';
 import { useSettingsStore } from '@/shared/settings';
 import { spacing, useTheme } from '@/shared/theme';
 
-import { SettingsSection, SettingToggle, ThemeModeSelector } from './components';
+import { SettingToggle, ThemeModeSelector, VolumeSlider } from './components';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
+  const router = useRouter();
   const hapticsEnabled = useSettingsStore((state) => state.hapticsEnabled);
   const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
   const themeMode = useSettingsStore((state) => state.themeMode);
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
+  const volume = useSettingsStore((state) => state.volume);
+  const setVolume = useSettingsStore((state) => state.setVolume);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header title="Configuración" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <SettingsSection
+        <SectionCard
           icon="vibrate"
           title="Háptica"
           headerRight={
@@ -30,9 +34,23 @@ export function SettingsScreen() {
           }
         />
 
-        <SettingsSection icon="palette" title="Apariencia">
+        <SectionCard icon="volume-high" title="Volumen">
+          <VolumeSlider value={volume} onChange={setVolume} />
+        </SectionCard>
+
+        <SectionCard icon="palette" title="Apariencia">
           <ThemeModeSelector selected={themeMode} onSelect={setThemeMode} />
-        </SettingsSection>
+        </SectionCard>
+
+        <SectionCard icon="information" title="Acerca de">
+          <PushButton
+            label="Créditos"
+            icon="heart"
+            variant="selectable"
+            fullWidth
+            onPress={() => router.push('/credits')}
+          />
+        </SectionCard>
       </ScrollView>
     </View>
   );
@@ -44,7 +62,8 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: spacing.md,
+    paddingTop: spacing.lg,
     paddingBottom: spacing.xl,
-    gap: spacing.md,
+    gap: spacing.lg,
   },
 });
