@@ -1,6 +1,6 @@
 /**
  * Banco de muestras de piano CROMÁTICO: un archivo por semitono, C4–C6
- * (ver assets/audio/piano-chromatic/ y CREDITS.md).
+ * (ver assets/audio/piano-chromatic/ y docs/credits/credits.md).
  *
  * Origen: Salamander Grand Piano (Yamaha C5), que viene muestreado cada 3
  * semitonos. Los semitonos intermedios se generan OFFLINE resampleando la

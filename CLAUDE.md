@@ -107,6 +107,14 @@ está mal — detente y avísame en vez de continuar.
   `.claude/rules/design-system.md`
 - Jest + React Native Testing Library (v14: `render` es **async**, siempre `await render(...)`)
 
+## Créditos
+
+El **único** lugar donde viven los créditos del proyecto es `docs/credits/credits.md`.
+No crees `CREDITS.md` sueltos en `assets/` ni en ninguna otra carpeta: si hay que
+acreditar algo nuevo (una muestra, una fuente, un colaborador), se agrega ahí y se
+refleja en la pantalla de Créditos (`src/features/credits/`), que es lo que cumple la
+atribución CC BY exigida por las muestras de piano.
+
 ## Estilo de código
 
 - Componentes funcionales, hooks, sin clases
