@@ -36,9 +36,6 @@ export interface ThemeColors {
   /** Texto de una opción secundaria seleccionada. */
   secondaryText: string;
 
-  /** Muesca del valor por defecto de un deslizable. Va encima de la barra. */
-  sliderTick: string;
-
   /** Barra de navegación inferior. */
   tabBar: string;
   tabBarBorder: string;
@@ -65,8 +62,6 @@ export const lightColors: ThemeColors = {
   secondaryTint: palette.blueTintLight,
   secondaryText: palette.blueTextLight,
 
-  sliderTick: palette.whiteVeil,
-
   tabBar: palette.white,
   tabBarBorder: palette.swan,
   tabActive: palette.purple,
@@ -92,10 +87,6 @@ export const darkColors: ThemeColors = {
   secondary: palette.blue,
   secondaryTint: palette.blueTintDark,
   secondaryText: palette.blueTextDark,
-
-  // En oscuro la muesca es un velo oscuro: uno claro brillaría demasiado sobre
-  // el morado y dejaría de ser sutil.
-  sliderTick: palette.midnightVeil,
 
   tabBar: palette.midnight,
   tabBarBorder: palette.steel,

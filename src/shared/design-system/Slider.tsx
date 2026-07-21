@@ -13,9 +13,6 @@ import { radii, useTheme } from '@/shared/theme';
 
 /** Grosor de la barra. Constante: no cambia al presionarla. */
 const TRACK_HEIGHT = 34;
-/** Muesca del imán: fina y corta a propósito, es una pista, no un adorno. */
-const TICK_WIDTH = 2;
-const TICK_HEIGHT = 12;
 /** Salto de las acciones de accesibilidad (incrementar/decrementar). */
 const A11Y_STEP = 0.1;
 /**
@@ -141,17 +138,6 @@ export function Slider({ value, onChange, detent, accessibilityLabel, style }: S
               { backgroundColor: colors.brand, width: `${clamp01(value) * 100}%` },
             ]}
           />
-          {/* Muesca del imán: dice dónde está el valor por defecto sin gritarlo.
-              Va encima del relleno, así que se ve tanto si la barra lo pasó
-              como si no. */}
-          {detent != null && (
-            <View
-              style={[
-                styles.tick,
-                { backgroundColor: colors.sliderTick, left: `${clamp01(detent) * 100}%` },
-              ]}
-            />
-          )}
         </View>
       </View>
     </GestureDetector>
@@ -171,17 +157,5 @@ const styles = StyleSheet.create({
   },
   fill: {
     height: '100%',
-  },
-  tick: {
-    position: 'absolute',
-    width: TICK_WIDTH,
-    height: TICK_HEIGHT,
-    borderRadius: radii.pill,
-    // `left`/`top` posicionan el borde: se corrige media muesca en cada eje
-    // para que sea su CENTRO el que caiga sobre el valor y sobre el medio de la
-    // barra.
-    marginLeft: -TICK_WIDTH / 2,
-    top: '50%',
-    marginTop: -TICK_HEIGHT / 2,
   },
 });
