@@ -1,6 +1,7 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
 import { IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio/IAudioPlayer';
+import { DEFAULT_VOLUME, volumeToGain } from '@/domain/audio/volume';
 import { PIANO_SAMPLES, sampleFor } from './pianoSampleMap';
 
 /**
@@ -62,12 +63,11 @@ const MIN_SOUNDING_S = 1.5;
 const SUSTAIN_FLOOR_S = MIN_SOUNDING_S - RELEASE_S;
 
 /**
- * Ganancia de la mezcla. Va a 1: las muestras ya salen del banco con +7 dB
- * (`scripts/build-piano-samples.mjs`) y bajar aquí desharía justamente esa
- * subida. Lo que impide que un acorde sature no es headroom, sino el limitador
- * de más abajo.
+ * Rampa del cambio de volumen. Saltar la ganancia de golpe mientras hay notas
+ * sonando produce un click; 20 ms lo evitan y siguen sintiéndose instantáneos
+ * al arrastrar el deslizable.
  */
-const MASTER_GAIN = 1;
+const VOLUME_RAMP_S = 0.02;
 
 /**
  * Umbral por debajo del cual el limitador es transparente (≈ -1.9 dBFS). Una
@@ -124,6 +124,11 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
   const voices = new Map<VoiceHandle, Voice>();
   let nextHandle = 0;
   let loading: Promise<void> | undefined;
+  // Preferencia del usuario, no un headroom fijo: en el punto medio la ganancia
+  // es 1, que es lo que pide el banco (las muestras ya salen con +7 dB de
+  // `scripts/build-piano-samples.mjs` y atenuar aquí desharía esa subida).
+  // Se guarda aparte del nodo porque puede fijarse antes de que exista el bus.
+  let volume = DEFAULT_VOLUME;
 
   /** Programa el release de una voz y la retira del registro. */
   function release(handle: VoiceHandle, voice: Voice, fadeSeconds: number, floor: number) {
@@ -164,7 +169,7 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
         limiter.connect(ctx.destination);
 
         const bus = ctx.createGain();
-        bus.gain.value = MASTER_GAIN;
+        bus.gain.value = volumeToGain(volume);
         bus.connect(limiter);
 
         // En paralelo: 25 muestras cortas decodifican en cientos de ms.
@@ -228,6 +233,16 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       // gesto puede finalizar dos veces (cancelación + soltado).
       if (!voice) return;
       release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S);
+    },
+
+    setVolume(next: number) {
+      volume = next;
+      const ctx = context;
+      const bus = master;
+      // Antes de `load()` solo se recuerda: el bus lo aplicará al crearse.
+      if (!ctx || !bus) return;
+      bus.gain.cancelScheduledValues(ctx.currentTime);
+      bus.gain.linearRampToValueAtTime(volumeToGain(volume), ctx.currentTime + VOLUME_RAMP_S);
     },
 
     stopAll() {

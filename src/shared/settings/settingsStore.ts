@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
+import { DEFAULT_VOLUME } from '@/domain/audio/volume';
+
 import { mmkvStorage } from './mmkvStorage';
 
 /** Preferencia de apariencia: forzar claro/oscuro o seguir al sistema. */
@@ -11,8 +13,14 @@ interface SettingsState {
   hapticsEnabled: boolean;
   /** Modo de color elegido por el usuario. `system` sigue al SO. */
   themeMode: ThemeMode;
+  /**
+   * Volumen propio de la app (0–1), independiente del volumen del sistema.
+   * 0.5 es el volumen normal; la curva vive en `domain/audio/volume`.
+   */
+  volume: number;
   setHapticsEnabled: (enabled: boolean) => void;
   setThemeMode: (mode: ThemeMode) => void;
+  setVolume: (volume: number) => void;
 }
 
 /**
@@ -29,8 +37,10 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       hapticsEnabled: true,
       themeMode: 'system',
+      volume: DEFAULT_VOLUME,
       setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
       setThemeMode: (themeMode) => set({ themeMode }),
+      setVolume: (volume) => set({ volume }),
     }),
     {
       name: 'settings',
@@ -38,6 +48,7 @@ export const useSettingsStore = create<SettingsState>()(
       partialize: (state) => ({
         hapticsEnabled: state.hapticsEnabled,
         themeMode: state.themeMode,
+        volume: state.volume,
       }),
     },
   ),

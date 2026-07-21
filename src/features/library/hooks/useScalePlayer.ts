@@ -13,6 +13,7 @@ import {
 } from '@/domain/music-theory';
 import { VoiceHandle } from '@/domain/audio/IAudioPlayer';
 import { createPianoSamplerPlayer } from '@/infrastructure/audio/PianoSamplerPlayer';
+import { useSettingsStore } from '@/shared/settings';
 
 /**
  * Octava por defecto de la tónica. C4–B4 es cómodo como referencia inicial;
@@ -56,6 +57,13 @@ export function useScalePlayer(): ScalePlayer {
     (next: ScaleFamily) => setScaleType(defaultTypeOfFamily(next)),
     [],
   );
+
+  // El volumen es una preferencia global, así que se aplica al motor cada vez
+  // que cambia (también al montar, con el valor que MMKV ya rehidrató).
+  const volume = useSettingsStore((state) => state.volume);
+  useEffect(() => {
+    audioPlayer.setVolume(volume);
+  }, [volume]);
 
   useEffect(() => {
     let mounted = true;

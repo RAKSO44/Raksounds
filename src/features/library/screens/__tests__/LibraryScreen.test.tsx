@@ -14,6 +14,7 @@ jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
     load: jest.fn().mockResolvedValue(undefined),
     noteOn: (midi: number) => mockNoteOn(midi),
     noteOff: (handle: number) => mockNoteOff(handle),
+    setVolume: jest.fn(),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
   }),
