@@ -26,6 +26,9 @@ function ThemedApp() {
         }}
       >
         <Stack.Screen name="(tabs)" />
+        {/* Créditos vive fuera de las tabs: se abre desde Configuración y se
+            cierra con la flecha de la cabecera. */}
+        <Stack.Screen name="credits" />
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />
