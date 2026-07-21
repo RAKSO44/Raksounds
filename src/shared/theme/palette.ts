@@ -43,4 +43,10 @@ export const palette = {
   dim: '#5C7079',
 
   white: '#FFFFFF',
+
+  // Velos translúcidos: marcas discretas que deben leerse ENCIMA de otro color
+  // (p. ej. la muesca del centro de un deslizable, que cruza el relleno morado
+  // y el fondo neutro de la barra). Por eso llevan alfa y no un tono fijo.
+  whiteVeil: 'rgba(255, 255, 255, 0.5)',
+  midnightVeil: 'rgba(19, 31, 36, 0.45)',
 } as const;
