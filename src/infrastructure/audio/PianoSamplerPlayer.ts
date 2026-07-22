@@ -1,7 +1,6 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
 import { IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio/IAudioPlayer';
-import { DEFAULT_VOLUME, volumeToGain } from '@/domain/audio/volume';
 import { PIANO_SAMPLES, sampleFor } from './pianoSampleMap';
 
 /**
@@ -63,11 +62,13 @@ const MIN_SOUNDING_S = 1.5;
 const SUSTAIN_FLOOR_S = MIN_SOUNDING_S - RELEASE_S;
 
 /**
- * Rampa del cambio de volumen. Saltar la ganancia de golpe mientras hay notas
- * sonando produce un click; 20 ms lo evitan y siguen sintiéndose instantáneos
- * al arrastrar el deslizable.
+ * Ganancia fija del bus (≈ -3 dB de headroom). Las muestras pican casi a
+ * 0 dBFS, así que al pulsar toda la escala a la vez la suma empujaba el
+ * limitador a saturar de forma audible; este margen hace que los acordes lo
+ * rocen suave en vez de clavarse en él. No es una preferencia de usuario: el
+ * ajuste de volumen se quitó porque por encima de esto no hay techo digital.
  */
-const VOLUME_RAMP_S = 0.02;
+const MASTER_GAIN = 0.7;
 
 /**
  * Umbral por debajo del cual el limitador es transparente (≈ -1.9 dBFS). Una
@@ -124,11 +125,6 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
   const voices = new Map<VoiceHandle, Voice>();
   let nextHandle = 0;
   let loading: Promise<void> | undefined;
-  // Preferencia del usuario, no un headroom fijo: en el punto medio la ganancia
-  // es 1, que es lo que pide el banco (las muestras ya salen con +7 dB de
-  // `scripts/build-piano-samples.mjs` y atenuar aquí desharía esa subida).
-  // Se guarda aparte del nodo porque puede fijarse antes de que exista el bus.
-  let volume = DEFAULT_VOLUME;
 
   /** Programa el release de una voz y la retira del registro. */
   function release(handle: VoiceHandle, voice: Voice, fadeSeconds: number, floor: number) {
@@ -163,13 +159,17 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       loading ??= (async () => {
         const ctx = new AudioContext();
 
-        // Cadena del bus maestro: voces → ganancia → limitador → salida.
+        // Cadena del bus maestro: voces → ganancia fija → limitador → salida.
+        // Las muestras ya salen con la ganancia del banco (+7 dB de
+        // `scripts/build-piano-samples.mjs`); aquí solo se deja el headroom de
+        // MASTER_GAIN — amplificar por encima es imposible sin saturar, porque
+        // los picos del banco ya rozan 0 dBFS.
         const limiter = ctx.createWaveShaper();
         limiter.curve = softClipCurve();
         limiter.connect(ctx.destination);
 
         const bus = ctx.createGain();
-        bus.gain.value = volumeToGain(volume);
+        bus.gain.value = MASTER_GAIN;
         bus.connect(limiter);
 
         // En paralelo: 25 muestras cortas decodifican en cientos de ms.
@@ -233,16 +233,6 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       // gesto puede finalizar dos veces (cancelación + soltado).
       if (!voice) return;
       release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S);
-    },
-
-    setVolume(next: number) {
-      volume = next;
-      const ctx = context;
-      const bus = master;
-      // Antes de `load()` solo se recuerda: el bus lo aplicará al crearse.
-      if (!ctx || !bus) return;
-      bus.gain.cancelScheduledValues(ctx.currentTime);
-      bus.gain.linearRampToValueAtTime(volumeToGain(volume), ctx.currentTime + VOLUME_RAMP_S);
     },
 
     stopAll() {

@@ -29,17 +29,6 @@ suelto en un feature).
 - **`SectionCard`** — tarjeta de sección (ícono + título, control opcional a la
   altura del título y contenido debajo). Es el contenedor de Configuración y
   Créditos; vive en `shared/` porque lo usan 2+ features.
-- **`Slider`** — deslizable de 0 a 1 **sin perilla**: la barra entera es el
-  control, de grosor constante (no crece al presionarla). Es **relativo, no
-  absoluto**: apoyar el dedo NO mueve nada y un tap tampoco; el valor cambia
-  solo con el DESPLAZAMIENTO del gesto, sumado a donde estaba la barra al
-  empezar. Se agarra desde cualquier punto sin que la barra salte bajo el dedo.
-  No lo cambies a "saltar al punto tocado". El gesto es un `Pan` con
-  `activeOffsetX` para que el arrastre vertical siga haciendo scroll. Acepta un
-  `detent` opcional (valor imán, p. ej. el volumen por defecto) al que encaja
-  exactamente al pasar cerca. Da un golpe seco (`hapticTap`, el de los
-  controles no alzados) al llegar a los topes y al imán, nunca de forma
-  continua mientras se arrastra.
 - **`Header`** — cabecera morada que pinta el área de la status bar. Con
   `onBack` muestra una flecha de volver a la izquierda del título.
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos

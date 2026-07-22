@@ -1,5 +1,4 @@
 import { NO_VOICE } from '@/domain/audio/IAudioPlayer';
-import { volumeToGain } from '@/domain/audio/volume';
 import { PIANO_SAMPLES } from '../pianoSampleMap';
 import { createPianoSamplerPlayer } from '../PianoSamplerPlayer';
 
@@ -193,44 +192,6 @@ describe('createPianoSamplerPlayer', () => {
     expect(mockSources).toHaveLength(0);
   });
 
-  it('el volumen fijado antes de load() se aplica al crear el bus', async () => {
-    const player = createPianoSamplerPlayer();
-
-    player.setVolume(1);
-    await player.load();
-
-    // El primer gain que se crea es el bus maestro.
-    expect(mockGainNodes[0].value).toBeCloseTo(volumeToGain(1), 5);
-  });
-
-  it('cambiar el volumen rampa la ganancia del bus en vez de saltar', async () => {
-    const player = createPianoSamplerPlayer();
-    await player.load();
-    const master = mockGains[0];
-
-    mockNow = 5;
-    player.setVolume(0.25);
-
-    const ramp = master.ramps.at(-1)!;
-    expect(ramp.value).toBeCloseTo(volumeToGain(0.25), 5);
-    // Sin la rampa, mover el deslizable con notas sonando produciría un click.
-    expect(ramp.time).toBeGreaterThan(mockNow);
-  });
-
-  it('bajar el volumen a cero silencia el bus', async () => {
-    const player = createPianoSamplerPlayer();
-    await player.load();
-
-    player.setVolume(0);
-
-    expect(mockGains[0].ramps.at(-1)!.value).toBe(0);
-  });
-
-  it('fijar el volumen sin load() no lanza', () => {
-    const player = createPianoSamplerPlayer();
-    expect(() => player.setVolume(0.8)).not.toThrow();
-  });
-
   it('sin load() no suena pero tampoco lanza', () => {
     const player = createPianoSamplerPlayer();
     expect(player.noteOn(60)).toBe(NO_VOICE);
@@ -248,6 +209,17 @@ describe('createPianoSamplerPlayer', () => {
     expect(mockDecodedIds).toHaveLength(PIANO_SAMPLES.length);
     // Y un único bus maestro, no uno por llamada.
     expect(mockGains).toHaveLength(1);
+  });
+
+  it('el bus maestro deja headroom fijo y nunca amplifica', async () => {
+    await loadedPlayer();
+
+    // Las muestras ya pican casi a 0 dBFS: una ganancia > 1 no tiene techo
+    // digital y saturaría; sin headroom, la escala completa a la vez clavaba
+    // el limitador de forma audible.
+    const busGain = mockGainNodes[0].value;
+    expect(busGain).toBeGreaterThan(0);
+    expect(busGain).toBeLessThan(1);
   });
 
   it('stopAll libera todas las voces en curso', async () => {

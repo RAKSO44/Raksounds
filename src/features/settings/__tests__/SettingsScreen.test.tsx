@@ -2,7 +2,6 @@ import { ReactNode } from 'react';
 import { fireEvent, render, screen, userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { DEFAULT_VOLUME } from '@/domain/audio/volume';
 import { useSettingsStore } from '@/shared/settings';
 import { ThemeProvider } from '@/shared/theme';
 
@@ -28,7 +27,6 @@ beforeEach(() => {
   useSettingsStore.setState({
     hapticsEnabled: true,
     themeMode: 'system',
-    volume: DEFAULT_VOLUME,
     showOctave: false,
   });
 });
@@ -40,31 +38,10 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('Configuración')).toBeOnTheScreen();
     expect(screen.getByText('Háptica')).toBeOnTheScreen();
     expect(screen.getByText('Octava')).toBeOnTheScreen();
-    expect(screen.getByText('Volumen')).toBeOnTheScreen();
     expect(screen.getByText('Créditos')).toBeOnTheScreen();
     for (const option of ['Claro', 'Oscuro', 'Sistema']) {
       expect(screen.getByText(option)).toBeOnTheScreen();
     }
-  });
-
-  it('el volumen arranca a la mitad del recorrido', async () => {
-    await renderScreen();
-
-    expect(screen.getByLabelText('Volumen')).toHaveAccessibilityValue({
-      now: 50,
-      min: 0,
-      max: 100,
-    });
-  });
-
-  it('subir el volumen con accesibilidad lo guarda en el store', async () => {
-    await renderScreen();
-
-    fireEvent(screen.getByLabelText('Volumen'), 'accessibilityAction', {
-      nativeEvent: { actionName: 'increment' },
-    });
-
-    expect(useSettingsStore.getState().volume).toBeGreaterThan(DEFAULT_VOLUME);
   });
 
   it('apagar el toggle desactiva la háptica en el store', async () => {

@@ -5,7 +5,7 @@ import { Header, PushButton, SectionCard } from '@/shared/design-system';
 import { useSettingsStore } from '@/shared/settings';
 import { spacing, useTheme } from '@/shared/theme';
 
-import { SettingToggle, ThemeModeSelector, VolumeSlider } from './components';
+import { SettingToggle, ThemeModeSelector } from './components';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
@@ -14,8 +14,6 @@ export function SettingsScreen() {
   const setHapticsEnabled = useSettingsStore((state) => state.setHapticsEnabled);
   const themeMode = useSettingsStore((state) => state.themeMode);
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
-  const volume = useSettingsStore((state) => state.volume);
-  const setVolume = useSettingsStore((state) => state.setVolume);
   const showOctave = useSettingsStore((state) => state.showOctave);
   const setShowOctave = useSettingsStore((state) => state.setShowOctave);
 
@@ -47,10 +45,6 @@ export function SettingsScreen() {
             />
           }
         />
-
-        <SectionCard icon="volume-high" title="Volumen">
-          <VolumeSlider value={volume} onChange={setVolume} />
-        </SectionCard>
 
         <SectionCard icon="palette" title="Apariencia">
           <ThemeModeSelector selected={themeMode} onSelect={setThemeMode} />

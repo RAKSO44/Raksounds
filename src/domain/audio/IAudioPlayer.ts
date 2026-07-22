@@ -43,13 +43,6 @@ export interface IAudioPlayer {
    */
   noteOff(handle: VoiceHandle): void;
 
-  /**
-   * Ajusta el volumen de la app (0 = silencio, 0.5 = normal, 1 = máximo), que
-   * es independiente del volumen del sistema. Afecta a las voces que ya están
-   * sonando y a las siguientes, y puede llamarse antes de `load()`.
-   */
-  setVolume(volume: number): void;
-
   /** Libera todas las voces en curso. */
   stopAll(): void;
 
