@@ -21,15 +21,18 @@ export const palette = {
   // Morado de marca (reemplaza al Feather Green)
   purple: '#A560E8',
   purpleShadow: '#8549BA',
-  purpleTintLight: '#F1E4FB',
-  purpleTintDark: '#3A2A52',
+  // Tints de selección: velo suave del color de marca sobre la superficie.
+  // Son hex OPACOS a propósito: la cara del botón tapa el labio 3D, y un rgba
+  // translúcido dejaría ver el labio oscuro a través de toda la cara.
+  purpleTintLight: '#FAF5FE',
+  purpleTintDark: '#33364F',
   purpleTextDark: '#CBA6F0',
 
   // Azul secundario (Macaw) — nivel de jerarquía por debajo del morado
   blue: '#1CB0F6',
-  blueTintLight: '#DDF4FF',
+  blueTintLight: '#F1FAFE',
   blueTextLight: '#1691D4',
-  blueTintDark: '#0F2E3D',
+  blueTintDark: '#203E4D',
   blueTextDark: '#7FD0F8',
 
   // Neutros del modo oscuro de Duolingo
