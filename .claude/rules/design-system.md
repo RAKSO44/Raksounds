@@ -69,8 +69,9 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   visible (neutro).
 - Al presionar, la cara baja y tapa el labio; al soltar, vuelve. **Ambos snaps
   son INSTANTÁNEOS** — sin animación de presionado ni de soltado.
-- Háptica firme al presionar (`hapticPressIn`) y al soltar (`hapticPressOut`),
-  vía `shared/haptics/` (expo-haptics; usa el mejor actuador del equipo).
+- Háptica firme SOLO al presionar (`hapticPressIn`): un único golpe seco por
+  pulsación; al soltar NO hay háptica. Vía `shared/haptics/` (expo-haptics;
+  usa el mejor actuador del equipo).
 - El gesto va con **react-native-gesture-handler**, NO con `Pressable`. El
   sistema de responders de React Native concede el toque a un solo componente a
   la vez, así que con `Pressable` era imposible mantener dos botones pulsados

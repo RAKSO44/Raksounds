@@ -61,19 +61,14 @@ export function hapticTap(): void {
 }
 
 /**
- * Golpe seco al PRESIONAR un botón alzado (relieve 3D). Junto con
- * `hapticPressOut` forma el par "baja / sube" característico de Duolingo.
+ * Golpe seco al PRESIONAR un botón alzado (relieve 3D). Es el ÚNICO impacto
+ * del botón: al soltar no hay háptica (convención del proyecto — un solo golpe
+ * por pulsación, no un par baja/sube).
  *
- * `Keyboard_Press`/`Keyboard_Release` son justamente el par que el sistema afina
- * para tecla-abajo / tecla-arriba: dos golpes DISTINTOS y secos, en vez de dos
- * vibraciones idénticas (que era lo que hacía que el par se sintiera "brrr-brrr"
- * en lugar de "tac-tac").
+ * `Keyboard_Press` es el golpe que el sistema afina para tecla-abajo: un
+ * impacto DISTINTO y seco, en vez de la vibración larga y floja de
+ * `impactAsync` en Android.
  */
 export function hapticPressIn(): void {
   dryHit(Haptics.AndroidHaptics.Keyboard_Press);
-}
-
-/** Golpe seco al SOLTAR un botón alzado (el segundo impacto del par). */
-export function hapticPressOut(): void {
-  dryHit(Haptics.AndroidHaptics.Keyboard_Release);
 }

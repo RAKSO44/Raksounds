@@ -8,7 +8,7 @@ import {
 } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 
-import { hapticPressIn, hapticPressOut, hapticTap } from '@/shared/haptics';
+import { hapticPressIn, hapticTap } from '@/shared/haptics';
 import { radii, useTheme } from '@/shared/theme';
 
 /** Grosor de la barra. Constante: no cambia al presionarla. */
@@ -110,9 +110,10 @@ export function Slider({ value, onChange, detent, accessibilityLabel, style }: S
         .runOnJS(true)
         .activeOffsetX([-8, 8])
         .onBegin(handleBegin)
+        // Un solo golpe seco al agarrar; al soltar no hay háptica (misma
+        // convención que los botones alzados).
         .onStart(hapticPressIn)
-        .onUpdate(handleUpdate)
-        .onFinalize(hapticPressOut),
+        .onUpdate(handleUpdate),
     [handleBegin, handleUpdate],
   );
 

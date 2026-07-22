@@ -4,7 +4,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { hapticPressIn, hapticPressOut } from '@/shared/haptics';
+import { hapticPressIn } from '@/shared/haptics';
 import { elevation, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 export type PushButtonVariant = 'solid' | 'selectable';
@@ -59,8 +59,8 @@ interface PushButtonProps {
  * El labio (más oscuro) mide `elevation.buttonLip` en reposo. Al presionar, la
  * cara baja exactamente esa distancia de forma **instantánea** (sin animación),
  * de modo que el labio desaparece y el botón se ve "hundido". Al soltar, la cara
- * vuelve con un "pop" animado corto. La háptica se dispara al presionar y al
- * soltar.
+ * vuelve con un "pop" animado corto. La háptica se dispara SOLO al presionar
+ * (un único golpe seco; al soltar no vibra).
  *
  * El gesto va con react-native-gesture-handler y NO con `Pressable`, porque el
  * sistema de responders de React Native concede el toque a UN solo componente a
@@ -102,9 +102,9 @@ export function PushButton({
 
   const handlePressOut = useCallback(() => {
     // Retorno instantáneo también: sin animación de "soltado" en ningún botón.
+    // Sin háptica al soltar: el único golpe seco es el del press-in.
     // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
     translateY.value = 0;
-    hapticPressOut();
     onPressOut?.();
   }, [translateY, onPressOut]);
 
