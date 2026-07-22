@@ -1,7 +1,7 @@
 import { StyleSheet, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
-import { formatNote, ScaleDegree } from '@/domain/music-theory';
+import { formatNote, formatNoteName, ScaleDegree } from '@/domain/music-theory';
 import { PushButton } from '@/shared/design-system';
 import { spacing, typography } from '@/shared/theme';
 
@@ -13,6 +13,8 @@ interface ScaleDegreeButtonsProps {
   onReleaseDegree: (degree: ScaleDegree) => void;
   /** Deshabilita los botones mientras cargan las muestras de audio. */
   disabled?: boolean;
+  /** Si está en `true`, el label incluye el número de octava (C4 en vez de C). */
+  showOctave?: boolean;
 }
 
 /**
@@ -26,16 +28,17 @@ export function ScaleDegreeButtons({
   onPressDegree,
   onReleaseDegree,
   disabled,
+  showOctave = false,
 }: ScaleDegreeButtonsProps) {
   return (
     <View style={styles.container}>
       {degrees.map((degree) => {
-        const name = formatNote(degree.note);
+        const name = showOctave ? formatNote(degree.note) : formatNoteName(degree.note.name);
         return (
           <Animated.View
-            // Incluir el nombre en la clave hace que cambiar la tónica remonte
-            // el botón y dispare un fundido corto y discreto.
-            key={`${degree.degreeIndex}-${name}`}
+            // La clave lleva siempre nota + octava: cambiar la tónica remonta
+            // el botón (fundido corto), pero alternar el ajuste de octava no.
+            key={`${degree.degreeIndex}-${formatNote(degree.note)}`}
             entering={FadeIn.duration(120)}
             layout={LinearTransition.duration(160)}
           >

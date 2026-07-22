@@ -2,6 +2,7 @@ import { ReactNode } from 'react';
 import { render, screen, userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useSettingsStore } from '@/shared/settings';
 import { ThemeProvider } from '@/shared/theme';
 
 import { LibraryScreen } from '../LibraryScreen';
@@ -38,6 +39,10 @@ const renderScreen = () => render(<LibraryScreen />, { wrapper: Providers });
 
 let nextVoice = 0;
 beforeEach(() => {
+  // Con la octava visible los labels (C4, E♭4…) son únicos y no chocan con los
+  // botones del selector de nota base (C, E♭…). El default real (oculta) se
+  // cubre en su propio test.
+  useSettingsStore.setState({ showOctave: true });
   nextVoice = 0;
   mockNoteOn.mockReset();
   // Cada nota iniciada devuelve una voz distinta, como el motor real.
@@ -57,6 +62,16 @@ describe('LibraryScreen', () => {
     for (const note of ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4']) {
       expect(screen.getByText(note)).toBeOnTheScreen();
     }
+  });
+
+  it('por defecto la octava está oculta: las notas no llevan número', async () => {
+    useSettingsStore.setState({ showOctave: false });
+    await renderScreen();
+
+    expect(screen.queryByText('C4')).not.toBeOnTheScreen();
+    // 'C' aparece en el selector de nota base Y como grado de la escala.
+    expect(screen.getAllByText('C').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('D').length).toBeGreaterThan(1);
   });
 
   it('al tocar un grado suena su altura MIDI', async () => {

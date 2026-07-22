@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Header } from '@/shared/design-system';
+import { useSettingsStore } from '@/shared/settings';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
 import {
@@ -25,6 +26,7 @@ export function LibraryScreen() {
     pressDegree,
     releaseDegree,
   } = useScalePlayer();
+  const showOctave = useSettingsStore((state) => state.showOctave);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -44,6 +46,7 @@ export function LibraryScreen() {
           onPressDegree={pressDegree}
           onReleaseDegree={releaseDegree}
           disabled={!ready}
+          showOctave={showOctave}
         />
         {!ready && (
           <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
