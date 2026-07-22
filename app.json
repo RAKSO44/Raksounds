@@ -28,12 +28,12 @@
         {
           "backgroundColor": "#FBEAD3",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 275,
+          "imageWidth": 240,
           "resizeMode": "contain",
           "dark": {
             "backgroundColor": "#FBEAD3",
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 275
+            "imageWidth": 240
           }
         }
       ],
