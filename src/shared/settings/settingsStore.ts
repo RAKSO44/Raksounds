@@ -18,9 +18,12 @@ interface SettingsState {
    * 0.5 es el volumen normal; la curva vive en `domain/audio/volume`.
    */
   volume: number;
+  /** Si está en `true`, las notas muestran el número de octava (C4, C5…). */
+  showOctave: boolean;
   setHapticsEnabled: (enabled: boolean) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setVolume: (volume: number) => void;
+  setShowOctave: (show: boolean) => void;
 }
 
 /**
@@ -38,9 +41,11 @@ export const useSettingsStore = create<SettingsState>()(
       hapticsEnabled: true,
       themeMode: 'system',
       volume: DEFAULT_VOLUME,
+      showOctave: false,
       setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
       setThemeMode: (themeMode) => set({ themeMode }),
       setVolume: (volume) => set({ volume }),
+      setShowOctave: (showOctave) => set({ showOctave }),
     }),
     {
       name: 'settings',
@@ -49,6 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
         hapticsEnabled: state.hapticsEnabled,
         themeMode: state.themeMode,
         volume: state.volume,
+        showOctave: state.showOctave,
       }),
     },
   ),

@@ -29,6 +29,7 @@ beforeEach(() => {
     hapticsEnabled: true,
     themeMode: 'system',
     volume: DEFAULT_VOLUME,
+    showOctave: false,
   });
 });
 
@@ -38,6 +39,7 @@ describe('SettingsScreen', () => {
 
     expect(screen.getByText('Configuración')).toBeOnTheScreen();
     expect(screen.getByText('Háptica')).toBeOnTheScreen();
+    expect(screen.getByText('Octava')).toBeOnTheScreen();
     expect(screen.getByText('Volumen')).toBeOnTheScreen();
     expect(screen.getByText('Créditos')).toBeOnTheScreen();
     for (const option of ['Claro', 'Oscuro', 'Sistema']) {
@@ -71,6 +73,17 @@ describe('SettingsScreen', () => {
     fireEvent(screen.getByRole('switch', { name: 'Háptica' }), 'valueChange', false);
 
     expect(useSettingsStore.getState().hapticsEnabled).toBe(false);
+  });
+
+  it('la octava arranca desactivada y encenderla la guarda en el store', async () => {
+    await renderScreen();
+
+    const toggle = screen.getByRole('switch', { name: 'Octava' });
+    expect(toggle.props.value).toBe(false);
+
+    fireEvent(toggle, 'valueChange', true);
+
+    expect(useSettingsStore.getState().showOctave).toBe(true);
   });
 
   it('elegir un modo de apariencia lo guarda en el store', async () => {

@@ -16,6 +16,8 @@ export function SettingsScreen() {
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
   const volume = useSettingsStore((state) => state.volume);
   const setVolume = useSettingsStore((state) => state.setVolume);
+  const showOctave = useSettingsStore((state) => state.showOctave);
+  const setShowOctave = useSettingsStore((state) => state.setShowOctave);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -30,6 +32,18 @@ export function SettingsScreen() {
               accessibilityLabel="Háptica"
               value={hapticsEnabled}
               onValueChange={setHapticsEnabled}
+            />
+          }
+        />
+
+        <SectionCard
+          icon="numeric"
+          title="Octava"
+          headerRight={
+            <SettingToggle
+              accessibilityLabel="Octava"
+              value={showOctave}
+              onValueChange={setShowOctave}
             />
           }
         />
