@@ -27,6 +27,23 @@ export const elevation = {
 } as const;
 
 /**
+ * Breakpoints de layout (no de plataforma: web en un celular se queda por
+ * debajo de `wide` y se ve igual que la app nativa — ver
+ * `.claude/rules/architecture.md`, sección "Soporte web").
+ */
+export const breakpoints = {
+  /** A partir de este ancho (px) la navegación pasa de tab bar inferior a
+   *  riel lateral (`useIsWideScreen`). */
+  wide: 900,
+} as const;
+
+export const navigation = {
+  /** Ancho del riel lateral que reemplaza al tab bar inferior en pantallas
+   *  de ancho >= `breakpoints.wide`. */
+  railWidth: 88,
+} as const;
+
+/**
  * Tipografía. Duolingo usa una fuente redondeada muy gruesa; sin esa fuente
  * embebida usamos la del sistema con pesos altos para el mismo carácter.
  */

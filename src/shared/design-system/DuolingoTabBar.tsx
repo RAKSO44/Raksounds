@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { hapticPressIn } from '@/shared/haptics';
-import { spacing, useTheme } from '@/shared/theme';
+import { navigation, spacing, useIsWideScreen, useTheme } from '@/shared/theme';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -35,10 +35,19 @@ export interface TabBarProps {
   };
 }
 
-/** Barra de navegación inferior estilo Duolingo: solo íconos, sin texto. */
+/**
+ * Barra de navegación estilo Duolingo: solo íconos, sin texto. Por debajo del
+ * breakpoint ancho es el tab bar inferior de siempre (también en web — un
+ * celular no debe ver nada distinto de la app); a partir de ahí se convierte
+ * en un riel fijo a la izquierda. `tabBarPosition: 'left'` (fijado en
+ * `(tabs)/_layout.tsx`) ya hace que bottom-tabs use `flexDirection: 'row'` y
+ * le dé el resto del ancho al contenido, así que este componente solo decide
+ * su propia forma — no hace falta tocar el layout del contenido.
+ */
 export function DuolingoTabBar({ state, descriptors, navigation }: TabBarProps) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const isWide = useIsWideScreen();
 
   // Las rutas ocultas (href: null) llegan con tabBarItemStyle display: 'none'.
   const visibleRoutes = state.routes.filter(
@@ -47,13 +56,20 @@ export function DuolingoTabBar({ state, descriptors, navigation }: TabBarProps) 
 
   return (
     <View
+      testID="duolingo-tab-bar"
       style={[
-        styles.bar,
-        {
-          backgroundColor: colors.tabBar,
-          borderTopColor: colors.tabBarBorder,
-          paddingBottom: insets.bottom + spacing.sm,
-        },
+        isWide ? styles.rail : styles.bar,
+        isWide
+          ? {
+              backgroundColor: colors.tabBar,
+              borderRightColor: colors.tabBarBorder,
+              paddingTop: insets.top + spacing.sm,
+            }
+          : {
+              backgroundColor: colors.tabBar,
+              borderTopColor: colors.tabBarBorder,
+              paddingBottom: insets.bottom + spacing.sm,
+            },
       ]}
     >
       {visibleRoutes.map((route) => {
@@ -80,7 +96,7 @@ export function DuolingoTabBar({ state, descriptors, navigation }: TabBarProps) 
             accessibilityState={{ selected: focused }}
             accessibilityLabel={label}
             onPress={onPress}
-            style={styles.item}
+            style={isWide ? styles.railItem : styles.item}
           >
             <MaterialCommunityIcons name={TAB_ICONS[route.name] ?? 'circle'} size={30} color={color} />
           </Pressable>
@@ -98,6 +114,17 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rail: {
+    width: navigation.railWidth,
+    height: '100%',
+    borderRightWidth: 1,
+    alignItems: 'stretch',
+  },
+  railItem: {
+    paddingVertical: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
