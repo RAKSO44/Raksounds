@@ -1,4 +1,22 @@
-<!DOCTYPE html><html  lang="en"><head><title data-rh="true"></title><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><style id="expo-reset">#root,body,html{height:100%}body{overflow:hidden}#root{display:flex}</style><style id="react-native-stylesheet">[stylesheet-group="0"]{}
+<!DOCTYPE html><html  lang="es"><head><title data-rh="true"></title><meta charSet="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/><meta http-equiv="X-UA-Compatible" content="IE=edge"/><meta name="color-scheme" content="light dark"/><style id="expo-reset">#root,body,html{height:100%}body{overflow:hidden}#root{display:flex}</style><style>:root{--rk-background:#FFFFFF;--rk-surface:#FFFFFF;--rk-surfaceShadow:#E5E5E5;--rk-border:#E5E5E5;--rk-textPrimary:#4B4B4B;--rk-textSecondary:#777777;--rk-textOnBrand:#FFFFFF;--rk-brand:#A560E8;--rk-brandShadow:#8549BA;--rk-brandTint:#FAF5FE;--rk-brandText:#8549BA;--rk-secondary:#1CB0F6;--rk-secondaryTint:#F1FAFE;--rk-secondaryText:#1691D4;--rk-tabBar:#FFFFFF;--rk-tabBarBorder:#E5E5E5;--rk-tabActive:#A560E8;--rk-tabInactive:#AFAFAF;}[data-theme="dark"]{--rk-background:#131F24;--rk-surface:#202F36;--rk-surfaceShadow:#2E3D45;--rk-border:#37464F;--rk-textPrimary:#FFFFFF;--rk-textSecondary:#8FA3AD;--rk-textOnBrand:#FFFFFF;--rk-brand:#A560E8;--rk-brandShadow:#8549BA;--rk-brandTint:#33364F;--rk-brandText:#CBA6F0;--rk-secondary:#1CB0F6;--rk-secondaryTint:#203E4D;--rk-secondaryText:#7FD0F8;--rk-tabBar:#131F24;--rk-tabBarBorder:#37464F;--rk-tabActive:#A560E8;--rk-tabInactive:#5C7079;}</style><script>
+(function () {
+  try {
+    var mode = 'system';
+    var raw = localStorage.getItem('settings');
+    if (raw) {
+      var parsed = JSON.parse(raw);
+      if (parsed && parsed.state && parsed.state.themeMode) {
+        mode = parsed.state.themeMode;
+      }
+    }
+    var isDark = mode === 'dark' || (mode === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.dataset.theme = isDark ? 'dark' : 'light';
+  } catch (e) {
+    // Si algo falla (localStorage bloqueado, JSON corrupto), se queda en el
+    // claro por defecto de :root — nunca rompe el render.
+  }
+})();
+</script><style id="react-native-stylesheet">[stylesheet-group="0"]{}
 body{margin:0;}
 button::-moz-focus-inner,input::-moz-focus-inner{border:0;padding:0;}
 html{-ms-text-size-adjust:100%;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:rgba(0,0,0,0);}
@@ -348,5 +366,5 @@ input::-webkit-search-cancel-button,input::-webkit-search-decoration,input::-web
 @keyframes r-1pzkwqh{0%{transform:translateY(100%);}100%{transform:translateY(0%);}}
 @keyframes r-imtty0{0%{opacity:0;}100%{opacity:1;}}
 @keyframes r-q67da2{0%{transform:translateX(-100%);}100%{transform:translateX(400%);}}
-@keyframes r-t2lo5v{0%{opacity:1;}100%{opacity:0;}}</style><link rel="icon" href="/Raksounds/favicon.ico"/><script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script></head><body><div id="root"><div class="css-g5y9jx r-13awgt0"></div></div><script src="/Raksounds/_expo/static/js/web/entry-da294a81121cd91c9d6dca7de08e77f3.js" defer></script>
+@keyframes r-t2lo5v{0%{opacity:1;}100%{opacity:0;}}</style><link rel="icon" href="/Raksounds/favicon.ico"/><script type="module">globalThis.__EXPO_ROUTER_HYDRATE__=true;</script></head><body><div id="root"><div class="css-g5y9jx r-13awgt0"></div></div><script src="/Raksounds/_expo/static/js/web/entry-de49a003a2937c42d11446a0aab76693.js" defer></script>
 </body></html>
