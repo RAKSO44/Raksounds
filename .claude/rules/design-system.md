@@ -96,7 +96,45 @@ Fuente de verdad: `shared/theme/` (`palette.ts` crudo → `colors.ts` semántico
 - Animaciones **sutiles y agradables** (reanimated): fundidos cortos y
   transiciones de layout breves. Nada de rebotes exagerados que distraigan.
 
-## 5. Regla de oro
+## 5. Web (react-native-web) — misma identidad visual, SIEMPRE
+
+Raksound corre también en navegador (ver "Soporte web" en
+`.claude/rules/architecture.md`). La regla no tiene excepciones: **no existe
+un "tema web"**. Colores de `colors.ts`, `radii`, `spacing`, `typography`, el
+labio 3D de `PushButton` (snap instantáneo al presionar/soltar, sin
+animación) y la háptica (que ya no-opea sola en web) son exactamente los
+mismos que en iOS/Android. Si en algún momento un componente necesita verse
+distinto en web, la pregunta correcta es "¿por qué el theme no alcanza?", no
+"¿cómo lo bifurco con un `.web.tsx`".
+
+Lo único que sí cambia en web es **layout**, y por ANCHO de pantalla, no por
+plataforma:
+
+- **Web abierta en un celular debe verse igual que la app nativa**: mismo tab
+  bar inferior, misma columna angosta, mismo padding. No hay una versión
+  "web mobile" distinta de la app.
+- **Web en escritorio (ancho >= `breakpoints.wide`, 900px)**: la navegación
+  pasa de tab bar inferior a riel lateral fijo (`DuolingoTabBar`, decidido
+  por `useIsWideScreen()` de `shared/theme/`), reutilizando los mismos
+  íconos/colores — no un componente de navegación distinto. El contenido de
+  cada pantalla puede reorganizarse igual (columna centrada con `maxWidth`,
+  grillas de más columnas) reutilizando siempre
+  `PushButton`/`GroupedOptionList`/`Header`, nunca reinventándolos para web.
+  Los breakpoints viven como tokens en `shared/theme/tokens.ts` (mismo lugar
+  que `spacing`/`radii`), no como números sueltos en un componente.
+- **Estados que solo existen con puntero/teclado** (hover, foco visible por
+  Tab) son una EXTENSIÓN del lenguaje visual, no una desviación: si se agrega
+  hover a un `PushButton`, debe ser sutil (p. ej. un leve cambio de opacidad
+  o el mismo tono ligeramente resaltado) y nunca reemplazar el snap
+  instantáneo de presionado ni la ausencia de animación al soltar. El foco de
+  teclado necesita un anillo visible accesible — pendiente de definir su
+  color/grosor como token cuando se aborde el layout de escritorio.
+- `react-native-gesture-handler` y `react-native-reanimated` ya funcionan en
+  web, así que `PushButton` no necesita una variante `.web.tsx`: el mismo
+  gesto de `LongPress` que da el note-on inmediato en nativo funciona igual
+  con click de mouse.
+
+## 6. Regla de oro
 
 Si vas a introducir un color, forma o interacción nueva, primero confirma que no
 exista ya en el theme / design-system. Coherencia > novedad. Ante la duda,
