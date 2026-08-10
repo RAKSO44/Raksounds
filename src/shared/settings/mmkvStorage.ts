@@ -8,6 +8,10 @@ import { StateStorage } from 'zustand/middleware';
  *
  * MMKV es un módulo nativo; en el entorno de tests (Jest) se mockea, ver
  * jest.setup.js. Se expone como `StateStorage` para el middleware `persist`.
+ *
+ * Este archivo es la implementación nativa (iOS/Android). En web, Metro
+ * resuelve automáticamente `mmkvStorage.web.ts` en su lugar — ver ese archivo
+ * y `.claude/rules/architecture.md`.
  */
 const storage = createMMKV({ id: 'raksound-settings' });
 
