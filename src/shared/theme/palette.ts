@@ -35,6 +35,31 @@ export const palette = {
   blueTintDark: '#203E4D',
   blueTextDark: '#7FD0F8',
 
+  // Verde de acierto (Feather Green de Duolingo). En Raksound NO es color de
+  // marca: se reserva para "respuesta correcta" y para la dificultad más baja.
+  green: '#58CC02',
+  greenShadow: '#58A700',
+  greenTintLight: '#F0FBE6',
+  greenTextLight: '#4CA300',
+  greenTintDark: '#22331C',
+  greenTextDark: '#93E64D',
+
+  // Rojo de error (Cardinal)
+  red: '#FF4B4B',
+  redShadow: '#E63939',
+  redTintLight: '#FFF0F0',
+  redTextLight: '#E02B2B',
+  redTintDark: '#3A2224',
+  redTextDark: '#FF9A9A',
+
+  // Amarillo de dificultad media (Bee)
+  yellow: '#FFC800',
+  yellowShadow: '#E0A800',
+  yellowTintLight: '#FFF9E5',
+  yellowTextLight: '#B58500',
+  yellowTintDark: '#3A3016',
+  yellowTextDark: '#FFD84D',
+
   // Neutros del modo oscuro de Duolingo
   midnight: '#131F24',
   slate: '#202F36',

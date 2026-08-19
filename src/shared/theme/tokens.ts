@@ -24,6 +24,32 @@ export const radii = {
 export const elevation = {
   /** Alto del labio en reposo; al presionar se colapsa a 0. */
   buttonLip: 4,
+  /** Grosor del anillo interior que marca un botón sólido seleccionado. */
+  selectionRing: 3,
+} as const;
+
+/** Medidas de controles que se repiten entre pantallas de ejercicios. */
+export const controls = {
+  /** Alto de la barra de progreso de una ronda. */
+  progressBarHeight: 16,
+  /** Ancho mínimo de las teclas grandes (nota base y nota a adivinar). */
+  noteTileSize: 104,
+  /** Amplitud (px) del temblor de una respuesta incorrecta. */
+  shakeDistance: 6,
+} as const;
+
+/** Duraciones (ms) de las animaciones. Cortas y sutiles, no rebotes largos. */
+export const motion = {
+  /** Fundido de entrada de un elemento nuevo. */
+  enter: 220,
+  /** Salida / transición de layout. */
+  exit: 140,
+  /** Retardo entre elementos de una entrada escalonada. */
+  stagger: 60,
+  /** Medio ciclo del temblor de una respuesta incorrecta. */
+  shake: 50,
+  /** Ida del "pop" de una respuesta correcta. */
+  pop: 110,
 } as const;
 
 /**
@@ -54,6 +80,14 @@ export const typography = {
   sectionLabel: { fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.8 },
   chip: { fontSize: 15, fontWeight: '700' },
   note: { fontSize: 18, fontWeight: '800' },
+  /** Nota grande de una tecla de ejercicio (y el "?" de la nota oculta). */
+  noteLarge: { fontSize: 32, fontWeight: '800' },
+  /** Enunciado de un ejercicio ("¿Cuál de estas es su 5ª justa?"). */
+  question: { fontSize: 17, fontWeight: '700' },
+  /** Cifra destacada de una estadística del resumen. */
+  stat: { fontSize: 24, fontWeight: '800' },
+  /** Cifra principal del resumen de una ronda (el porcentaje de aciertos). */
+  heroValue: { fontSize: 44, fontWeight: '800' },
   caption: { fontSize: 12, fontWeight: '600' },
   tabLabel: { fontSize: 11, fontWeight: '700' },
 } as const satisfies Record<string, TextStyle>;

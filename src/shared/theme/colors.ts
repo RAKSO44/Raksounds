@@ -19,6 +19,8 @@ export interface ThemeColors {
   textSecondary: string;
   /** Texto sobre el color de marca (siempre legible). */
   textOnBrand: string;
+  /** Texto sobre el amarillo de dificultad: el blanco ahí no tiene contraste. */
+  textOnWarning: string;
 
   /** Color de marca (morado). Cara de los botones sólidos y del header. */
   brand: string;
@@ -36,6 +38,31 @@ export interface ThemeColors {
   /** Texto de una opción secundaria seleccionada. */
   secondaryText: string;
 
+  /** Acierto (verde). Respuesta correcta y dificultad baja. */
+  success: string;
+  successShadow: string;
+  successTint: string;
+  successText: string;
+
+  /** Error (rojo). Respuesta incorrecta y dificultad alta. */
+  danger: string;
+  dangerShadow: string;
+  dangerTint: string;
+  dangerText: string;
+
+  /** Aviso (amarillo). Dificultad intermedia. */
+  warning: string;
+  warningShadow: string;
+  warningTint: string;
+  warningText: string;
+
+  /** Cara de un botón deshabilitado (gris plano, sin relieve). */
+  disabledSurface: string;
+  /** Texto de un botón deshabilitado. */
+  disabledText: string;
+  /** Canal vacío de la barra de progreso de una ronda. */
+  progressTrack: string;
+
   /** Barra de navegación inferior. */
   tabBar: string;
   tabBarBorder: string;
@@ -52,6 +79,7 @@ export const lightColors: ThemeColors = {
   textPrimary: palette.eel,
   textSecondary: palette.wolf,
   textOnBrand: palette.white,
+  textOnWarning: palette.eel,
 
   brand: palette.purple,
   brandShadow: palette.purpleShadow,
@@ -61,6 +89,25 @@ export const lightColors: ThemeColors = {
   secondary: palette.blue,
   secondaryTint: palette.blueTintLight,
   secondaryText: palette.blueTextLight,
+
+  success: palette.green,
+  successShadow: palette.greenShadow,
+  successTint: palette.greenTintLight,
+  successText: palette.greenTextLight,
+
+  danger: palette.red,
+  dangerShadow: palette.redShadow,
+  dangerTint: palette.redTintLight,
+  dangerText: palette.redTextLight,
+
+  warning: palette.yellow,
+  warningShadow: palette.yellowShadow,
+  warningTint: palette.yellowTintLight,
+  warningText: palette.yellowTextLight,
+
+  disabledSurface: palette.swan,
+  disabledText: palette.hare,
+  progressTrack: palette.swan,
 
   tabBar: palette.white,
   tabBarBorder: palette.swan,
@@ -77,6 +124,7 @@ export const darkColors: ThemeColors = {
   textPrimary: palette.white,
   textSecondary: palette.fog,
   textOnBrand: palette.white,
+  textOnWarning: palette.eel,
 
   // El morado de marca se mantiene idéntico en oscuro (botones "enteros").
   brand: palette.purple,
@@ -87,6 +135,27 @@ export const darkColors: ThemeColors = {
   secondary: palette.blue,
   secondaryTint: palette.blueTintDark,
   secondaryText: palette.blueTextDark,
+
+  // Los colores "enteros" (cara de botón sólido) no cambian en oscuro, igual
+  // que la marca: lo que se adapta son los tints y los textos sobre superficie.
+  success: palette.green,
+  successShadow: palette.greenShadow,
+  successTint: palette.greenTintDark,
+  successText: palette.greenTextDark,
+
+  danger: palette.red,
+  dangerShadow: palette.redShadow,
+  dangerTint: palette.redTintDark,
+  dangerText: palette.redTextDark,
+
+  warning: palette.yellow,
+  warningShadow: palette.yellowShadow,
+  warningTint: palette.yellowTintDark,
+  warningText: palette.yellowTextDark,
+
+  disabledSurface: palette.steel,
+  disabledText: palette.dim,
+  progressTrack: palette.steel,
 
   tabBar: palette.midnight,
   tabBarBorder: palette.steel,
