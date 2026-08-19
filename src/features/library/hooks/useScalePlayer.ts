@@ -12,20 +12,17 @@ import {
   ScaleType,
 } from '@/domain/music-theory';
 import { VoiceHandle } from '@/domain/audio/IAudioPlayer';
-import { createPianoSamplerPlayer } from '@/infrastructure/audio/PianoSamplerPlayer';
+// Punto de composición entre el dominio musical y la implementación real de
+// audio: la Librería consume el motor compartido de `infrastructure/audio`, el
+// mismo que usan los Ejercicios (las muestras precargadas deben sobrevivir a la
+// navegación y no duplicarse por pantalla).
+import { pianoPlayer } from '@/infrastructure/audio/pianoPlayer';
 
 /**
  * Octava por defecto de la tónica. C4–B4 es cómodo como referencia inicial;
  * un selector de octava (para voces graves/agudas) llegará con Configuraciones.
  */
 const DEFAULT_ROOT_OCTAVE = 4;
-
-/**
- * Único punto de composición entre el dominio musical y la implementación
- * real de audio. Singleton a nivel de módulo: la Librería es la tab inicial
- * y las muestras precargadas deben sobrevivir a la navegación.
- */
-const audioPlayer = createPianoSamplerPlayer();
 
 export interface ScalePlayer {
   root: NoteName;
@@ -52,14 +49,11 @@ export function useScalePlayer(): ScalePlayer {
 
   // La familia es un derivado del subtipo: no duplicamos estado.
   const family = familyOf(scaleType);
-  const setFamily = useCallback(
-    (next: ScaleFamily) => setScaleType(defaultTypeOfFamily(next)),
-    [],
-  );
+  const setFamily = useCallback((next: ScaleFamily) => setScaleType(defaultTypeOfFamily(next)), []);
 
   useEffect(() => {
     let mounted = true;
-    audioPlayer.load().then(() => {
+    pianoPlayer.load().then(() => {
       if (mounted) setReady(true);
     });
     return () => {
@@ -67,10 +61,7 @@ export function useScalePlayer(): ScalePlayer {
     };
   }, []);
 
-  const scale = useMemo(
-    () => buildScale(root, DEFAULT_ROOT_OCTAVE, scaleType),
-    [root, scaleType],
-  );
+  const scale = useMemo(() => buildScale(root, DEFAULT_ROOT_OCTAVE, scaleType), [root, scaleType]);
 
   // Voz que está sonando por cada grado pulsado. Es un ref y no estado porque
   // sonar una nota no repinta nada, y varias teclas pueden estar pulsadas a la
@@ -84,9 +75,9 @@ export function useScalePlayer(): ScalePlayer {
       // Defensa por si un press-out se perdiera (gesto cancelado de forma rara):
       // sin esto la voz anterior quedaría sonando hasta agotar la muestra.
       const previous = held.get(degree.degreeIndex);
-      if (previous !== undefined) audioPlayer.noteOff(previous);
+      if (previous !== undefined) pianoPlayer.noteOff(previous);
 
-      held.set(degree.degreeIndex, audioPlayer.noteOn(degree.midi));
+      held.set(degree.degreeIndex, pianoPlayer.noteOn(degree.midi));
     },
     [ready],
   );
@@ -96,7 +87,7 @@ export function useScalePlayer(): ScalePlayer {
     const voice = held.get(degree.degreeIndex);
     if (voice === undefined) return;
     held.delete(degree.degreeIndex);
-    audioPlayer.noteOff(voice);
+    pianoPlayer.noteOff(voice);
   }, []);
 
   // Al salir de la Librería (cambio de tab) no debe quedar ninguna nota colgada.
@@ -104,7 +95,7 @@ export function useScalePlayer(): ScalePlayer {
     const held = heldVoices.current;
     return () => {
       held.clear();
-      audioPlayer.stopAll();
+      pianoPlayer.stopAll();
     };
   }, []);
 

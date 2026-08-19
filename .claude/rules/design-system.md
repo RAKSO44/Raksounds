@@ -29,6 +29,9 @@ suelto en un feature).
 - **`SectionCard`** — tarjeta de sección (ícono + título, control opcional a la
   altura del título y contenido debajo). Es el contenedor de Configuración y
   Créditos; vive en `shared/` porque lo usan 2+ features.
+- **`ConfirmDialog`** — diálogo modal para una acción que se pierde si se hace
+  sin querer (abandonar una ronda). Dos `PushButton`: el destructivo en rojo
+  (`solid`) y el de quedarse como `selectable` neutro.
 - **`Header`** — cabecera morada que pinta el área de la status bar. Con
   `onBack` muestra una flecha de volver a la izquierda del título.
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
@@ -65,6 +68,16 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   sistema de responders de React Native concede el toque a un solo componente a
   la vez, así que con `Pressable` era imposible mantener dos botones pulsados
   (las notas no se podían tocar simultáneamente). No lo reviertas.
+- **PROHIBIDO animar escala.** Nada de "crecer y volver": ni el pop al
+  habilitarse un botón, ni la celebración de una respuesta correcta, ni
+  muelles que se pasan del valor y rebotan. Es lo contrario del carácter de la
+  app. Si algo tiene que notarse, se nota por COLOR o por un movimiento corto
+  y direccional (el temblor lateral de un fallo, la barra que avanza), nunca
+  por tamaño.
+- Las animaciones que sí existen son cortas y con curva de salida
+  (`Easing.out`), con las duraciones de `motion` en `shared/theme/tokens.ts`.
+  `withSpring` no se usa en ningún sitio: su rebote es exactamente lo que no
+  queremos.
 - Tres callbacks: `onPressIn` (el dedo toca), `onPress` (tap completo, solo si
   el gesto no se canceló) y `onPressOut` (siempre, incluso al cancelarse). Para
   algo que debe sentirse inmediato —una tecla de piano— usa `onPressIn`, no
@@ -89,8 +102,23 @@ Fuente de verdad: `shared/theme/` (`palette.ts` crudo → `colors.ts` semántico
 
 ## 4. Tipografía, forma y espaciado
 
-- Pesos altos (`700`–`800`) para el carácter grueso de Duolingo; tokens en
-  `typography` (`shared/theme/tokens.ts`).
+- La familia es **Poppins**. Los `.ttf` viven en `assets/fonts/` y se **embeben
+  en el binario** con el plugin `expo-font` de `app.config.ts`; `useFonts` en
+  `app/_layout.tsx` es solo para web, donde no hay binario. Cargarlas únicamente
+  en tiempo de ejecución hace que Android mida cada texto con la fuente del
+  sistema y lo pinte con Poppins (más ancha): el resultado son etiquetas
+  recortadas ("Arpegi") y puntos suspensivos donde sobra espacio. Si se añade
+  un peso nuevo hay que copiarlo a `assets/fonts/`, listarlo en el plugin y
+  **volver a compilar** (`expo prebuild` + `expo run:android`).
+- Los tokens de `typography` (`shared/theme/tokens.ts`) declaran `fontFamily`
+  (`fonts.bold`, `fonts.extrabold`…) y **nunca** `fontWeight`: en React Native
+  cada peso es un archivo distinto, y mezclar ambos hace que Android sintetice
+  una negrita falsa.
+- **PROHIBIDO truncar texto.** Nada de `numberOfLines` ni `ellipsizeMode` en
+  ningún componente: un texto que no cabe se envuelve o hace crecer su caja,
+  nunca sale con "…". Los contenedores de texto llevan `flexShrink: 0` para que
+  un padre estrecho no pueda aplastarlos.
+- Pesos altos (bold / extrabold) para el carácter grueso de Duolingo.
 - Bordes redondeados (`radii`) y espaciado por tokens (`spacing`). Nunca números
   mágicos: si falta un token, se agrega al theme.
 - Animaciones **sutiles y agradables** (reanimated): fundidos cortos y
