@@ -5,9 +5,30 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { hapticPressIn } from '@/shared/haptics';
-import { elevation, radii, spacing, typography, useTheme } from '@/shared/theme';
+import { elevation, radii, spacing, ThemeColors, typography, useTheme } from '@/shared/theme';
 
 export type PushButtonVariant = 'solid' | 'selectable';
+
+/**
+ * Familia de color del botón. `brand` (morado) es la de siempre; el resto son
+ * los roles semánticos que necesitan los ejercicios (acierto, error, aviso) y
+ * el celeste secundario. El tono NO cambia la forma del botón, solo su color.
+ */
+export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning';
+
+/** Colores que aporta cada tono, resueltos desde el tema activo. */
+interface ToneColors {
+  /** Cara del botón sólido. */
+  face: string;
+  /** Labio 3D. */
+  lip: string;
+  /** Cara tenue de un `selectable` seleccionado. */
+  tint: string;
+  /** Texto de un `selectable` seleccionado. */
+  text: string;
+  /** Texto sobre la cara sólida. */
+  onFace: string;
+}
 
 /**
  * Cuánto puede moverse el dedo sin que el gesto se cancele, en px.
@@ -42,9 +63,24 @@ interface PushButtonProps {
    * de marca al seleccionarse.
    */
   variant?: PushButtonVariant;
-  /** Solo aplica a `selectable`. */
+  /** Familia de color. Por defecto, el morado de marca. */
+  tone?: PushButtonTone;
+  /**
+   * En `selectable`, pinta el botón del color del tono. En `solid` (que ya va
+   * a color entero) marca la selección con un anillo interior claro.
+   */
   selected?: boolean;
+  /**
+   * Deshabilitado estilo Duolingo: cara gris plana, sin labio y sin gesto.
+   * No es un botón "atenuado": es un botón que aún no está disponible.
+   */
   disabled?: boolean;
+  /**
+   * `center` apila label y sublabel (teclas, opciones). `spread` los reparte en
+   * una fila —label a la izquierda, sublabel a la derecha—, que es la forma de
+   * una fila de nivel ("NIVEL 1" / "8ª justa y 5ª justa").
+   */
+  align?: 'center' | 'spread';
   accessibilityLabel?: string;
   minWidth?: number;
   fullWidth?: boolean;
@@ -77,8 +113,10 @@ export function PushButton({
   onPressIn,
   onPressOut,
   variant = 'solid',
+  tone = 'brand',
   selected = false,
   disabled = false,
+  align = 'center',
   accessibilityLabel,
   minWidth,
   fullWidth,
@@ -133,16 +171,45 @@ export function PushButton({
 
   const isSolid = variant === 'solid';
   const isSelected = variant === 'selectable' && selected;
+  const toneColors = TONES[tone](colors);
 
-  const faceColor = isSolid || isSelected ? (isSolid ? colors.brand : colors.brandTint) : colors.surface;
-  const lipColor = isSolid || isSelected ? colors.brandShadow : colors.surfaceShadow;
-  const borderColor = isSolid ? 'transparent' : isSelected ? colors.brand : colors.border;
-  const labelColor = isSolid ? colors.textOnBrand : isSelected ? colors.brandText : colors.textPrimary;
-  const sublabelColor = isSolid
-    ? colors.textOnBrand
-    : isSelected
-      ? colors.brandText
-      : colors.textSecondary;
+  // Un botón deshabilitado no es un botón atenuado: pierde el color, el relieve
+  // y el gesto, como el "Continuar" de Duolingo antes de elegir respuesta.
+  const faceColor = disabled
+    ? colors.disabledSurface
+    : isSolid
+      ? toneColors.face
+      : isSelected
+        ? toneColors.tint
+        : colors.surface;
+  const lipColor = disabled
+    ? colors.disabledSurface
+    : isSolid || isSelected
+      ? toneColors.lip
+      : colors.surfaceShadow;
+  const labelColor = disabled
+    ? colors.disabledText
+    : isSolid
+      ? toneColors.onFace
+      : isSelected
+        ? toneColors.text
+        : colors.textPrimary;
+  const sublabelColor = disabled
+    ? colors.disabledText
+    : isSolid
+      ? toneColors.onFace
+      : isSelected
+        ? toneColors.text
+        : colors.textSecondary;
+  // El borde de un sólido es el anillo de selección (transparente si no lo
+  // está): reservarlo siempre evita que seleccionar desplace el layout.
+  const borderColor = isSolid
+    ? 'transparent'
+    : disabled
+      ? colors.disabledSurface
+      : isSelected
+        ? toneColors.face
+        : colors.border;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -163,7 +230,6 @@ export function PushButton({
           styles.container,
           fullWidth && styles.fullWidth,
           minWidth != null && { minWidth },
-          disabled && styles.disabled,
           style,
         ]}
       >
@@ -172,16 +238,29 @@ export function PushButton({
         <Animated.View
           style={[
             styles.face,
+            align === 'spread' && styles.faceSpread,
             { backgroundColor: faceColor, borderColor, borderWidth: isSolid ? 0 : 2 },
             faceAnimatedStyle,
           ]}
         >
+          {/* Anillo de selección de un sólido: va superpuesto y no en el borde
+              del propio botón, para que seleccionar no cambie su tamaño. */}
+          {isSolid && selected && !disabled && (
+            <View pointerEvents="none" style={[styles.ring, { borderColor: colors.textOnBrand }]} />
+          )}
           {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
           <Text style={[typography.chip, labelStyle, { color: labelColor }]} numberOfLines={1}>
             {label}
           </Text>
           {sublabel != null && (
-            <Text style={[styles.sublabel, { color: sublabelColor }]} numberOfLines={1}>
+            <Text
+              style={[
+                styles.sublabel,
+                align === 'spread' && styles.sublabelSpread,
+                { color: sublabelColor },
+              ]}
+              numberOfLines={1}
+            >
               {sublabel}
             </Text>
           )}
@@ -191,6 +270,49 @@ export function PushButton({
   );
 }
 
+/**
+ * Cada tono resuelve sus colores desde el tema. Se define fuera del componente
+ * porque es una tabla, no estado: el tono solo elige qué roles leer.
+ */
+const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
+  brand: (colors) => ({
+    face: colors.brand,
+    lip: colors.brandShadow,
+    tint: colors.brandTint,
+    text: colors.brandText,
+    onFace: colors.textOnBrand,
+  }),
+  secondary: (colors) => ({
+    face: colors.secondary,
+    lip: colors.secondaryText,
+    tint: colors.secondaryTint,
+    text: colors.secondaryText,
+    onFace: colors.textOnBrand,
+  }),
+  success: (colors) => ({
+    face: colors.success,
+    lip: colors.successShadow,
+    tint: colors.successTint,
+    text: colors.successText,
+    onFace: colors.textOnBrand,
+  }),
+  danger: (colors) => ({
+    face: colors.danger,
+    lip: colors.dangerShadow,
+    tint: colors.dangerTint,
+    text: colors.dangerText,
+    onFace: colors.textOnBrand,
+  }),
+  warning: (colors) => ({
+    face: colors.warning,
+    lip: colors.warningShadow,
+    tint: colors.warningTint,
+    text: colors.warningText,
+    // El blanco no tiene contraste sobre amarillo; ahí el texto va oscuro.
+    onFace: colors.textOnWarning,
+  }),
+};
+
 const styles = StyleSheet.create({
   container: {
     position: 'relative',
@@ -198,9 +320,6 @@ const styles = StyleSheet.create({
   },
   fullWidth: {
     alignSelf: 'stretch',
-  },
-  disabled: {
-    opacity: 0.45,
   },
   lip: {
     position: 'absolute',
@@ -221,7 +340,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
+  faceSpread: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+  },
+  ring: {
+    position: 'absolute',
+    top: spacing.xs,
+    left: spacing.xs,
+    right: spacing.xs,
+    bottom: spacing.xs,
+    borderWidth: elevation.selectionRing,
+    borderRadius: radii.sm,
+  },
   sublabel: {
     ...typography.caption,
+  },
+  sublabelSpread: {
+    ...typography.chip,
+    // En una fila, el sublabel es el dato de la derecha y compite con el
+    // título: se le deja encoger antes que al label.
+    flexShrink: 1,
   },
 });
