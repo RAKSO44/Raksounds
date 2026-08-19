@@ -9,7 +9,8 @@ features/       → pantallas, componentes y hooks de cada feature.
                   composición, ej. useScalePlayer) de infrastructure/.
 infrastructure/ → implementaciones concretas (react-native-audio-api, etc.).
                   Solo importan interfaces/tipos de domain/.
-shared/         → design-system y theme. No importan de ninguna otra capa.
+shared/         → design-system, theme y utilidades transversales (haptics,
+                  settings, navigation). No importan de features/ ni de app/.
 domain/         → TypeScript puro. NO importa NADA: ni react, ni react-native,
                   ni expo, ni de otras capas. 100% testeable con Jest solo.
 ```

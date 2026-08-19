@@ -49,7 +49,7 @@ Reglas de negocio clave:
 ## Qué SÍ construimos ahora: los Ejercicios
 
 Entrenamiento auditivo por rondas de 10 ejercicios. Dos tipos, que se pueden practicar
-sueltos o mezclados ("Combinado"):
+sueltos o mezclados ("Mixto"):
 
 1. **Identificación de intervalo**: suenan la nota base (visible) y otra nota oculta; hay
    que decir qué intervalo forman eligiendo entre opciones que son INTERVALOS
@@ -67,9 +67,15 @@ Reglas de negocio clave:
   aguda posible (base + 8ª) caiga dentro del banco de muestras C4–C6.
 - Corregir es un paso explícito: "Confirmar" solo se habilita con una opción elegida y,
   tras corregir, el MISMO botón pasa a decir "Continuar".
-- Al terminar la ronda se muestra un resumen (aciertos, tiempo medio, mejor racha,
-  intervalos fallados y el acierto más rápido) calculado en
-  `domain/ear-training/roundSummary.ts`, no en la pantalla.
+- Al terminar la ronda se REEMPLAZA la pantalla del ejercicio por la de
+  resultados (`exercise/summary`): aciertos, tiempo medio y repeticiones medias por
+  pregunta (cuántas veces hubo que volver a oír una nota YA escuchada),
+  intervalos fallados y el acierto más rápido, todo calculado en
+  `domain/ear-training/roundSummary.ts`, no en la pantalla. Ahí el "atrás" del
+  sistema equivale a "Continuar"; en la ronda, en cambio, salir (flecha o
+  "atrás") pide confirmación con un `ConfirmDialog`. En la raíz de las pestañas
+  el "atrás" del sistema también confirma antes de cerrar la app
+  (`shared/navigation/ExitConfirmation`).
 
 ## Arquitectura — REGLA DE ORO
 
@@ -91,13 +97,16 @@ src/
       screens/
       hooks/              # useScalePlayer
     exercises/
-      components/        # AnswerOption, NoteKey, IntervalExercise, NoteExercise, RoundSummaryView…
-      screens/           # ExercisesScreen (menú), LevelSelectScreen, ExerciseRoundScreen
+      components/        # AnswerOption, NoteKey, IntervalExercise, NoteExercise,
+                         #   AnswerFeedbackSheet, ExerciseProgressBar, RoundSummaryView…
+      screens/           # ExercisesScreen (menú), LevelSelectScreen, ExerciseRoundScreen,
+                         #   RoundSummaryScreen
       hooks/              # useExerciseRound, useNotePlayer, useNoteFormatter
     home/                 # placeholder, NO implementar lógica todavía
     profile/              # placeholder, NO implementar lógica todavía
   shared/
-    design-system/        # componentes base reutilizables
+    design-system/        # componentes base reutilizables (incl. ConfirmDialog)
+    navigation/           # useHardwareBack + ExitConfirmation (atrás del sistema)
     theme/
   app/                    # rutas de Expo Router (reemplaza navigation/)
     _layout.tsx            # layout raíz
@@ -111,6 +120,7 @@ src/
     exercise/              # fuera de las tabs: una ronda no se abandona por accidente
       levels.tsx           # → LevelSelectScreen (?mode=)
       round.tsx            # → ExerciseRoundScreen (?mode=&level=)
+      summary.tsx          # → RoundSummaryScreen (?mode=&summary=)
 ```
 
 Los archivos de `src/app/` son wrappers finos: la UI real vive en `features/*/screens/`.
@@ -138,6 +148,11 @@ está mal — detente y avísame en vez de continuar.
 - Zustand para estado global (liviano, suficiente para el alcance actual; instalar cuando se use)
 - **Sin framework de estilos** (ni NativeWind ni similares): componentes 100% propios con
   `StyleSheet` y tokens en `shared/theme/`
+- Tipografía **Poppins**: los `.ttf` viven en `assets/fonts/` y se embeben en el
+  binario con el plugin `expo-font` de `app.config.ts` (`useFonts` en
+  `app/_layout.tsx` solo hace falta para web). Cargarlas solo en runtime hace
+  que Android mida los textos con la fuente del sistema y los recorte. Los
+  tokens de `typography` declaran `fontFamily` y NUNCA `fontWeight`
 - **Estética Duolingo + modo oscuro** obligatorios: la referencia visual es siempre
   Duolingo (nunca UI genérica), con morado de marca y azul secundario, y tema
   claro/oscuro según el sistema. Detalle y componentes reutilizables en
