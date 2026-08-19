@@ -72,3 +72,29 @@ export function hapticTap(): void {
 export function hapticPressIn(): void {
   dryHit(Haptics.AndroidHaptics.Keyboard_Press);
 }
+
+/**
+ * Confirmación de acierto. A diferencia de los golpes de pulsación, esto es un
+ * PATRÓN de notificación (dos toques ascendentes), no un click: se dispara al
+ * corregir un ejercicio, donde el usuario ya soltó el dedo y necesita que la
+ * respuesta se sienta, no solo se vea.
+ *
+ * En Android, `Confirm` es la constante que el sistema afina para "operación
+ * completada con éxito"; en iOS el equivalente es `NotificationFeedbackType.Success`.
+ */
+export function hapticSuccess(): void {
+  if (Platform.OS === 'android') {
+    safe(() => Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Confirm));
+    return;
+  }
+  safe(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success));
+}
+
+/** Contrapartida de `hapticSuccess` para una respuesta incorrecta. */
+export function hapticError(): void {
+  if (Platform.OS === 'android') {
+    safe(() => Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Reject));
+    return;
+  }
+  safe(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error));
+}
