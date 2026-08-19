@@ -157,6 +157,13 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
       await renderScreen();
 
       for (let i = 0; i < 10; i += 1) {
+        if (i === 0) {
+          // Solo en el primer ejercicio: la base suena dos veces y la nota a
+          // adivinar una. La segunda vuelta a la base es UNA repetición.
+          await user.press(screen.getByLabelText('Nota base C4'));
+          await user.press(screen.getByLabelText('Nota a adivinar'));
+          await user.press(screen.getByLabelText('Nota base C4'));
+        }
         await user.press(screen.getByText(ANSWER));
         await user.press(screen.getByText('Confirmar'));
         await user.press(screen.getByText('Continuar'));
@@ -170,6 +177,9 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
       const summary = decodeRoundSummary(call.params.summary);
       expect(summary?.correctCount).toBe(10);
       expect(summary?.missedIntervals).toEqual([]);
+      // Una repetición en diez preguntas: 0,1 de media. Lo que se escucha por
+      // primera vez no cuenta, ni siquiera oír las dos notas del ejercicio.
+      expect(summary?.averageReplays).toBeCloseTo(0.1);
       // Recorrer la ronda entera son 30 pulsaciones simuladas: no cabe en el
       // timeout por defecto de Jest.
     },

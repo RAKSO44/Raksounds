@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   AnswerRecord,
+  countReplays,
   createRound,
   Exercise,
   ExerciseLevel,
@@ -36,10 +37,9 @@ export interface ExerciseRound {
   summary: RoundSummary | null;
   select: (interval: IntervalId) => void;
   /**
-   * Registra que sonó una nota del ejercicio en curso, identificada por la
-   * tecla que la disparó. La PRIMERA vez que suena cada tecla no cuenta (oír
-   * cada nota una vez es el ejercicio); a partir de ahí cuenta como repetición,
-   * que es lo que el resumen promedia.
+   * Registra que SONÓ una nota del ejercicio en curso, identificada por la
+   * tecla que la disparó. Cuáles de esas escuchas son repeticiones lo decide
+   * `countReplays`: la primera vez de cada tecla no cuenta.
    */
   registerListen: (key: string) => void;
   /** Corrige la respuesta elegida. No hace nada sin selección. */
@@ -71,14 +71,13 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
   // repintado; además así el cronómetro se reinicia solo al cambiar de
   // ejercicio, incluido el primero.
   const startedAt = useRef(0);
-  // Repeticiones del ejercicio en curso y teclas ya oídas en él. Son refs por
-  // lo mismo que las respuestas: sonar una nota no repinta nada.
-  const replays = useRef(0);
-  const heard = useRef(new Set<string>());
+  // Teclas que han sonado en el ejercicio en curso, en orden. Es un ref por lo
+  // mismo que las respuestas: sonar una nota no repinta nada. Cuántas de esas
+  // escuchas son repeticiones lo decide el dominio, no este hook.
+  const listened = useRef<string[]>([]);
   useEffect(() => {
     startedAt.current = Date.now();
-    replays.current = 0;
-    heard.current.clear();
+    listened.current = [];
   }, [index]);
 
   const exercise = exercises[index] ?? null;
@@ -94,8 +93,7 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
   );
 
   const registerListen = useCallback((key: string) => {
-    if (heard.current.has(key)) replays.current += 1;
-    else heard.current.add(key);
+    listened.current.push(key);
   }, []);
 
   const confirm = useCallback(() => {
@@ -106,7 +104,7 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
       answer: exercise.answer,
       chosen: selected,
       elapsedMs: Date.now() - startedAt.current,
-      replayCount: replays.current,
+      replayCount: countReplays(listened.current),
     });
 
     if (selected === exercise.answer) hapticSuccess();

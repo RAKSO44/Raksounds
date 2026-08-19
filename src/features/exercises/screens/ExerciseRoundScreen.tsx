@@ -53,7 +53,9 @@ export function ExerciseRoundScreen() {
     () => ({
       ...notePlayer,
       press: (key: string, midi: number) => {
-        registerListen(key);
+        // Solo cuenta si de verdad va a sonar: con las muestras aún cargando
+        // el motor descarta la pulsación, y contarla inflaría el resumen.
+        if (notePlayer.ready) registerListen(key);
         notePlayer.press(key, midi);
       },
     }),

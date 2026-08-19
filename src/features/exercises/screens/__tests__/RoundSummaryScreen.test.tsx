@@ -55,8 +55,7 @@ describe('RoundSummaryScreen', () => {
     expect(screen.getByText('8 de 10 correctas')).toBeOnTheScreen();
     expect(screen.getByText('2.4 s')).toBeOnTheScreen();
     expect(screen.getByText('por pregunta')).toBeOnTheScreen();
-    // Las repeticiones se redondean a un entero: 2.6 se lee como "3".
-    expect(screen.getByText('3')).toBeOnTheScreen();
+    expect(screen.getByText('2.6')).toBeOnTheScreen();
     expect(screen.getByText('repeticiones por pregunta')).toBeOnTheScreen();
   });
 

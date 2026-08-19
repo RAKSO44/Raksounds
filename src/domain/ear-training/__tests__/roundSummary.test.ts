@@ -1,5 +1,5 @@
 import { IntervalId } from '../intervals';
-import { AnswerRecord, summarizeRound } from '../roundSummary';
+import { AnswerRecord, countReplays, summarizeRound } from '../roundSummary';
 
 function record(
   answer: IntervalId,
@@ -9,6 +9,22 @@ function record(
 ): AnswerRecord {
   return { kind: 'interval', answer, chosen, elapsedMs, replayCount };
 }
+
+describe('countReplays', () => {
+  it('la primera vez que suena cada tecla no cuenta', () => {
+    // El ejercicio de nota: la base y las tres opciones, una vez cada una.
+    expect(countReplays(['root', 'option-0', 'option-1', 'option-2'])).toBe(0);
+  });
+
+  it('cada vuelta a una tecla ya oída suma una repetición', () => {
+    // Base, opción A, otra vez la base, otra vez la A y una tercera vez la A.
+    expect(countReplays(['root', 'option-0', 'root', 'option-0', 'option-0'])).toBe(3);
+  });
+
+  it('sin escuchas no hay repeticiones', () => {
+    expect(countReplays([])).toBe(0);
+  });
+});
 
 describe('summarizeRound', () => {
   it('cuenta aciertos y calcula porcentaje y tiempo medio', () => {

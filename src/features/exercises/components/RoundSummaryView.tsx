@@ -63,9 +63,10 @@ export function RoundSummaryView({ summary }: RoundSummaryViewProps) {
           <Stat
             icon="replay"
             // Repeticiones: cuántas veces, de media, hubo que volver a oír una
-            // nota YA escuchada en la misma pregunta. Va como entero, que es
-            // como se piensa ("la repetí dos veces").
-            value={String(Math.round(summary.averageReplays))}
+            // nota YA escuchada en la misma pregunta. Con un decimal (como su
+            // vecina de tiempo): redondear a entero escondía justo lo que mide
+            // —repetir en tres preguntas de diez se leía como "0".
+            value={summary.averageReplays.toFixed(1)}
             label="repeticiones por pregunta"
           />
         </View>

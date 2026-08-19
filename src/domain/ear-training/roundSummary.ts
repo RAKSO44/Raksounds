@@ -39,6 +39,26 @@ export interface RoundSummary {
   readonly fastestMs: number | null;
 }
 
+/**
+ * Repeticiones en una secuencia de escuchas, donde cada elemento identifica a
+ * la tecla que sonó ("root", "target", "option-1"…).
+ *
+ * La PRIMERA vez que suena cada tecla no cuenta: oír una vez cada nota del
+ * ejercicio es el trabajo normal. A partir de ahí, cada vez que vuelve a sonar
+ * una tecla ya oída cuenta como una repetición.
+ */
+export function countReplays(listened: readonly string[]): number {
+  const heard = new Set<string>();
+  let replays = 0;
+
+  for (const key of listened) {
+    if (heard.has(key)) replays += 1;
+    else heard.add(key);
+  }
+
+  return replays;
+}
+
 export function summarizeRound(answers: readonly AnswerRecord[]): RoundSummary {
   const total = answers.length;
   const missed: IntervalId[] = [];
