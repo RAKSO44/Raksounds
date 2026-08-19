@@ -3,6 +3,15 @@ import { Switch } from 'react-native';
 import { hapticTap } from '@/shared/haptics';
 import { useTheme } from '@/shared/theme';
 
+/**
+ * `activeThumbColor` es una prop EXCLUSIVA de react-native-web: allí el círculo
+ * del interruptor encendido ignora `thumbColor` y cae en el verde por defecto
+ * de la librería (#009688). En nativo la prop no existe y se descarta.
+ */
+interface WebOnlySwitchProps {
+  activeThumbColor?: string;
+}
+
 interface SettingToggleProps {
   /** Nombre accesible del interruptor (la sección ya rotula el ajuste). */
   accessibilityLabel: string;
@@ -31,6 +40,7 @@ export function SettingToggle({ accessibilityLabel, value, onValueChange }: Sett
       accessibilityLabel={accessibilityLabel}
       trackColor={{ false: colors.surfaceShadow, true: colors.brand }}
       thumbColor={colors.textOnBrand}
+      {...({ activeThumbColor: colors.textOnBrand } satisfies WebOnlySwitchProps)}
       ios_backgroundColor={colors.surfaceShadow}
       style={{ transform: [{ scale: 1.25 }] }}
     />

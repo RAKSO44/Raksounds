@@ -3,3 +3,4 @@ export * from './colors';
 export * from './palette';
 export * from './ThemeProvider';
 export * from './useIsWideScreen';
+export * from './useSystemColorScheme';

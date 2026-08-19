@@ -1,9 +1,9 @@
 import { createContext, ReactNode, useContext, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
 
 import { useSettingsStore } from '@/shared/settings';
 
 import { darkColors, lightColors, ThemeColors } from './colors';
+import { useSystemColorScheme } from './useSystemColorScheme';
 
 export interface Theme {
   colors: ThemeColors;
@@ -18,7 +18,7 @@ const ThemeContext = createContext<Theme | null>(null);
  * Un único punto de decisión claro/oscuro para toda la app.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const scheme = useColorScheme();
+  const scheme = useSystemColorScheme();
   const themeMode = useSettingsStore((state) => state.themeMode);
   const isDark = themeMode === 'system' ? scheme === 'dark' : themeMode === 'dark';
 

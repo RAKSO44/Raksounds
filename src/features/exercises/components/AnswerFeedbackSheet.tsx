@@ -8,10 +8,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { IntervalId } from '@/domain/ear-training';
+import { ExerciseKind, IntervalId } from '@/domain/ear-training';
 import { controls, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
-import { intervalLabel } from '../labels';
+import { feedbackDetailLabel } from '../labels';
 
 /** translateY inicial, fuera de pantalla, hasta medir el alto real. */
 const OFFSCREEN = 2000;
@@ -20,8 +20,12 @@ interface AnswerFeedbackSheetProps {
   /** Sube al corregir y baja al pasar al siguiente ejercicio. */
   visible: boolean;
   correct: boolean;
-  /** Intervalo correcto, para nombrarlo cuando el usuario falló. */
+  /** Qué tipo de ejercicio es: decide qué se dice al fallar. */
+  kind: ExerciseKind;
+  /** Intervalo correcto del ejercicio. */
   answer: IntervalId;
+  /** Lo que el usuario eligió. */
+  chosen: IntervalId;
   /** Alto de la barra de acción, que tapa la parte baja de la hoja. */
   bottomInset: number;
 }
@@ -41,7 +45,9 @@ interface AnswerFeedbackSheetProps {
 export function AnswerFeedbackSheet({
   visible,
   correct,
+  kind,
   answer,
+  chosen,
   bottomInset,
 }: AnswerFeedbackSheetProps) {
   const { colors } = useTheme();
@@ -49,9 +55,9 @@ export function AnswerFeedbackSheet({
   // Instantánea del último contenido mostrado, junto al `visible` con el que se
   // tomó. Solo se refresca en el flanco de SUBIDA, que es cuando la corrección
   // es la del ejercicio en pantalla; al bajar se conserva tal cual.
-  const [displayed, setDisplayed] = useState({ visible, correct, answer });
+  const [displayed, setDisplayed] = useState({ visible, correct, kind, answer, chosen });
   if (visible !== displayed.visible) {
-    setDisplayed(visible ? { visible, correct, answer } : { ...displayed, visible });
+    setDisplayed(visible ? { visible, correct, kind, answer, chosen } : { ...displayed, visible });
   }
 
   // Empieza muy abajo (aún no se conoce el alto real): así no hay un fotograma
@@ -104,9 +110,7 @@ export function AnswerFeedbackSheet({
             {displayed.correct ? '¡Correcto!' : 'Casi'}
           </Text>
           <Text style={[styles.detail, { color: foreground }]}>
-            {displayed.correct
-              ? intervalLabel(displayed.answer)
-              : `Era ${intervalLabel(displayed.answer)}`}
+            {feedbackDetailLabel(displayed)}
           </Text>
         </View>
       </View>

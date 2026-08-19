@@ -2,6 +2,7 @@ import { ComponentProps } from 'react';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import {
+  ExerciseKind,
   ExerciseMode,
   INTERVALS,
   IntervalId,
@@ -90,6 +91,34 @@ export const TIER_TONES: Record<LevelTier, PushButtonTone> = {
   medium: 'warning',
   hard: 'danger',
 };
+
+interface FeedbackDetailInput {
+  readonly kind: ExerciseKind;
+  readonly correct: boolean;
+  /** Intervalo correcto del ejercicio. */
+  readonly answer: IntervalId;
+  /** Lo que el usuario eligió. */
+  readonly chosen: IntervalId;
+}
+
+/**
+ * Segunda línea de la hoja de corrección.
+ *
+ * Al fallar, lo útil depende del ejercicio: en "identificación de intervalo" la
+ * pregunta ERA cuál es el intervalo, así que se nombra el correcto; en
+ * "identificación de nota" el intervalo pedido ya estaba en el enunciado, y lo
+ * que el usuario no sabe es qué acaba de marcar.
+ */
+export function feedbackDetailLabel({
+  kind,
+  correct,
+  answer,
+  chosen,
+}: FeedbackDetailInput): string {
+  if (correct) return intervalLabel(answer);
+  if (kind === 'note') return `Marcaste ${intervalLabel(chosen)}`;
+  return `Era ${intervalLabel(answer)}`;
+}
 
 /** Enunciado del ejercicio de identificación de nota. */
 export function noteQuestionLabel(id: IntervalId): string {

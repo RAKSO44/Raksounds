@@ -45,7 +45,6 @@ export function ExerciseRoundScreen() {
 
   const revealed = round.phase === 'revealed';
   const answering = round.phase === 'answering';
-  const completed = round.index + (revealed ? 1 : 0);
 
   // Cada nota que suena se le cuenta al ejercicio en curso; el hook decide si
   // es la primera vez (normal) o una repetición, que es lo que mide el resumen.
@@ -93,7 +92,11 @@ export function ExerciseRoundScreen() {
       <Header title={MODE_LABELS[mode]} onBack={askToLeave} />
 
       <View style={styles.progress}>
-        <ExerciseProgressBar completed={completed} total={round.total} />
+        {/* La barra avanza al PASAR de ejercicio ("Continuar"), no al corregir:
+            mide cuánta ronda queda, no si ya respondiste. Sus pasos son los
+            saltos entre ejercicios (uno menos que ejercicios hay), de modo que
+            al llegar al último ya está llena. */}
+        <ExerciseProgressBar completed={round.index} total={Math.max(1, round.total - 1)} />
       </View>
 
       <ScrollView
@@ -133,7 +136,9 @@ export function ExerciseRoundScreen() {
         <AnswerFeedbackSheet
           visible={revealed}
           correct={round.isCorrect ?? false}
+          kind={round.exercise.kind}
           answer={round.exercise.answer}
+          chosen={round.selected ?? round.exercise.answer}
           bottomInset={actionBarHeight}
         />
       )}

@@ -248,6 +248,18 @@ describe('ExerciseRoundScreen — identificación de nota', () => {
     expect(mockNoteOn.mock.calls).toEqual([[65], [65]]);
   });
 
+  it('al fallar dice QUÉ marcaste, no cuál era: el intervalo pedido ya estaba en el enunciado', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+
+    // La opción A es la 4ª justa y el ejercicio pide la 8ª justa.
+    await user.press(screen.getByLabelText('Opción A'));
+    await user.press(screen.getByText('Confirmar'));
+
+    expect(screen.getByText('Marcaste 4ª justa')).toBeOnTheScreen();
+    expect(screen.queryByText('Era 8ª justa')).not.toBeOnTheScreen();
+  });
+
   it('al corregir, todas las opciones revelan qué nota eran', async () => {
     const user = userEvent.setup();
     await renderScreen();
