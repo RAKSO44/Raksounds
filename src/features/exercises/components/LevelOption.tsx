@@ -14,9 +14,9 @@ interface LevelOptionProps {
 
 /**
  * Fila de un nivel: el número a la izquierda y lo que ese nivel añade a la
- * derecha. Va a color entero según la dificultad (verde → amarillo → rojo →
- * morado), como el mapa de una unidad de Duolingo, y marca la selección con el
- * anillo interior del propio botón.
+ * derecha. En reposo TODOS los niveles son iguales (neutros): el color de la
+ * dificultad —verde, amarillo, morado y rojo para el tritono— aparece solo al
+ * elegir uno, que es lo que hace que la elección se lea.
  */
 export function LevelOption({ level, selected, onSelect }: LevelOptionProps) {
   // A partir del segundo nivel el resumen es incremental ("+ 3ªM y 3ªm"): lo
@@ -29,7 +29,7 @@ export function LevelOption({ level, selected, onSelect }: LevelOptionProps) {
       entering={FadeInDown.duration(motion.enter).delay(level.number * motion.stagger)}
     >
       <PushButton
-        variant="solid"
+        variant="selectable"
         tone={TIER_TONES[level.tier]}
         align="spread"
         label={`NIVEL ${level.number}`}

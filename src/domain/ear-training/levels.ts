@@ -10,7 +10,7 @@ import { IntervalId } from './intervals';
  * segundos y séptimos son los más cercanos entre sí, y el tritono cierra.
  */
 
-export type LevelTier = 'easy' | 'medium' | 'hard' | 'expert';
+export type LevelTier = 'easy' | 'medium' | 'hard';
 
 export interface ExerciseLevel {
   /** Número visible del nivel (1–7). Es también su identificador en las rutas. */
@@ -26,11 +26,11 @@ export interface ExerciseLevel {
 const LEVEL_STEPS: readonly { added: readonly IntervalId[]; tier: LevelTier }[] = [
   { added: ['P8', 'P5'], tier: 'easy' },
   { added: ['P4'], tier: 'easy' },
-  { added: ['M3', 'm3'], tier: 'medium' },
+  { added: ['M3', 'm3'], tier: 'easy' },
   { added: ['M6', 'm6'], tier: 'medium' },
-  { added: ['M2', 'm2'], tier: 'hard' },
+  { added: ['M2', 'm2'], tier: 'medium' },
   { added: ['M7', 'm7'], tier: 'hard' },
-  { added: ['TT'], tier: 'expert' },
+  { added: ['TT'], tier: 'hard' },
 ];
 
 export const EXERCISE_LEVELS: readonly ExerciseLevel[] = LEVEL_STEPS.reduce<ExerciseLevel[]>(

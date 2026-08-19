@@ -30,6 +30,10 @@ export const palette = {
 
   // Azul secundario (Macaw) — nivel de jerarquía por debajo del morado
   blue: '#1CB0F6',
+  // Labio 3D del azul secundario (Macaw oscuro de Duolingo). Es el MISMO en
+  // claro y oscuro: un labio "más claro que la cara" se ve como un borde
+  // blanco y rompe el relieve.
+  blueShadow: '#1899D6',
   blueTintLight: '#F1FAFE',
   blueTextLight: '#1691D4',
   blueTintDark: '#203E4D',
@@ -40,6 +44,9 @@ export const palette = {
   green: '#58CC02',
   greenShadow: '#58A700',
   greenTintLight: '#F0FBE6',
+  // Fondo del panel de acierto: el verde claro de Duolingo. Más presente que
+  // el tint (que es un velo para superficies), sin llegar al color entero.
+  greenPanel: '#DFF5C6',
   greenTextLight: '#4CA300',
   greenTintDark: '#22331C',
   greenTextDark: '#93E64D',
@@ -48,6 +55,8 @@ export const palette = {
   red: '#FF4B4B',
   redShadow: '#E63939',
   redTintLight: '#FFF0F0',
+  /** Fondo del panel de fallo, en el mismo registro que `greenPanel`. */
+  redPanel: '#FFE0E1',
   redTextLight: '#E02B2B',
   redTintDark: '#3A2224',
   redTextDark: '#FF9A9A',
@@ -71,4 +80,9 @@ export const palette = {
   dim: '#5C7079',
 
   white: '#FFFFFF',
+
+  /** Brillo interior de la barra de progreso: un velo claro sobre el relleno. */
+  shine: 'rgba(255, 255, 255, 0.45)',
+  /** Velo oscuro tras un diálogo modal. */
+  scrim: 'rgba(0, 0, 0, 0.5)',
 } as const;

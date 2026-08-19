@@ -3,11 +3,11 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { RoundSummary } from '@/domain/ear-training';
+import { IntervalId, RoundSummary } from '@/domain/ear-training';
 import { SectionCard } from '@/shared/design-system';
-import { motion, radii, spacing, typography, useTheme } from '@/shared/theme';
+import { controls, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
-import { intervalLabel, INTERVAL_COMPACT_LABELS } from '../labels';
+import { INTERVAL_COMPACT_LABELS } from '../labels';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -21,26 +21,33 @@ function formatSeconds(ms: number): string {
 }
 
 /**
- * Resumen de la ronda. Las tarjetas entran escalonadas de arriba abajo, como el
- * recuento de fin de lección de Duolingo: primero el resultado global y después
- * el detalle.
+ * Resumen de la ronda.
+ *
+ * La jerarquía es la de un recuento de fin de lección: primero el dato que
+ * resume todo (el porcentaje, a tamaño de titular y del color que le
+ * corresponde al resultado), después las dos medidas de "cómo" se respondió y
+ * por último el detalle por intervalo. Las tarjetas entran escalonadas de
+ * arriba abajo, en el mismo orden en que se leen.
  */
 export function RoundSummaryView({ summary }: RoundSummaryViewProps) {
   const { colors } = useTheme();
   const percentage = Math.round(summary.accuracy * 100);
-  const perfect = summary.correctCount === summary.total;
+
+  // El color del titular es el propio resultado: verde si dominó la ronda,
+  // ámbar si va a medias y rojo si toca repetirla.
+  const heroColor =
+    summary.accuracy >= 0.8
+      ? colors.successText
+      : summary.accuracy >= 0.5
+        ? colors.warningText
+        : colors.dangerText;
 
   return (
     <View style={styles.container}>
       <Row index={0}>
-        <View style={[styles.hero, { backgroundColor: colors.brand }]}>
-          <MaterialCommunityIcons
-            name={perfect ? 'trophy' : 'chart-donut'}
-            size={44}
-            color={colors.textOnBrand}
-          />
-          <Text style={[styles.heroValue, { color: colors.textOnBrand }]}>{percentage}%</Text>
-          <Text style={[styles.heroCaption, { color: colors.textOnBrand }]}>
+        <View style={styles.hero}>
+          <Text style={[styles.heroValue, { color: heroColor }]}>{percentage}%</Text>
+          <Text style={[styles.heroCaption, { color: colors.textSecondary }]}>
             {summary.correctCount} de {summary.total} correctas
           </Text>
         </View>
@@ -50,20 +57,34 @@ export function RoundSummaryView({ summary }: RoundSummaryViewProps) {
         <View style={styles.statsRow}>
           <Stat
             icon="timer-outline"
-            label="Tiempo medio"
             value={formatSeconds(summary.averageMs)}
+            label="por pregunta"
           />
-          <Stat icon="fire" label="Mejor racha" value={String(summary.bestStreak)} />
+          <Stat
+            icon="replay"
+            // Repeticiones: cuántas veces, de media, hubo que volver a oír una
+            // nota YA escuchada en la misma pregunta. Va como entero, que es
+            // como se piensa ("la repetí dos veces").
+            value={String(Math.round(summary.averageReplays))}
+            label="repeticiones por pregunta"
+          />
         </View>
       </Row>
 
       <Row index={2}>
         <SectionCard icon="flash" title="Tu acierto más rápido">
-          <Text style={[styles.detail, { color: colors.textSecondary }]}>
-            {summary.fastestInterval === null || summary.fastestMs === null
-              ? 'Esta vez no hubo aciertos: vuelve a intentarlo.'
-              : `${intervalLabel(summary.fastestInterval)} en ${formatSeconds(summary.fastestMs)}`}
-          </Text>
+          {summary.fastestInterval === null || summary.fastestMs === null ? (
+            <Text style={[styles.detail, { color: colors.textSecondary }]}>
+              Esta vez no hubo aciertos: vuelve a intentarlo.
+            </Text>
+          ) : (
+            <View style={styles.chips}>
+              <IntervalChip interval={summary.fastestInterval} tone="success" />
+              <Text style={[styles.detail, { color: colors.textSecondary }]}>
+                en {formatSeconds(summary.fastestMs)}
+              </Text>
+            </View>
+          )}
         </SectionCard>
       </Row>
 
@@ -76,11 +97,7 @@ export function RoundSummaryView({ summary }: RoundSummaryViewProps) {
           ) : (
             <View style={styles.chips}>
               {summary.missedIntervals.map((interval) => (
-                <View key={interval} style={[styles.chip, { backgroundColor: colors.dangerTint }]}>
-                  <Text style={[styles.chipLabel, { color: colors.dangerText }]}>
-                    {INTERVAL_COMPACT_LABELS[interval]}
-                  </Text>
-                </View>
+                <IntervalChip key={interval} interval={interval} tone="danger" />
               ))}
             </View>
           )}
@@ -99,12 +116,35 @@ function Row({ index, children }: { index: number; children: ReactNode }) {
   );
 }
 
+/**
+ * Etiqueta de un intervalo del resumen. Verde si es el acierto más rápido,
+ * rojo si es uno de los fallados; el color es el MISMO en claro y oscuro
+ * (tokens `result*`), porque es un dato que hay que reconocer de un vistazo y
+ * no una superficie del tema.
+ */
+function IntervalChip({ interval, tone }: { interval: IntervalId; tone: 'success' | 'danger' }) {
+  const { colors } = useTheme();
+  const background = tone === 'success' ? colors.resultSuccess : colors.resultDanger;
+  const foreground = tone === 'success' ? colors.resultSuccessText : colors.resultDangerText;
+
+  return (
+    <View style={[styles.chip, { backgroundColor: background }]}>
+      <Text style={[styles.chipLabel, { color: foreground }]}>
+        {INTERVAL_COMPACT_LABELS[interval]}
+      </Text>
+    </View>
+  );
+}
+
 function Stat({ icon, label, value }: { icon: IconName; label: string; value: string }) {
   const { colors } = useTheme();
   return (
     <View style={[styles.stat, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-      <MaterialCommunityIcons name={icon} size={22} color={colors.textSecondary} />
-      <Text style={[styles.statValue, { color: colors.textPrimary }]}>{value}</Text>
+      <View style={styles.statValueRow}>
+        {/* El icono es parte de la cifra, no un adorno: va de su mismo color. */}
+        <MaterialCommunityIcons name={icon} size={22} color={colors.textPrimary} />
+        <Text style={[styles.statValue, { color: colors.textPrimary }]}>{value}</Text>
+      </View>
       <Text style={[styles.statLabel, { color: colors.textSecondary }]}>{label}</Text>
     </View>
   );
@@ -116,9 +156,8 @@ const styles = StyleSheet.create({
   },
   hero: {
     alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.lg,
-    borderRadius: radii.lg,
+    gap: spacing.xs,
+    paddingVertical: spacing.lg,
   },
   heroValue: {
     ...typography.heroValue,
@@ -138,6 +177,11 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     borderWidth: 2,
   },
+  statValueRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: controls.statIconGap,
+  },
   statValue: {
     ...typography.stat,
   },
@@ -151,12 +195,14 @@ const styles = StyleSheet.create({
   chips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     gap: spacing.sm,
   },
   chip: {
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radii.pill,
+    // Menos redondeado que una píldora: es una etiqueta de dato, no un botón.
+    borderRadius: radii.sm,
   },
   chipLabel: {
     ...typography.chip,

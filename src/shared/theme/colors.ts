@@ -33,6 +33,8 @@ export interface ThemeColors {
 
   /** Acento secundario (jerarquía por debajo de la marca). */
   secondary: string;
+  /** Labio inferior 3D de los botones secundarios. */
+  secondaryShadow: string;
   /** Fondo tenue de una opción secundaria seleccionada. */
   secondaryTint: string;
   /** Texto de una opción secundaria seleccionada. */
@@ -62,6 +64,22 @@ export interface ThemeColors {
   disabledText: string;
   /** Canal vacío de la barra de progreso de una ronda. */
   progressTrack: string;
+  /** Brillo interior del relleno de la barra de progreso. */
+  progressShine: string;
+
+  /**
+   * Colores de RESULTADO: la hoja de corrección de un ejercicio y las etiquetas
+   * de intervalo del resumen. A diferencia del resto de tints, son IDÉNTICOS en
+   * claro y oscuro: el verde de acierto y el rojo de fallo son un dato que hay
+   * que reconocer de un vistazo, no una superficie que deba adaptarse al tema.
+   */
+  resultSuccess: string;
+  resultSuccessText: string;
+  resultDanger: string;
+  resultDangerText: string;
+
+  /** Velo oscuro tras un diálogo modal. */
+  scrim: string;
 
   /** Barra de navegación inferior. */
   tabBar: string;
@@ -87,6 +105,7 @@ export const lightColors: ThemeColors = {
   brandText: palette.purpleShadow,
 
   secondary: palette.blue,
+  secondaryShadow: palette.blueShadow,
   secondaryTint: palette.blueTintLight,
   secondaryText: palette.blueTextLight,
 
@@ -108,6 +127,14 @@ export const lightColors: ThemeColors = {
   disabledSurface: palette.swan,
   disabledText: palette.hare,
   progressTrack: palette.swan,
+  progressShine: palette.shine,
+
+  resultSuccess: palette.greenPanel,
+  resultSuccessText: palette.greenTextLight,
+  resultDanger: palette.redPanel,
+  resultDangerText: palette.redTextLight,
+
+  scrim: palette.scrim,
 
   tabBar: palette.white,
   tabBarBorder: palette.swan,
@@ -133,6 +160,7 @@ export const darkColors: ThemeColors = {
   brandText: palette.purpleTextDark,
 
   secondary: palette.blue,
+  secondaryShadow: palette.blueShadow,
   secondaryTint: palette.blueTintDark,
   secondaryText: palette.blueTextDark,
 
@@ -156,6 +184,14 @@ export const darkColors: ThemeColors = {
   disabledSurface: palette.steel,
   disabledText: palette.dim,
   progressTrack: palette.steel,
+  progressShine: palette.shine,
+
+  resultSuccess: palette.greenPanel,
+  resultSuccessText: palette.greenTextLight,
+  resultDanger: palette.redPanel,
+  resultDangerText: palette.redTextLight,
+
+  scrim: palette.scrim,
 
   tabBar: palette.midnight,
   tabBarBorder: palette.steel,

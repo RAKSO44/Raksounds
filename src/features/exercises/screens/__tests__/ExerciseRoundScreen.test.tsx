@@ -5,13 +5,20 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useSettingsStore } from '@/shared/settings';
 import { ThemeProvider } from '@/shared/theme';
 
+import { decodeRoundSummary } from '../../summaryParams';
 import { ExerciseRoundScreen } from '../ExerciseRoundScreen';
 
 const mockDismissAll = jest.fn();
+const mockReplace = jest.fn();
 let mockParams: { mode?: string; level?: string } = { mode: 'interval', level: '3' };
 
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: jest.fn(), back: jest.fn(), dismissAll: mockDismissAll }),
+  useRouter: () => ({
+    push: jest.fn(),
+    back: jest.fn(),
+    replace: mockReplace,
+    dismissAll: mockDismissAll,
+  }),
   useLocalSearchParams: () => mockParams,
 }));
 
@@ -60,6 +67,7 @@ beforeEach(() => {
   useSettingsStore.setState({ showOctave: true });
   jest.spyOn(Math, 'random').mockReturnValue(0);
   mockDismissAll.mockClear();
+  mockReplace.mockClear();
   nextVoice = 0;
   mockNoteOn.mockReset();
   mockNoteOn.mockImplementation(() => {
@@ -140,7 +148,7 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
   });
 
   it(
-    'tras diez ejercicios muestra el resumen y continuar cierra la ronda',
+    'tras diez ejercicios salta a la pantalla de resultados con el resumen',
     async () => {
       // En el nivel 1 solo hay dos intervalos, así que con `Math.random` fijo los
       // diez ejercicios son iguales y la ronda se puede recorrer entera.
@@ -154,15 +162,15 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
         await user.press(screen.getByText('Continuar'));
       }
 
-      expect(screen.getByText('100%')).toBeOnTheScreen();
-      expect(screen.getByText('10 de 10 correctas')).toBeOnTheScreen();
-      expect(
-        screen.getByText('Ningún intervalo se te resistió. ¡Sube de nivel!'),
-      ).toBeOnTheScreen();
-
-      await user.press(screen.getByText('Continuar'));
-      expect(mockDismissAll).toHaveBeenCalled();
-      // Recorrer la ronda entera son 31 pulsaciones simuladas: no cabe en el
+      // La ronda se REEMPLAZA por su resultado: no se puede volver a unos
+      // ejercicios ya respondidos.
+      expect(mockReplace).toHaveBeenCalledTimes(1);
+      const call = mockReplace.mock.calls[0][0];
+      expect(call.pathname).toBe('/exercise/summary');
+      const summary = decodeRoundSummary(call.params.summary);
+      expect(summary?.correctCount).toBe(10);
+      expect(summary?.missedIntervals).toEqual([]);
+      // Recorrer la ronda entera son 30 pulsaciones simuladas: no cabe en el
       // timeout por defecto de Jest.
     },
     LONG_ROUND_TIMEOUT_MS,
@@ -183,12 +191,32 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
         await user.press(screen.getByText('Continuar'));
       }
 
-      expect(screen.getByText('90%')).toBeOnTheScreen();
-      expect(screen.getByText('9 de 10 correctas')).toBeOnTheScreen();
-      expect(screen.getByText('8ªJ')).toBeOnTheScreen();
+      const summary = decodeRoundSummary(mockReplace.mock.calls[0][0].params.summary);
+      expect(summary?.correctCount).toBe(9);
+      expect(summary?.missedIntervals).toEqual(['P8']);
     },
     LONG_ROUND_TIMEOUT_MS,
   );
+});
+
+describe('ExerciseRoundScreen — salir de la ronda', () => {
+  it('la flecha pide confirmación antes de abandonar', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByLabelText('Volver'));
+    expect(screen.getByText('¿Salir de la ronda?')).toBeOnTheScreen();
+    // Mientras no se confirme, la ronda sigue donde estaba.
+    expect(mockDismissAll).not.toHaveBeenCalled();
+
+    await user.press(screen.getByText('Seguir'));
+    expect(screen.queryByText('¿Salir de la ronda?')).not.toBeOnTheScreen();
+    expect(mockDismissAll).not.toHaveBeenCalled();
+
+    await user.press(screen.getByLabelText('Volver'));
+    await user.press(screen.getByText('Salir'));
+    expect(mockDismissAll).toHaveBeenCalled();
+  });
 });
 
 describe('ExerciseRoundScreen — identificación de nota', () => {
@@ -201,7 +229,9 @@ describe('ExerciseRoundScreen — identificación de nota', () => {
     await renderScreen();
 
     expect(screen.getByText('¿Cuál de estas es su 8ª justa?')).toBeOnTheScreen();
-    expect(screen.getByText('A')).toBeOnTheScreen();
+    // Las opciones son solo sonido: no llevan ni la nota ni una letra que las
+    // nombre en pantalla.
+    expect(screen.queryByText('A')).not.toBeOnTheScreen();
 
     await user.press(screen.getByLabelText('Opción A'));
     // La primera opción es la 4ª justa sobre C4: F4 (65).

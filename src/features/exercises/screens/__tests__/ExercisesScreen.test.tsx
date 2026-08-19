@@ -32,9 +32,11 @@ describe('ExercisesScreen', () => {
   it('ofrece los tres modos de práctica', async () => {
     await render(<ExercisesScreen />, { wrapper: Providers });
 
-    expect(screen.getByText('Combinado')).toBeOnTheScreen();
     expect(screen.getByText('Identificación de intervalo')).toBeOnTheScreen();
     expect(screen.getByText('Identificación de nota')).toBeOnTheScreen();
+    // El modo mezclado va en una columna con el nombre letra a letra, así que
+    // se busca por su etiqueta accesible y no por el texto pintado.
+    expect(screen.getByLabelText('Mixto')).toBeOnTheScreen();
   });
 
   it('elegir un modo lleva a la selección de nivel con ese modo', async () => {
@@ -46,6 +48,18 @@ describe('ExercisesScreen', () => {
     expect(mockPush).toHaveBeenCalledWith({
       pathname: '/exercise/levels',
       params: { mode: 'note' },
+    });
+  });
+
+  it('el modo mixto lleva a la selección de nivel igual que los sueltos', async () => {
+    const user = userEvent.setup();
+    await render(<ExercisesScreen />, { wrapper: Providers });
+
+    await user.press(screen.getByLabelText('Mixto'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/exercise/levels',
+      params: { mode: 'mixed' },
     });
   });
 });

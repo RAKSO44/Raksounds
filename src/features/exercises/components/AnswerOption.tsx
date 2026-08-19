@@ -1,11 +1,10 @@
 import { ComponentProps, useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleProp, StyleSheet, TextStyle } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
   useSharedValue,
   withSequence,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -61,9 +60,12 @@ export function answerOptionState({
 }
 
 interface AnswerOptionProps {
-  label: string;
+  /** Ausente en una opción que es solo sonido (identificación de nota). */
+  label?: string;
   sublabel?: string;
   icon?: IconName;
+  /** Tamaño del texto de la cara (el color lo fija el propio botón). */
+  labelStyle?: StyleProp<TextStyle>;
   state: AnswerOptionState;
   /** Posición en la fila; escalona la entrada de las opciones. */
   index: number;
@@ -75,12 +77,10 @@ interface AnswerOptionProps {
 }
 
 /**
- * Una opción de respuesta. Encima del `PushButton` del design system añade las
- * dos microinteracciones que hacen que corregir se sienta vivo:
- *
- * - acierto: un "pop" corto de escala (celebración discreta, sin rebotes);
- * - fallo: un temblor lateral breve, el mismo recurso que usa Duolingo para
- *   decir "esa no" sin bloquear la pantalla.
+ * Una opción de respuesta. Encima del `PushButton` del design system añade el
+ * temblor lateral breve del fallo, el mismo recurso que usa Duolingo para decir
+ * "esa no" sin bloquear la pantalla. El acierto NO se anima: se cuenta en la
+ * hoja de corrección que sube desde abajo.
  *
  * La entrada va escalonada por posición para que las opciones no aparezcan
  * todas de golpe al cambiar de ejercicio.
@@ -89,6 +89,7 @@ export function AnswerOption({
   label,
   sublabel,
   icon,
+  labelStyle,
   state,
   index,
   disabled,
@@ -98,27 +99,19 @@ export function AnswerOption({
   onPress,
 }: AnswerOptionProps) {
   const translateX = useSharedValue(0);
-  const scale = useSharedValue(1);
 
   useEffect(() => {
-    if (state === 'wrong') {
-      translateX.value = withSequence(
-        withTiming(-controls.shakeDistance, { duration: motion.shake }),
-        withTiming(controls.shakeDistance, { duration: motion.shake }),
-        withTiming(-controls.shakeDistance / 2, { duration: motion.shake }),
-        withTiming(0, { duration: motion.shake }),
-      );
-    }
-    if (state === 'correct') {
-      scale.value = withSequence(
-        withTiming(1.06, { duration: motion.pop }),
-        withSpring(1, { damping: 12, stiffness: 200 }),
-      );
-    }
-  }, [state, translateX, scale]);
+    if (state !== 'wrong') return;
+    translateX.value = withSequence(
+      withTiming(-controls.shakeDistance, { duration: motion.shake }),
+      withTiming(controls.shakeDistance, { duration: motion.shake }),
+      withTiming(-controls.shakeDistance / 2, { duration: motion.shake }),
+      withTiming(0, { duration: motion.shake }),
+    );
+  }, [state, translateX]);
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: translateX.value }, { scale: scale.value }],
+    transform: [{ translateX: translateX.value }],
   }));
 
   return (
@@ -133,6 +126,7 @@ export function AnswerOption({
         label={label}
         sublabel={sublabel}
         icon={icon}
+        labelStyle={labelStyle}
         fullWidth
         disabled={disabled}
         accessibilityLabel={accessibilityLabel}

@@ -1,50 +1,85 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { EXERCISE_MODES, ExerciseMode } from '@/domain/ear-training';
+import { ExerciseMode } from '@/domain/ear-training';
 import { Header, PushButton } from '@/shared/design-system';
-import { motion, spacing, typography, useTheme } from '@/shared/theme';
+import { controls, motion, spacing, typography, useTheme } from '@/shared/theme';
 
-import { MODE_DESCRIPTIONS, MODE_ICONS, MODE_LABELS } from '../labels';
+import { MIXED_VERTICAL_LABEL, MODE_DESCRIPTIONS, MODE_ICONS, MODE_LABELS } from '../labels';
+
+/** Los dos tipos sueltos, en el orden en que se aprenden. */
+const SINGLE_MODES: readonly ExerciseMode[] = ['interval', 'note'];
 
 /**
  * Menú de la sección Ejercicios: elegir qué tipo de ejercicio auditivo
  * practicar. La dificultad se elige después, en su propia pantalla.
  *
- * "Combinado" va a color entero (es la opción recomendada, la que mezcla los
- * dos tipos) y los tipos sueltos quedan como selectores neutros: la jerarquía
- * de siempre entre un botón sólido y uno transparente.
+ * Los dos tipos sueltos se apilan a la izquierda y la mezcla ocupa una columna
+ * a su derecha, a color entero y con el nombre en vertical: se lee de un
+ * vistazo que es "los dos a la vez", sin repetir una tercera fila igual a las
+ * otras dos.
  */
 export function ExercisesScreen() {
   const { colors } = useTheme();
   const router = useRouter();
+
+  const openLevels = (mode: ExerciseMode) =>
+    router.push({ pathname: '/exercise/levels', params: { mode } });
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <Header title="Ejercicios" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
-          Ejercicios auditivos
-        </Text>
+        <View style={styles.sectionHeader}>
+          <MaterialCommunityIcons name="ear-hearing" size={20} color={colors.textSecondary} />
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+            Ejercicios auditivos
+          </Text>
+        </View>
 
-        {EXERCISE_MODES.map((mode: ExerciseMode, index) => (
+        <View style={styles.grid}>
+          <View style={styles.singles}>
+            {SINGLE_MODES.map((mode, index) => (
+              <Animated.View
+                key={mode}
+                entering={FadeInDown.duration(motion.enter).delay(index * motion.stagger)}
+              >
+                <PushButton
+                  variant="selectable"
+                  icon={MODE_ICONS[mode]}
+                  iconPlacement="start"
+                  label={MODE_LABELS[mode]}
+                  sublabel={MODE_DESCRIPTIONS[mode]}
+                  fullWidth
+                  accessibilityLabel={MODE_LABELS[mode]}
+                  onPress={() => openLevels(mode)}
+                />
+              </Animated.View>
+            ))}
+          </View>
+
           <Animated.View
-            key={mode}
-            entering={FadeInDown.duration(motion.enter).delay(index * motion.stagger)}
+            entering={FadeInDown.duration(motion.enter).delay(SINGLE_MODES.length * motion.stagger)}
+            style={styles.mixed}
           >
             <PushButton
-              variant={mode === 'mixed' ? 'solid' : 'selectable'}
-              icon={MODE_ICONS[mode]}
-              label={MODE_LABELS[mode]}
-              sublabel={MODE_DESCRIPTIONS[mode]}
+              variant="solid"
+              label={MIXED_VERTICAL_LABEL}
+              labelStyle={typography.note}
+              fillHeight
+              // `fullWidth` (alignSelf: stretch) es lo que hace que la cara
+              // llegue al borde de su columna: sin él el botón se encoge a su
+              // contenido y deja un hueco muerto a la derecha.
               fullWidth
-              accessibilityLabel={MODE_LABELS[mode]}
-              onPress={() => router.push({ pathname: '/exercise/levels', params: { mode } })}
+              style={styles.mixedButton}
+              accessibilityLabel={MODE_LABELS.mixed}
+              onPress={() => openLevels('mixed')}
             />
           </Animated.View>
-        ))}
+        </View>
       </ScrollView>
     </View>
   );
@@ -60,7 +95,27 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xl,
     gap: spacing.md,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   sectionLabel: {
     ...typography.sectionLabel,
+  },
+  grid: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.md,
+  },
+  singles: {
+    flex: 1,
+    gap: spacing.md,
+  },
+  mixed: {
+    width: controls.verticalOptionWidth,
+  },
+  mixedButton: {
+    flex: 1,
   },
 });

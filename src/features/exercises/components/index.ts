@@ -1,4 +1,4 @@
-export * from './AnswerFeedback';
+export * from './AnswerFeedbackSheet';
 export * from './AnswerOption';
 export * from './BottomActionBar';
 export * from './ExerciseProgressBar';

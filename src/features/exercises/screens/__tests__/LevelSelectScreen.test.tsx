@@ -76,11 +76,11 @@ describe('LevelSelectScreen', () => {
     });
   });
 
-  it('un modo desconocido en la ruta cae en el combinado', async () => {
+  it('un modo desconocido en la ruta cae en el mixto', async () => {
     mockParams = { mode: 'inventado' };
     await renderScreen();
 
-    expect(screen.getByText('Combinado')).toBeOnTheScreen();
+    expect(screen.getByText('Mixto')).toBeOnTheScreen();
   });
 
   it('la flecha de la cabecera vuelve atrás', async () => {

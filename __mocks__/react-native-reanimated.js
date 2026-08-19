@@ -24,9 +24,20 @@ const Animated = {
   createAnimatedComponent: (Component) => Component,
 };
 
+// Curvas de easing: en un test no hay tiempo que interpolar, así que basta con
+// que existan y sean encadenables (Easing.out(Easing.cubic)).
+const easingFn = () => 0;
+const Easing = new Proxy(
+  {},
+  {
+    get: () => () => easingFn,
+  },
+);
+
 module.exports = {
   __esModule: true,
   default: Animated,
+  Easing,
   useSharedValue: (initial) => ({ value: initial }),
   useAnimatedStyle: () => ({}),
   withTiming: (toValue) => toValue,

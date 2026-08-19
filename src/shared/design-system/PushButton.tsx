@@ -5,7 +5,15 @@ import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanima
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { hapticPressIn } from '@/shared/haptics';
-import { elevation, radii, spacing, ThemeColors, typography, useTheme } from '@/shared/theme';
+import {
+  controls,
+  elevation,
+  radii,
+  spacing,
+  ThemeColors,
+  typography,
+  useTheme,
+} from '@/shared/theme';
 
 export type PushButtonVariant = 'solid' | 'selectable';
 
@@ -43,7 +51,11 @@ const PRESS_SLOP = 20;
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
 interface PushButtonProps {
-  label: string;
+  /**
+   * Texto de la cara. Es opcional porque hay botones que solo son un ícono
+   * (las opciones sonoras de un ejercicio, que no deben delatar su nota).
+   */
+  label?: string;
   /** Segunda línea opcional (p. ej. el número de grado bajo la nota). */
   sublabel?: string;
   /** Ícono opcional encima del label (toma el color del texto del botón). */
@@ -66,8 +78,8 @@ interface PushButtonProps {
   /** Familia de color. Por defecto, el morado de marca. */
   tone?: PushButtonTone;
   /**
-   * En `selectable`, pinta el botón del color del tono. En `solid` (que ya va
-   * a color entero) marca la selección con un anillo interior claro.
+   * Solo aplica a `selectable`: pinta el botón del color del tono. Un `solid`
+   * ya va a color entero y NO tiene estado de selección.
    */
   selected?: boolean;
   /**
@@ -81,6 +93,22 @@ interface PushButtonProps {
    * una fila de nivel ("NIVEL 1" / "8ª justa y 5ª justa").
    */
   align?: 'center' | 'spread';
+  /**
+   * Dónde va el ícono: encima del texto (por defecto) o a su izquierda, en la
+   * misma fila.
+   */
+  iconPlacement?: 'above' | 'start';
+  /**
+   * `compact` reduce el alto de la cara. Es para la acción principal fija de
+   * abajo, que no necesita el cuerpo de una tarjeta.
+   */
+  size?: 'regular' | 'compact';
+  /**
+   * La cara ocupa todo el alto del contenedor. Es para un botón que acompaña a
+   * una columna de otros botones y debe llegar de arriba abajo: sin esto la
+   * cara mide lo que su texto y el labio asomaría por todo el hueco sobrante.
+   */
+  fillHeight?: boolean;
   accessibilityLabel?: string;
   minWidth?: number;
   fullWidth?: boolean;
@@ -117,6 +145,9 @@ export function PushButton({
   selected = false,
   disabled = false,
   align = 'center',
+  size = 'regular',
+  iconPlacement = 'above',
+  fillHeight = false,
   accessibilityLabel,
   minWidth,
   fullWidth,
@@ -169,6 +200,7 @@ export function PushButton({
     [handlePressIn, handlePressOut, onPress, disabled],
   );
 
+  const iconStart = iconPlacement === 'start';
   const isSolid = variant === 'solid';
   const isSelected = variant === 'selectable' && selected;
   const toneColors = TONES[tone](colors);
@@ -201,8 +233,8 @@ export function PushButton({
       : isSelected
         ? toneColors.text
         : colors.textSecondary;
-  // El borde de un sólido es el anillo de selección (transparente si no lo
-  // está): reservarlo siempre evita que seleccionar desplace el layout.
+  // Un sólido no lleva borde (su color ya es la cara), pero se reserva
+  // transparente para que el grosor no cambie el tamaño entre variantes.
   const borderColor = isSolid
     ? 'transparent'
     : disabled
@@ -238,32 +270,38 @@ export function PushButton({
         <Animated.View
           style={[
             styles.face,
-            align === 'spread' && styles.faceSpread,
+            fillHeight && styles.faceFill,
+            size === 'compact' && styles.faceCompact,
+            iconStart && styles.faceRow,
             { backgroundColor: faceColor, borderColor, borderWidth: isSolid ? 0 : 2 },
             faceAnimatedStyle,
           ]}
         >
-          {/* Anillo de selección de un sólido: va superpuesto y no en el borde
-              del propio botón, para que seleccionar no cambie su tamaño. */}
-          {isSolid && selected && !disabled && (
-            <View pointerEvents="none" style={[styles.ring, { borderColor: colors.textOnBrand }]} />
-          )}
           {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
-          <Text style={[typography.chip, labelStyle, { color: labelColor }]} numberOfLines={1}>
-            {label}
-          </Text>
-          {sublabel != null && (
-            <Text
-              style={[
-                styles.sublabel,
-                align === 'spread' && styles.sublabelSpread,
-                { color: sublabelColor },
-              ]}
-              numberOfLines={1}
-            >
-              {sublabel}
-            </Text>
-          )}
+          <View
+            style={[
+              styles.texts,
+              iconStart && styles.textsStart,
+              align === 'spread' && styles.textsSpread,
+            ]}
+          >
+            {label != null && label !== '' && (
+              <Text style={[typography.chip, styles.label, labelStyle, { color: labelColor }]}>
+                {label}
+              </Text>
+            )}
+            {sublabel != null && (
+              <Text
+                style={[
+                  styles.sublabel,
+                  align === 'spread' && styles.sublabelSpread,
+                  { color: sublabelColor },
+                ]}
+              >
+                {sublabel}
+              </Text>
+            )}
+          </View>
         </Animated.View>
       </View>
     </GestureDetector>
@@ -284,7 +322,7 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
   }),
   secondary: (colors) => ({
     face: colors.secondary,
-    lip: colors.secondaryText,
+    lip: colors.secondaryShadow,
     tint: colors.secondaryTint,
     text: colors.secondaryText,
     onFace: colors.textOnBrand,
@@ -340,27 +378,45 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.xs,
   },
-  faceSpread: {
+  faceRow: {
     flexDirection: 'row',
+    gap: spacing.md,
+  },
+  texts: {
+    alignItems: 'center',
+    gap: spacing.xs,
+    // El texto manda sobre el tamaño de la caja: NUNCA se encoge (y por tanto
+    // nunca se recorta ni sale con puntos suspensivos).
+    flexShrink: 0,
+  },
+  textsStart: {
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  textsSpread: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
     gap: spacing.md,
   },
-  ring: {
-    position: 'absolute',
-    top: spacing.xs,
-    left: spacing.xs,
-    right: spacing.xs,
-    bottom: spacing.xs,
-    borderWidth: elevation.selectionRing,
-    borderRadius: radii.sm,
+  faceFill: {
+    flex: 1,
+  },
+  faceCompact: {
+    paddingVertical: controls.compactButtonPaddingY,
+  },
+  label: {
+    textAlign: 'center',
   },
   sublabel: {
     ...typography.caption,
   },
   sublabelSpread: {
     ...typography.chip,
-    // En una fila, el sublabel es el dato de la derecha y compite con el
-    // título: se le deja encoger antes que al label.
+    // En una fila, el sublabel es el dato de la derecha: se le deja repartir el
+    // espacio con el título (envolviendo si hace falta, nunca recortando).
     flexShrink: 1,
+    textAlign: 'right',
   },
 });

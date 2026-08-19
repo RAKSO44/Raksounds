@@ -35,6 +35,13 @@ export interface ExerciseRound {
   /** Solo tiene valor en `summary`. */
   summary: RoundSummary | null;
   select: (interval: IntervalId) => void;
+  /**
+   * Registra que sonó una nota del ejercicio en curso, identificada por la
+   * tecla que la disparó. La PRIMERA vez que suena cada tecla no cuenta (oír
+   * cada nota una vez es el ejercicio); a partir de ahí cuenta como repetición,
+   * que es lo que el resumen promedia.
+   */
+  registerListen: (key: string) => void;
   /** Corrige la respuesta elegida. No hace nada sin selección. */
   confirm: () => void;
   /** Pasa al siguiente ejercicio o, si era el último, al resumen. */
@@ -64,8 +71,14 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
   // repintado; además así el cronómetro se reinicia solo al cambiar de
   // ejercicio, incluido el primero.
   const startedAt = useRef(0);
+  // Repeticiones del ejercicio en curso y teclas ya oídas en él. Son refs por
+  // lo mismo que las respuestas: sonar una nota no repinta nada.
+  const replays = useRef(0);
+  const heard = useRef(new Set<string>());
   useEffect(() => {
     startedAt.current = Date.now();
+    replays.current = 0;
+    heard.current.clear();
   }, [index]);
 
   const exercise = exercises[index] ?? null;
@@ -80,6 +93,11 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
     [phase],
   );
 
+  const registerListen = useCallback((key: string) => {
+    if (heard.current.has(key)) replays.current += 1;
+    else heard.current.add(key);
+  }, []);
+
   const confirm = useCallback(() => {
     if (phase !== 'answering' || selected === null || exercise === null) return;
 
@@ -88,6 +106,7 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
       answer: exercise.answer,
       chosen: selected,
       elapsedMs: Date.now() - startedAt.current,
+      replayCount: replays.current,
     });
 
     if (selected === exercise.answer) hapticSuccess();
@@ -119,6 +138,7 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
     isCorrect,
     summary,
     select,
+    registerListen,
     confirm,
     advance,
   };

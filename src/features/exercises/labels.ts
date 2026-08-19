@@ -56,7 +56,7 @@ export const INTERVAL_COMPACT_LABELS: Record<IntervalId, string> = {
 };
 
 export const MODE_LABELS: Record<ExerciseMode, string> = {
-  mixed: 'Combinado',
+  mixed: 'Mixto',
   interval: 'Identificación de intervalo',
   note: 'Identificación de nota',
 };
@@ -67,18 +67,28 @@ export const MODE_DESCRIPTIONS: Record<ExerciseMode, string> = {
   note: 'Encuentra la nota que está al intervalo pedido',
 };
 
+/**
+ * El modo mezclado se pinta como una columna a la derecha de los dos tipos
+ * sueltos, así que su nombre va letra a letra en vertical.
+ */
+export const MIXED_VERTICAL_LABEL = MODE_LABELS.mixed.toUpperCase().split('').join('\n');
+
 export const MODE_ICONS: Record<ExerciseMode, IconName> = {
   mixed: 'shuffle-variant',
   interval: 'ruler',
   note: 'music-note',
 };
 
-/** Color de cada franja de dificultad, expresado como tono del design system. */
+/**
+ * Color de cada franja de dificultad, expresado como tono del design system.
+ * Es el color con el que se ve un nivel SELECCIONADO (en reposo todos son
+ * neutros): verde los tres primeros, amarillo los dos intermedios y rojo los
+ * dos últimos.
+ */
 export const TIER_TONES: Record<LevelTier, PushButtonTone> = {
   easy: 'success',
   medium: 'warning',
   hard: 'danger',
-  expert: 'brand',
 };
 
 /** Enunciado del ejercicio de identificación de nota. */

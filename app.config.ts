@@ -36,6 +36,24 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    // Las fuentes se EMBEBEN en el binario (no se cargan en tiempo de
+    // ejecución): así Android tiene la tipografía registrada antes del primer
+    // layout. Cargándolas después, la primera medición de cada texto se hace
+    // con la fuente del sistema y luego se pinta con Poppins, que es más
+    // ancha: el resultado son textos recortados ("Arpegi") o con puntos
+    // suspensivos donde sobra espacio.
+    [
+      'expo-font',
+      {
+        fonts: [
+          './assets/fonts/Poppins_400Regular.ttf',
+          './assets/fonts/Poppins_500Medium.ttf',
+          './assets/fonts/Poppins_600SemiBold.ttf',
+          './assets/fonts/Poppins_700Bold.ttf',
+          './assets/fonts/Poppins_800ExtraBold.ttf',
+        ],
+      },
+    ],
     [
       'expo-splash-screen',
       {

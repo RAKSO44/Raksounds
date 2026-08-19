@@ -11,7 +11,7 @@ type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 /** Icono por ruta. Íconos redondeados y "juguetones" (MaterialCommunityIcons). */
 const TAB_ICONS: Record<string, IconName> = {
   index: 'music-circle',
-  exercises: 'ear-hearing',
+  exercises: 'headphones',
   settings: 'cog',
   home: 'home-heart',
   profile: 'emoticon-happy',
