@@ -29,6 +29,11 @@ function ThemedApp() {
         {/* Créditos vive fuera de las tabs: se abre desde Configuración y se
             cierra con la flecha de la cabecera. */}
         <Stack.Screen name="credits" />
+        {/* La elección de nivel y la ronda también viven fuera de las tabs:
+            una ronda empezada no debe poder abandonarse por accidente
+            tocando otra pestaña. */}
+        <Stack.Screen name="exercise/levels" />
+        <Stack.Screen name="exercise/round" />
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />

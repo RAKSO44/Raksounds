@@ -31,6 +31,10 @@ module.exports = {
   useAnimatedStyle: () => ({}),
   withTiming: (toValue) => toValue,
   withSpring: (toValue) => toValue,
+  // Una secuencia acaba en su último paso: es el valor que tendría la
+  // animación al terminar, que es lo único observable desde un test.
+  withSequence: (...steps) => steps[steps.length - 1],
+  withDelay: (_delay, animation) => animation,
   runOnJS: (fn) => fn,
   FadeIn: animationBuilder,
   FadeInDown: animationBuilder,

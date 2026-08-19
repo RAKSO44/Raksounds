@@ -19,6 +19,7 @@ export default function TabsLayout() {
       tabBar={(props) => <DuolingoTabBar {...(props as unknown as TabBarProps)} />}
     >
       <Tabs.Screen name="index" options={{ title: 'Librería' }} />
+      <Tabs.Screen name="exercises" options={{ title: 'Ejercicios' }} />
       <Tabs.Screen name="settings" options={{ title: 'Configuración' }} />
       {/* Home y Perfil siguen como rutas (placeholders) pero ocultas del
           tab bar con href: null hasta que se implementen. */}
