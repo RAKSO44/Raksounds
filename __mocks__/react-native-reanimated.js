@@ -24,13 +24,28 @@ const Animated = {
   createAnimatedComponent: (Component) => Component,
 };
 
+// Curvas de easing: en un test no hay tiempo que interpolar, así que basta con
+// que existan y sean encadenables (Easing.out(Easing.cubic)).
+const easingFn = () => 0;
+const Easing = new Proxy(
+  {},
+  {
+    get: () => () => easingFn,
+  },
+);
+
 module.exports = {
   __esModule: true,
   default: Animated,
+  Easing,
   useSharedValue: (initial) => ({ value: initial }),
   useAnimatedStyle: () => ({}),
   withTiming: (toValue) => toValue,
   withSpring: (toValue) => toValue,
+  // Una secuencia acaba en su último paso: es el valor que tendría la
+  // animación al terminar, que es lo único observable desde un test.
+  withSequence: (...steps) => steps[steps.length - 1],
+  withDelay: (_delay, animation) => animation,
   runOnJS: (fn) => fn,
   FadeIn: animationBuilder,
   FadeInDown: animationBuilder,

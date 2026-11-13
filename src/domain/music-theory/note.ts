@@ -99,6 +99,39 @@ export function sameNoteName(a: NoteName, b: NoteName): boolean {
   return a.letter === b.letter && a.accidental === b.accidental;
 }
 
+/**
+ * Deletrea la nota que está a `letterStep` letras y `semitones` semitonos de
+ * una tónica. Es el núcleo compartido por la construcción de escalas (donde el
+ * paso de letra sale de la fórmula) y por los intervalos del entrenamiento
+ * auditivo (donde sale del número del intervalo: una 3ª avanza 2 letras).
+ *
+ * La letra decide el nombre y la octava; la alteración es lo que falta para
+ * llegar a la altura objetivo. Así E♭ + 6ª mayor da C, no B♯, sin tablas por
+ * tonalidad.
+ *
+ * Devuelve `null` si el resultado exigiera más de un doble sostenido/bemol:
+ * esa nota no es representable y quien llama decide qué hacer (descartarla o
+ * fallar con su propio mensaje).
+ */
+export function spellFromRoot(
+  root: NoteName,
+  rootOctave: number,
+  letterStep: number,
+  semitones: number,
+): Note | null {
+  const absoluteLetterIndex = letterIndex(root.letter) + letterStep;
+  const letter = NOTE_LETTERS[((absoluteLetterIndex % 7) + 7) % 7];
+  // La octava científica pertenece a la letra: sube cada vez que el ciclo de
+  // letras pasa de B a C.
+  const octave = rootOctave + Math.floor(absoluteLetterIndex / 7);
+
+  const targetMidi = noteToMidi({ name: root, octave: rootOctave }) + semitones;
+  const accidental = targetMidi - noteToMidi({ name: { letter, accidental: 0 }, octave });
+
+  if (accidental < -2 || accidental > 2) return null;
+  return { name: { letter, accidental: accidental as Accidental }, octave };
+}
+
 export type AccidentalPreference = 'sharp' | 'flat';
 
 /** Deletreos con sostenidos por clase de altura (índice 0–11). */

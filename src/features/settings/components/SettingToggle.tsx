@@ -1,8 +1,16 @@
-import type { ComponentType } from 'react';
-import { Switch, type SwitchProps } from 'react-native';
+import { Switch } from 'react-native';
 
 import { hapticTap } from '@/shared/haptics';
 import { useTheme } from '@/shared/theme';
+
+/**
+ * `activeThumbColor` es una prop EXCLUSIVA de react-native-web: allí el círculo
+ * del interruptor encendido ignora `thumbColor` y cae en el verde por defecto
+ * de la librería (#009688). En nativo la prop no existe y se descarta.
+ */
+interface WebOnlySwitchProps {
+  activeThumbColor?: string;
+}
 
 interface SettingToggleProps {
   /** Nombre accesible del interruptor (la sección ya rotula el ajuste). */
@@ -10,13 +18,6 @@ interface SettingToggleProps {
   value: boolean;
   onValueChange: (value: boolean) => void;
 }
-
-// react-native-web's Switch (a diferencia del Switch nativo) usa un color de
-// thumb DISTINTO para el estado activo (`activeThumbColor`, no tipado por
-// @types/react-native porque es propio de la implementación web) y por
-// defecto es un teal (#009688) si no se pasa. Sin este cast quedaba el
-// círculo del toggle en cyan al activarse solo en web.
-const ThemedSwitch = Switch as ComponentType<SwitchProps & { activeThumbColor?: string }>;
 
 /**
  * Interruptor on/off tematizado (track morado de marca al estar activo). Se
@@ -33,13 +34,13 @@ export function SettingToggle({ accessibilityLabel, value, onValueChange }: Sett
   };
 
   return (
-    <ThemedSwitch
+    <Switch
       value={value}
       onValueChange={handleChange}
       accessibilityLabel={accessibilityLabel}
       trackColor={{ false: colors.surfaceShadow, true: colors.brand }}
       thumbColor={colors.textOnBrand}
-      activeThumbColor={colors.textOnBrand}
+      {...({ activeThumbColor: colors.textOnBrand } satisfies WebOnlySwitchProps)}
       ios_backgroundColor={colors.surfaceShadow}
       style={{ transform: [{ scale: 1.25 }] }}
     />
