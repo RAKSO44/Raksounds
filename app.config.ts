@@ -68,7 +68,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
       },
     ],
-    'react-native-audio-api',
+    [
+      'react-native-audio-api',
+      {
+        // Los ejercicios de entonación escuchan la voz con el micrófono.
+        iosMicrophonePermission:
+          'Raksound usa el micrófono para escuchar tu voz y decirte si cantaste la nota afinada.',
+        // Pasar la lista reemplaza la del plugin, así que se repiten sus valores
+        // por defecto (servicio en primer plano) y se añade el micrófono.
+        androidPermissions: [
+          'android.permission.RECORD_AUDIO',
+          'android.permission.FOREGROUND_SERVICE',
+          'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
+        ],
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,
