@@ -40,6 +40,8 @@ export interface SingingTake {
   start: () => void;
   /** Cierra la toma ya y califica lo que se haya cantado. */
   finish: () => void;
+  /** Olvida el problema de la última toma (p. ej. al cerrar el aviso de permiso). */
+  clearProblem: () => void;
 }
 
 /**
@@ -126,5 +128,7 @@ export function useSingingTake(onSung: (midi: number) => void): SingingTake {
     [],
   );
 
-  return { status, problem, level, start, finish: close };
+  const clearProblem = useCallback(() => setProblem(null), []);
+
+  return { status, problem, level, start, finish: close, clearProblem };
 }

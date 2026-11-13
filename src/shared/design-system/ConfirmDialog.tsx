@@ -3,7 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { radii, spacing, typography, useTheme } from '@/shared/theme';
 
-import { PushButton } from './PushButton';
+import { PushButton, PushButtonTone } from './PushButton';
 
 interface ConfirmDialogProps {
   visible: boolean;
@@ -11,6 +11,11 @@ interface ConfirmDialogProps {
   message: string;
   /** Texto del botón que confirma la acción (el destructivo). */
   confirmLabel: string;
+  /**
+   * Color del botón de confirmar. Rojo por defecto (acción que se pierde);
+   * otro tono cuando confirmar no destruye nada (p. ej. abrir ajustes).
+   */
+  confirmTone?: PushButtonTone;
   cancelLabel: string;
   onConfirm: () => void;
   /** Cancelar o pedir cerrar el diálogo (backdrop, botón atrás del sistema). */
@@ -31,6 +36,7 @@ export function ConfirmDialog({
   title,
   message,
   confirmLabel,
+  confirmTone = 'danger',
   cancelLabel,
   onConfirm,
   onCancel,
@@ -62,7 +68,7 @@ export function ConfirmDialog({
             />
             <PushButton
               variant="solid"
-              tone="danger"
+              tone={confirmTone}
               label={confirmLabel}
               style={styles.action}
               size="compact"

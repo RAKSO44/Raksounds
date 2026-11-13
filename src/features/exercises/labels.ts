@@ -268,6 +268,8 @@ export function singingTargetLabel(target: SingingTarget): string {
 /**
  * Texto bajo el micrófono: qué hacer ahora o por qué la última toma no sirvió.
  * Un problema manda sobre la instrucción, porque explica por qué no avanzó.
+ * La falta de permiso NO se explica aquí: se resuelve con un diálogo que
+ * ofrece activarlo (ver `SingingRoundScreen`).
  */
 export function micHintLabel(
   status: 'idle' | 'starting' | 'listening',
@@ -275,7 +277,6 @@ export function micHintLabel(
 ): string {
   if (status === 'listening') return 'Te escucho… calla al terminar';
   if (status === 'starting') return 'Abriendo el micrófono…';
-  if (problem === 'denied') return 'Sin permiso de micrófono: actívalo en los ajustes del sistema';
   if (problem === 'unavailable') return 'No se pudo abrir el micrófono';
   if (problem === 'silent') return 'No te escuché bien. Toca el micrófono y vuelve a cantar';
   return 'Toca el micrófono y canta';

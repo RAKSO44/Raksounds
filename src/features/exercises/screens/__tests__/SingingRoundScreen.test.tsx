@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { act, render, screen, userEvent } from '@testing-library/react-native';
+import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { MicrophoneFrame, MicrophoneStartResult } from '@/domain/audio/IMicrophone';
@@ -181,16 +182,33 @@ describe('SingingRoundScreen — entonación de intervalos', () => {
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
   });
 
-  it('sin permiso de micrófono lo explica', async () => {
+  it('sin permiso de micrófono ofrece activarlo, sin texto bajo el micro', async () => {
     mockStartResult = 'denied';
+    const openSettings = jest.spyOn(Linking, 'openSettings').mockResolvedValue(undefined);
     const user = userEvent.setup();
     await renderScreen();
 
     await user.press(screen.getByRole('button', { name: 'Cantar' }));
 
-    expect(
-      screen.getByText('Sin permiso de micrófono: actívalo en los ajustes del sistema'),
-    ).toBeOnTheScreen();
+    expect(screen.getByText('Activa el micrófono')).toBeOnTheScreen();
+    expect(screen.queryByText(/ajustes del sistema/)).toBeNull();
+
+    await user.press(screen.getByText('Activar'));
+
+    expect(openSettings).toHaveBeenCalled();
+    expect(screen.queryByText('Activa el micrófono')).toBeNull();
+  });
+
+  it('"Ahora no" cierra el aviso de permiso', async () => {
+    mockStartResult = 'denied';
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Cantar' }));
+    await user.press(screen.getByText('Ahora no'));
+
+    expect(screen.queryByText('Activa el micrófono')).toBeNull();
+    expect(screen.getByText('Toca el micrófono y canta')).toBeOnTheScreen();
   });
 
   it(
