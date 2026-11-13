@@ -1,43 +1,43 @@
 import Animated, { FadeInDown } from 'react-native-reanimated';
 
-import { ExerciseLevel } from '@/domain/ear-training';
+import { LevelTier } from '@/domain/ear-training';
 import { PushButton } from '@/shared/design-system';
 import { motion, typography } from '@/shared/theme';
 
-import { INTERVAL_COMPACT_LABELS, TIER_TONES } from '../labels';
+import { TIER_TONES } from '../labels';
 
 interface LevelOptionProps {
-  level: ExerciseLevel;
+  /** Número visible del nivel. */
+  number: number;
+  tier: LevelTier;
+  /** Qué trae el nivel ("+ 3ªM y 3ªm", "Tríadas con inversiones"). */
+  summary: string;
   selected: boolean;
   onSelect: () => void;
 }
 
 /**
- * Fila de un nivel: el número a la izquierda y lo que ese nivel añade a la
+ * Fila de un nivel: el número a la izquierda y lo que ese nivel trae a la
  * derecha. En reposo TODOS los niveles son iguales (neutros): el color de la
- * dificultad —verde, amarillo, morado y rojo para el tritono— aparece solo al
- * elegir uno, que es lo que hace que la elección se lea.
+ * dificultad —verde, amarillo y rojo— aparece solo al elegir uno, que es lo que
+ * hace que la elección se lea.
+ *
+ * No sabe de qué ejercicio es el nivel: el resumen lo prepara la pantalla, así
+ * sirve igual para los niveles de intervalos y para los de acordes.
  */
-export function LevelOption({ level, selected, onSelect }: LevelOptionProps) {
-  // A partir del segundo nivel el resumen es incremental ("+ 3ªM y 3ªm"): lo
-  // que importa al elegir es qué se suma, no repetir toda la lista acumulada.
-  const added = level.added.map((interval) => INTERVAL_COMPACT_LABELS[interval]).join(' y ');
-  const summary = level.number === 1 ? added : `+ ${added}`;
-
+export function LevelOption({ number, tier, summary, selected, onSelect }: LevelOptionProps) {
   return (
-    <Animated.View
-      entering={FadeInDown.duration(motion.enter).delay(level.number * motion.stagger)}
-    >
+    <Animated.View entering={FadeInDown.duration(motion.enter).delay(number * motion.stagger)}>
       <PushButton
         variant="selectable"
-        tone={TIER_TONES[level.tier]}
+        tone={TIER_TONES[tier]}
         align="spread"
-        label={`NIVEL ${level.number}`}
+        label={`NIVEL ${number}`}
         labelStyle={typography.note}
         sublabel={summary}
         selected={selected}
         fullWidth
-        accessibilityLabel={`Nivel ${level.number}: ${summary}`}
+        accessibilityLabel={`Nivel ${number}: ${summary}`}
         onPress={onSelect}
       />
     </Animated.View>

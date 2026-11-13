@@ -1,12 +1,21 @@
+import { ComponentProps } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { PushButton, PushButtonTone } from '@/shared/design-system';
 import { controls, motion, spacing, typography, useTheme } from '@/shared/theme';
 
+type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
+
 interface NoteKeyProps {
   /** Texto de la cara: la nota ("G4") o el "?" mientras está oculta. */
-  label: string;
+  label?: string;
+  /**
+   * Ícono en vez de (o además de) texto: para una tecla que no debe delatar sus
+   * notas, como la del acorde que hay que analizar.
+   */
+  icon?: IconName;
   /** Rótulo bajo la tecla ("Nota base", "Nota a adivinar"). */
   caption: string;
   tone?: PushButtonTone;
@@ -26,6 +35,7 @@ interface NoteKeyProps {
  */
 export function NoteKey({
   label,
+  icon,
   caption,
   tone = 'brand',
   disabled,
@@ -37,11 +47,12 @@ export function NoteKey({
 
   return (
     <View style={styles.container}>
-      <Animated.View key={label} entering={FadeIn.duration(motion.enter)}>
+      <Animated.View key={label ?? icon} entering={FadeIn.duration(motion.enter)}>
         <PushButton
           variant="solid"
           tone={tone}
           label={label}
+          icon={icon}
           labelStyle={typography.noteLarge}
           minWidth={controls.noteTileSize}
           disabled={disabled}

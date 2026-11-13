@@ -91,4 +91,31 @@ describe('LevelSelectScreen', () => {
 
     expect(mockBack).toHaveBeenCalled();
   });
+
+  it('entonación de intervalos usa los mismos siete niveles y lleva a la ronda cantada', async () => {
+    mockParams = { mode: 'singInterval' };
+    const user = userEvent.setup();
+    await renderScreen();
+
+    expect(screen.getByText('Entonación de intervalos')).toBeOnTheScreen();
+    expect(screen.getByText('NIVEL 7')).toBeOnTheScreen();
+
+    await user.press(screen.getByText('NIVEL 2'));
+    await user.press(screen.getByText('Confirmar'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/exercise/sing',
+      params: { kind: 'singInterval', level: '2' },
+    });
+  });
+
+  it('entonación de notas tiene sus cinco niveles propios', async () => {
+    mockParams = { mode: 'singNote' };
+    await renderScreen();
+
+    expect(screen.getByText('Una nota: cántala igual')).toBeOnTheScreen();
+    expect(screen.getByText('Tríadas invertidas')).toBeOnTheScreen();
+    expect(screen.getByText('NIVEL 5')).toBeOnTheScreen();
+    expect(screen.queryByText('NIVEL 6')).toBeNull();
+  });
 });

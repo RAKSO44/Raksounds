@@ -46,6 +46,16 @@ export const controls = {
   statIconGap: 12,
   /** Ancho de la columna vertical del modo mixto en el menú de Ejercicios. */
   verticalOptionWidth: 56,
+  /** Lado del botón de micrófono en reposo (cuadrado, como en Duolingo). */
+  micButtonSize: 88,
+  /** Ancho del botón de micrófono al escuchar (se ensancha a una píldora). */
+  micButtonWideWidth: 200,
+  /** Barras de volumen del micrófono: grosor y alturas mínima y máxima. */
+  micBarWidth: 8,
+  micBarMinHeight: 8,
+  micBarMaxHeight: 40,
+  /** Diámetro de los puntos del micrófono preparándose o deshabilitado. */
+  micDotSize: 8,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -62,6 +72,10 @@ export const motion = {
   progress: 260,
   /** Subida/bajada de la hoja inferior de corrección. */
   sheet: 220,
+  /** Ensanchado del micrófono de cuadrado a píldora (y vuelta). */
+  micResize: 180,
+  /** Suavizado de las barras de volumen entre un bloque de audio y el siguiente. */
+  micLevel: 80,
 } as const;
 
 /**

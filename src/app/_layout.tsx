@@ -36,6 +36,8 @@ function ThemedApp() {
         <Stack.Screen name="exercise/levels" />
         <Stack.Screen name="exercise/round" />
         <Stack.Screen name="exercise/summary" />
+        <Stack.Screen name="exercise/sing" />
+        <Stack.Screen name="exercise/sing-summary" />
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />

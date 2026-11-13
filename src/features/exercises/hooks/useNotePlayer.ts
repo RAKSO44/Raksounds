@@ -15,8 +15,18 @@ export interface NotePlayer {
    * se sueltan por separado y volver a pulsar la misma tecla siempre suena.
    */
   press: (key: string, midi: number) => void;
+  /**
+   * Como `press`, pero la tecla hace sonar VARIAS notas a la vez (un acorde).
+   * Se sueltan juntas con `release(key)`.
+   */
+  pressChord: (key: string, midis: readonly number[]) => void;
   /** El dedo suelta la tecla (o el gesto se cancela). */
   release: (key: string) => void;
+  /**
+   * Suelta todo lo que esté sonando. Se usa antes de abrir el micrófono: el
+   * piano no debe colarse en la toma como si fuera la voz.
+   */
+  silence: () => void;
 }
 
 /**
@@ -37,30 +47,40 @@ export function useNotePlayer(): NotePlayer {
     };
   }, []);
 
-  // Voz sonando por cada tecla pulsada. Es un ref y no estado porque sonar una
-  // nota no repinta nada, y varias teclas pueden estar pulsadas a la vez.
-  const heldVoices = useRef(new Map<string, VoiceHandle>());
+  // Voces sonando por cada tecla pulsada (una tecla de acorde tiene varias).
+  // Es un ref y no estado porque sonar una nota no repinta nada, y varias
+  // teclas pueden estar pulsadas a la vez.
+  const heldVoices = useRef(new Map<string, readonly VoiceHandle[]>());
 
-  const press = useCallback(
-    (key: string, midi: number) => {
+  const pressChord = useCallback(
+    (key: string, midis: readonly number[]) => {
       if (!ready) return;
       const held = heldVoices.current;
-      // Defensa por si un press-out se perdiera: sin esto la voz anterior
-      // quedaría sonando hasta agotar la muestra.
-      const previous = held.get(key);
-      if (previous !== undefined) pianoPlayer.noteOff(previous);
+      // Defensa por si un press-out se perdiera: sin esto las voces anteriores
+      // quedarían sonando hasta agotar la muestra.
+      held.get(key)?.forEach((voice) => pianoPlayer.noteOff(voice));
 
-      held.set(key, pianoPlayer.noteOn(midi));
+      held.set(
+        key,
+        midis.map((midi) => pianoPlayer.noteOn(midi)),
+      );
     },
     [ready],
   );
 
+  const press = useCallback((key: string, midi: number) => pressChord(key, [midi]), [pressChord]);
+
   const release = useCallback((key: string) => {
     const held = heldVoices.current;
-    const voice = held.get(key);
-    if (voice === undefined) return;
+    const voices = held.get(key);
+    if (voices === undefined) return;
     held.delete(key);
-    pianoPlayer.noteOff(voice);
+    voices.forEach((voice) => pianoPlayer.noteOff(voice));
+  }, []);
+
+  const silence = useCallback(() => {
+    heldVoices.current.clear();
+    pianoPlayer.stopAll();
   }, []);
 
   // Al salir del ejercicio no debe quedar ninguna nota colgada.
@@ -72,5 +92,5 @@ export function useNotePlayer(): NotePlayer {
     };
   }, []);
 
-  return { ready, press, release };
+  return { ready, press, pressChord, release, silence };
 }

@@ -19,3 +19,8 @@ un control nuevo, reutiliza estos:
 - **`Header`** — cabecera de marca que cubre el área de la status bar. Con
   `onBack` muestra la flecha de volver.
 - **`DuolingoTabBar`** — barra inferior solo de íconos (juguetones), sin texto.
+- **`MicButton`** — micrófono estilo Duolingo: cuadrado azul con ícono en
+  reposo, se ensancha a píldora con puntos al abrirse, barras que siguen el
+  volumen de la voz al escuchar, y gris hundido con puntos al deshabilitarse.
+  Mismo relieve y háptica que `PushButton`; el volumen llega como `SharedValue`
+  para que las barras se muevan sin repintar React.

@@ -8,10 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { ExerciseKind, IntervalId } from '@/domain/ear-training';
 import { controls, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
-
-import { feedbackDetailLabel } from '../labels';
 
 /** translateY inicial, fuera de pantalla, hasta medir el alto real. */
 const OFFSCREEN = 2000;
@@ -19,13 +16,12 @@ const OFFSCREEN = 2000;
 interface AnswerFeedbackSheetProps {
   /** Sube al corregir y baja al pasar al siguiente ejercicio. */
   visible: boolean;
+  /** Decide el color (verde/rojo) y el ícono. */
   correct: boolean;
-  /** Qué tipo de ejercicio es: decide qué se dice al fallar. */
-  kind: ExerciseKind;
-  /** Intervalo correcto del ejercicio. */
-  answer: IntervalId;
-  /** Lo que el usuario eligió. */
-  chosen: IntervalId;
+  /** Primera línea ("¡Correcto!", "Casi"). */
+  title: string;
+  /** Segunda línea: qué era o qué se respondió. */
+  detail: string;
   /** Alto de la barra de acción, que tapa la parte baja de la hoja. */
   bottomInset: number;
 }
@@ -45,9 +41,8 @@ interface AnswerFeedbackSheetProps {
 export function AnswerFeedbackSheet({
   visible,
   correct,
-  kind,
-  answer,
-  chosen,
+  title,
+  detail,
   bottomInset,
 }: AnswerFeedbackSheetProps) {
   const { colors } = useTheme();
@@ -55,9 +50,9 @@ export function AnswerFeedbackSheet({
   // Instantánea del último contenido mostrado, junto al `visible` con el que se
   // tomó. Solo se refresca en el flanco de SUBIDA, que es cuando la corrección
   // es la del ejercicio en pantalla; al bajar se conserva tal cual.
-  const [displayed, setDisplayed] = useState({ visible, correct, kind, answer, chosen });
+  const [displayed, setDisplayed] = useState({ visible, correct, title, detail });
   if (visible !== displayed.visible) {
-    setDisplayed(visible ? { visible, correct, kind, answer, chosen } : { ...displayed, visible });
+    setDisplayed(visible ? { visible, correct, title, detail } : { ...displayed, visible });
   }
 
   // Empieza muy abajo (aún no se conoce el alto real): así no hay un fotograma
@@ -106,12 +101,8 @@ export function AnswerFeedbackSheet({
           />
         </View>
         <View style={styles.texts}>
-          <Text style={[styles.title, { color: foreground }]}>
-            {displayed.correct ? '¡Correcto!' : 'Casi'}
-          </Text>
-          <Text style={[styles.detail, { color: foreground }]}>
-            {feedbackDetailLabel(displayed)}
-          </Text>
+          <Text style={[styles.title, { color: foreground }]}>{displayed.title}</Text>
+          <Text style={[styles.detail, { color: foreground }]}>{displayed.detail}</Text>
         </View>
       </View>
     </Animated.View>

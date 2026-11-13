@@ -4,3 +4,4 @@ export * from './ConfirmDialog';
 export * from './Header';
 export * from './SectionCard';
 export * from './DuolingoTabBar';
+export * from './MicButton';
