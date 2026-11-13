@@ -43,5 +43,5 @@ example
 /android
 
 
-# docs for proyect context
-/docs
+# local commands with credentials
+/docs/commands.md
