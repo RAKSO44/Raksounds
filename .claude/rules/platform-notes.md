@@ -30,6 +30,20 @@
   limitador soft-clip para acordes de 5+ notas. No reintroducir un slider que
   amplifique.
 
+## Micrófono (entonación)
+
+- Se captura con el `AudioRecorder` de react-native-audio-api (`onAudioReady`,
+  bloques de 2048 muestras), sin librería nueva. El permiso lo declara el
+  plugin en `app.config.ts` (`iosMicrophonePermission` y `RECORD_AUDIO` en
+  `androidPermissions`): ese array REEMPLAZA el del plugin, por eso repite los
+  permisos de servicio en primer plano. Cambiarlo exige `expo prebuild` +
+  rebuild.
+- Antes de abrir el micrófono se silencia el piano y los primeros 250 ms se
+  tratan como silencio (`TAKE_RULES.warmupMs`): si no, la cola de la muestra
+  se califica como si fuera la voz.
+- En web se desactivan `echoCancellation`, `noiseSuppression` y
+  `autoGainControl`: el procesado de llamada deforma la voz cantada.
+
 ## Gestos (multitouch)
 
 - `PushButton` usa `Gesture.LongPress().minDuration(0)` para que el note-on

@@ -36,6 +36,12 @@ suelto en un feature).
   `onBack` muestra una flecha de volver a la izquierda del título.
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
   redondeados y juguetones (`MaterialCommunityIcons`).
+- **`MicButton`** — el micrófono de los ejercicios de hablar de Duolingo, en el
+  azul secundario: cuadrado con ícono en reposo → se ENSANCHA (cambio de
+  ancho con `Easing.out`, nunca escala) a una píldora con 9 puntos mientras se
+  abre → 9 barras simétricas que siguen el volumen real de la voz → gris,
+  plano y hundido (sin labio) con puntos al deshabilitarse tras calificar.
+  Mismo labio, snap y háptica que `PushButton`.
 
 `PushButton` acepta un `icon` opcional (nombre de `MaterialCommunityIcons`) que
 se pinta encima del label con el color del texto del botón. Para un **selector
