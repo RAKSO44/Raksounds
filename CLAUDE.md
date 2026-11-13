@@ -159,6 +159,17 @@ está mal — detente y avísame en vez de continuar.
   `.claude/rules/design-system.md`
 - Jest + React Native Testing Library (v14: `render` es **async**, siempre `await render(...)`)
 
+## Base de datos (Supabase) — preparada, todavía sin usar
+
+El proyecto de Supabase está conectado vía el MCP `supabase` (`.mcp.json`), pero la
+persistencia sigue fuera del MVP: no se crean tablas hasta que el usuario lo pida.
+Cuando se trabaje, **antes de crear o cambiar cualquier objeto** se usa la skill
+`crear-sql-supabase` y se siguen las convenciones de `.claude/rules/base-de-datos.md`
+(PascalCase entre comillas, datos en esquemas privados, la app solo llama funciones
+del esquema `api`, RLS en toda tabla, migraciones versionadas en
+`supabase/migrations/`). Toda escritura por el MCP pide aprobación (hook
+`.claude/hooks/aprobar-escritura-supabase.mjs`).
+
 ## Créditos
 
 El **único** lugar donde viven los créditos del proyecto es `docs/credits/credits.md`.
