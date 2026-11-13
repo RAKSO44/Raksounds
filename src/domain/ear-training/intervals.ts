@@ -61,6 +61,14 @@ export const ALL_INTERVAL_IDS: readonly IntervalId[] = [
   'P8',
 ];
 
+/**
+ * Intervalo ascendente que mide `semitones` (1–12), o `null` fuera de rango.
+ * Seis semitonos se nombran como el tritono del catálogo (4ª aumentada).
+ */
+export function intervalBySemitones(semitones: number): IntervalId | null {
+  return ALL_INTERVAL_IDS.find((id) => INTERVALS[id].semitones === semitones) ?? null;
+}
+
 /** Semitonos de un intervalo (atajo del caso más frecuente). */
 export function semitonesOf(id: IntervalId): number {
   return INTERVALS[id].semitones;

@@ -1,6 +1,12 @@
 import { CHROMATIC_ROOTS, formatNote } from '@/domain/music-theory';
 
-import { ALL_INTERVAL_IDS, INTERVALS, noteAtInterval, semitonesOf } from '../intervals';
+import {
+  ALL_INTERVAL_IDS,
+  intervalBySemitones,
+  INTERVALS,
+  noteAtInterval,
+  semitonesOf,
+} from '../intervals';
 
 describe('INTERVALS', () => {
   it('lista los doce intervalos ascendentes de la octava, sin repetir distancia', () => {
@@ -51,5 +57,18 @@ describe('noteAtInterval', () => {
         expect(noteAtInterval(root, 4, id)).not.toBeNull();
       }
     }
+  });
+});
+
+describe('intervalBySemitones', () => {
+  it('encuentra cada intervalo por su tamaño', () => {
+    expect(intervalBySemitones(7)).toBe('P5');
+    expect(intervalBySemitones(6)).toBe('TT');
+    expect(intervalBySemitones(12)).toBe('P8');
+  });
+
+  it('null fuera del catálogo (unísono o más de una octava)', () => {
+    expect(intervalBySemitones(0)).toBeNull();
+    expect(intervalBySemitones(13)).toBeNull();
   });
 });
