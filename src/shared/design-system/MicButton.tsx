@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -6,6 +6,7 @@ import Animated, {
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -38,6 +39,21 @@ const PRESS_SLOP = 20;
  */
 const BAR_PROFILE = [0.35, 0.55, 0.75, 0.9, 1, 0.9, 0.75, 0.55, 0.35] as const;
 
+/** Qué pinta la cara en cada estado. */
+type MicContent = 'icon' | 'dots' | 'bars';
+
+function contentOf(state: MicButtonState): MicContent {
+  if (state === 'idle') return 'icon';
+  if (state === 'listening') return 'bars';
+  return 'dots';
+}
+
+function widthOf(state: MicButtonState): number {
+  return state === 'idle' ? controls.micButtonSize : controls.micButtonWideWidth;
+}
+
+const CONTENT_FADE = { duration: motion.micContent, easing: Easing.out(Easing.quad) };
+
 /**
  * Botón de micrófono estilo Duolingo.
  *
@@ -46,6 +62,9 @@ const BAR_PROFILE = [0.35, 0.55, 0.75, 0.9, 1, 0.9, 0.75, 0.55, 0.35] as const;
  * estado en estado, y al pasar de reposo a escuchar se ENSANCHA de cuadrado a
  * píldora. Es un cambio de ancho, corto y con curva de salida: no crece en
  * escala ni rebota.
+ *
+ * El contenido nunca cambia a la vez que el ancho: primero se desvanece, luego
+ * el botón se ensancha (o se encoge) y al final entra el contenido nuevo.
  *
  * Deshabilitado se ve como en Duolingo tras hablar: gris, sin labio y hundido
  * (la cara ocupa el sitio del labio), con los puntos en gris.
@@ -56,22 +75,54 @@ export function MicButton({ state, level, onPress, accessibilityLabel }: MicButt
   const interactive = state === 'idle' || state === 'listening';
 
   const pressOffset = useSharedValue(disabled ? elevation.buttonLip : 0);
-  const width = useSharedValue<number>(
-    state === 'idle' ? controls.micButtonSize : controls.micButtonWideWidth,
-  );
+  const width = useSharedValue<number>(widthOf(state));
+  const iconOpacity = useSharedValue(contentOf(state) === 'icon' ? 1 : 0);
+  const dotsOpacity = useSharedValue(contentOf(state) === 'dots' ? 1 : 0);
+  const barsOpacity = useSharedValue(contentOf(state) === 'bars' ? 1 : 0);
+
+  const previousState = useRef(state);
+  // Momento (ms, reloj de pared) en que termina el último ensanchado. Un estado
+  // que llega a mitad de él (el micro abre antes de que se vean los puntos)
+  // debe esperar igual: si no, su contenido aparecería en un botón aún estrecho.
+  const resizeEndsAt = useRef(0);
 
   useEffect(() => {
-    width.value = withTiming(
-      state === 'idle' ? controls.micButtonSize : controls.micButtonWideWidth,
-      {
-        duration: motion.micResize,
-        easing: Easing.out(Easing.cubic),
-      },
-    );
+    const from = previousState.current;
+    previousState.current = state;
     // Deshabilitado = hundido: snap, igual que una pulsación.
-
     pressOffset.value = disabled ? elevation.buttonLip : 0;
-  }, [state, disabled, width, pressOffset]);
+    if (from === state) return;
+
+    // Cambiar de ancho con contenido dentro hace que los puntos se salgan del
+    // cuadrado (9 puntos no caben en 88 px). Así que va en tres tiempos, como en
+    // Duolingo: el contenido se desvanece, el botón cambia de ancho vacío, y el
+    // contenido nuevo aparece cuando ya tiene sitio.
+    const now = Date.now();
+    if (widthOf(from) !== widthOf(state)) {
+      width.value = withDelay(
+        motion.micContent,
+        withTiming(widthOf(state), {
+          duration: motion.micResize,
+          easing: Easing.out(Easing.cubic),
+        }),
+      );
+      resizeEndsAt.current = now + motion.micContent + motion.micResize;
+    }
+    const fadeInDelay = Math.max(0, resizeEndsAt.current - now);
+
+    const next = contentOf(state);
+    const layers: [MicContent, typeof iconOpacity][] = [
+      ['icon', iconOpacity],
+      ['dots', dotsOpacity],
+      ['bars', barsOpacity],
+    ];
+    for (const [content, opacity] of layers) {
+      opacity.value =
+        content === next
+          ? withDelay(fadeInDelay, withTiming(1, CONTENT_FADE))
+          : withTiming(0, CONTENT_FADE);
+    }
+  }, [state, disabled, width, pressOffset, iconOpacity, dotsOpacity, barsOpacity]);
 
   const handlePressIn = useCallback(() => {
     // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
@@ -101,6 +152,9 @@ export function MicButton({ state, level, onPress, accessibilityLabel }: MicButt
 
   const containerStyle = useAnimatedStyle(() => ({ width: width.value }));
   const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: pressOffset.value }] }));
+  const iconStyle = useAnimatedStyle(() => ({ opacity: iconOpacity.value }));
+  const dotsStyle = useAnimatedStyle(() => ({ opacity: dotsOpacity.value }));
+  const barsStyle = useAnimatedStyle(() => ({ opacity: barsOpacity.value }));
 
   const faceColor = disabled ? colors.disabledSurface : colors.secondary;
   const lipColor = disabled ? colors.disabledSurface : colors.secondaryShadow;
@@ -120,11 +174,17 @@ export function MicButton({ state, level, onPress, accessibilityLabel }: MicButt
       >
         <View style={[styles.lip, { backgroundColor: lipColor }]} />
         <Animated.View style={[styles.face, { backgroundColor: faceColor }, faceStyle]}>
-          {state === 'idle' && (
+          {/* Las tres capas están siempre montadas, una encima de otra, y solo
+              cambia su opacidad: así una puede desvanecerse mientras otra entra. */}
+          <Animated.View style={[styles.layer, iconStyle]}>
             <MaterialCommunityIcons name="microphone" size={40} color={contentColor} />
-          )}
-          {(state === 'starting' || disabled) && <Dots color={contentColor} />}
-          {state === 'listening' && <Bars color={contentColor} level={level} />}
+          </Animated.View>
+          <Animated.View style={[styles.layer, dotsStyle]}>
+            <Dots color={contentColor} />
+          </Animated.View>
+          <Animated.View style={[styles.layer, barsStyle]}>
+            <Bars color={contentColor} level={level} />
+          </Animated.View>
         </Animated.View>
       </Animated.View>
     </GestureDetector>
@@ -192,6 +252,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  layer: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   row: {
     flexDirection: 'row',
