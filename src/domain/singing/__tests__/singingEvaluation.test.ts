@@ -20,14 +20,14 @@ const FIFTH_OVER_C: IntervalSingingExercise = {
 describe('evaluateSinging', () => {
   it('afinado exacto', () => {
     expect(evaluateSinging(FIFTH_OVER_C, 67)).toEqual({
-      verdict: 'correct',
+      verdict: 'perfect',
       centsOff: 0,
       sungOffset: 7,
     });
   });
 
   it('acepta la nota en cualquier octava (voz grave una octava abajo)', () => {
-    expect(evaluateSinging(FIFTH_OVER_C, 55.1).verdict).toBe('correct');
+    expect(evaluateSinging(FIFTH_OVER_C, 55.1).verdict).toBe('perfect');
     expect(evaluateSinging(FIFTH_OVER_C, 55.1).centsOff).toBe(10);
   });
 
@@ -36,7 +36,10 @@ describe('evaluateSinging', () => {
     expect(evaluateSinging(FIFTH_OVER_C, 67.3).centsOff).toBe(30);
   });
 
-  it('distingue afinado, casi y otra nota', () => {
+  it('distingue perfecto, afinado, casi y otra nota', () => {
+    expect(verdictFor(0)).toBe('perfect');
+    expect(verdictFor(-10)).toBe('perfect');
+    expect(verdictFor(11)).toBe('correct');
     expect(verdictFor(25)).toBe('correct');
     expect(verdictFor(-26)).toBe('close');
     expect(verdictFor(50)).toBe('close');
@@ -134,6 +137,16 @@ describe('summarizeSingingRound', () => {
     expect(summary.averageCentsOff).toBe(20);
     expect(summary.tendencyCents).toBe(-20);
     expect(summary.missedTargets).toEqual([{ kind: 'interval', interval: 'M3' }]);
+  });
+
+  it('"perfecto" cuenta como acierto y "casi" como fallo', () => {
+    const summary = summarizeSingingRound([
+      record({ verdict: 'perfect', centsOff: 3 }),
+      record({ verdict: 'correct', centsOff: 20 }),
+      record({ verdict: 'close', centsOff: 40 }),
+    ]);
+    expect(summary.correctCount).toBe(2);
+    expect(summary.missedTargets).toHaveLength(1);
   });
 
   it('agrupa los fallos por función de acorde', () => {

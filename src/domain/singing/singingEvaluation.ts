@@ -13,6 +13,11 @@ import { SingingExercise } from './singingGenerator';
  * Las desviaciones se miden en cents (1 semitono = 100 cents).
  */
 
+/**
+ * Hasta aquí la toma es "perfecta". 10 cents es lo más fino que la detección
+ * por micrófono distingue de forma fiable; por debajo sería ruido de medida.
+ */
+export const PERFECT_CENTS = 10;
 /** Hasta aquí la nota está afinada. */
 export const IN_TUNE_CENTS = 25;
 /**
@@ -22,11 +27,17 @@ export const IN_TUNE_CENTS = 25;
 export const CLOSE_CENTS = 50;
 
 /**
+ * - `perfect`: clavada (|desviación| ≤ 10 cents). Es un acierto.
  * - `correct`: afinada (|desviación| ≤ 25 cents).
  * - `close`: la nota pedida, pero desafinada (≤ 50 cents). Cuenta como fallo.
  * - `wrong`: otra nota.
  */
-export type SingingVerdict = 'correct' | 'close' | 'wrong';
+export type SingingVerdict = 'perfect' | 'correct' | 'close' | 'wrong';
+
+/** Si el veredicto cuenta como acierto en la ronda (`perfect` y `correct`). */
+export function isSingingHit(verdict: SingingVerdict): boolean {
+  return verdict === 'perfect' || verdict === 'correct';
+}
 
 export interface SingingEvaluation {
   readonly verdict: SingingVerdict;
@@ -47,6 +58,7 @@ function foldToOctave(semitones: number): number {
 
 export function verdictFor(centsOff: number): SingingVerdict {
   const distance = Math.abs(centsOff);
+  if (distance <= PERFECT_CENTS) return 'perfect';
   if (distance <= IN_TUNE_CENTS) return 'correct';
   if (distance <= CLOSE_CENTS) return 'close';
   return 'wrong';

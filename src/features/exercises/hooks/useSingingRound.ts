@@ -4,6 +4,7 @@ import { countReplays } from '@/domain/ear-training';
 import {
   createSingingRound,
   evaluateSinging,
+  isSingingHit,
   SingingEvaluation,
   SingingExercise,
   SingingKind,
@@ -85,7 +86,7 @@ export function useSingingRound({ kind, levelNumber }: RoundOptions): SingingRou
         replayCount: countReplays(listened.current),
       });
 
-      if (result.verdict === 'correct') hapticSuccess();
+      if (isSingingHit(result.verdict)) hapticSuccess();
       else hapticError();
 
       setEvaluation(result);

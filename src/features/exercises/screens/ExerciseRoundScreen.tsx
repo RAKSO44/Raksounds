@@ -137,7 +137,7 @@ export function ExerciseRoundScreen() {
       {round.exercise !== null && (
         <AnswerFeedbackSheet
           visible={revealed}
-          correct={round.isCorrect ?? false}
+          result={round.isCorrect === true ? 'correct' : 'wrong'}
           title={feedbackTitleLabel(round.isCorrect ?? false)}
           detail={feedbackDetailLabel({
             kind: round.exercise.kind,

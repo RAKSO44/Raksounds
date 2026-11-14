@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { parseSingingKind } from '@/domain/singing';
 import { ConfirmDialog, Header, MicButton } from '@/shared/design-system';
@@ -15,6 +15,7 @@ import {
   BottomActionBar,
   ExerciseProgressBar,
   SingingExerciseView,
+  TuningGauge,
 } from '../components';
 import { useNoteFormatter } from '../hooks/useNoteFormatter';
 import { useNotePlayer } from '../hooks/useNotePlayer';
@@ -42,6 +43,7 @@ export function SingingRoundScreen() {
 
   const [leaving, setLeaving] = useState(false);
   const [actionBarHeight, setActionBarHeight] = useState(0);
+  const [sheetHeight, setSheetHeight] = useState(0);
 
   const revealed = round.phase === 'revealed';
 
@@ -94,9 +96,13 @@ export function SingingRoundScreen() {
     }, [askToLeave]),
   );
 
-  const micState = revealed ? 'disabled' : take.status;
   const exercise = round.exercise;
   const evaluation = round.evaluation;
+
+  // Con la hoja arriba, el contenido se centra en lo que queda visible encima
+  // de ella (la hoja tapa desde abajo hasta la barra de acción, que ya está
+  // fuera del ScrollView). Así el teclado de la corrección no queda debajo.
+  const sheetOverlap = revealed ? Math.max(0, sheetHeight - actionBarHeight) : 0;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -107,7 +113,10 @@ export function SingingRoundScreen() {
       </View>
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[
+          styles.content,
+          revealed && { paddingBottom: sheetOverlap + spacing.md },
+        ]}
         showsVerticalScrollIndicator={false}
         style={styles.scroll}
       >
@@ -115,6 +124,7 @@ export function SingingRoundScreen() {
           <Animated.View
             key={round.index}
             entering={FadeIn.duration(motion.enter)}
+            layout={LinearTransition.duration(motion.sheet).easing(Easing.out(Easing.cubic))}
             style={styles.exercise}
           >
             <SingingExerciseView exercise={exercise} revealed={revealed} player={player} />
@@ -125,28 +135,45 @@ export function SingingRoundScreen() {
           <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
         )}
 
-        <View style={styles.mic}>
-          <MicButton
-            state={micState}
-            level={take.level}
-            onPress={take.status === 'listening' ? take.finish : startTake}
-            accessibilityLabel={take.status === 'listening' ? 'Terminar de cantar' : 'Cantar'}
-          />
-          {!revealed && (
+        {/* Al corregir, la hoja tapa el micrófono: se desvanece mientras ella
+            sube y deja su sitio al teclado de la corrección. */}
+        {!revealed && (
+          <Animated.View
+            entering={FadeIn.duration(motion.enter)}
+            exiting={FadeOut.duration(motion.exit)}
+            style={styles.mic}
+          >
+            <MicButton
+              state={take.status}
+              level={take.level}
+              onPress={take.status === 'listening' ? take.finish : startTake}
+              accessibilityLabel={take.status === 'listening' ? 'Terminar de cantar' : 'Cantar'}
+            />
             <Text style={[styles.hint, { color: colors.textSecondary }]}>
               {micHintLabel(take.status, take.problem)}
             </Text>
-          )}
-        </View>
+          </Animated.View>
+        )}
       </ScrollView>
 
       {exercise !== null && (
         <AnswerFeedbackSheet
           visible={revealed}
-          correct={evaluation?.verdict === 'correct'}
+          result={evaluation?.verdict ?? 'wrong'}
           title={evaluation === null ? '' : singingTitleLabel(evaluation.verdict)}
           detail={evaluation === null ? '' : singingDetailLabel(exercise, evaluation, format)}
           bottomInset={actionBarHeight}
+          onHeight={setSheetHeight}
+          accessory={
+            evaluation === null ? undefined : (
+              <TuningGauge
+                key={round.index}
+                centsOff={evaluation.centsOff}
+                verdict={evaluation.verdict}
+                targetLabel={format(exercise.target)}
+              />
+            )
+          }
         />
       )}
 

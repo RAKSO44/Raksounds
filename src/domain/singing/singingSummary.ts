@@ -1,6 +1,6 @@
 import { IntervalId } from '../ear-training';
 import { ChordFunction } from './chords';
-import { SingingVerdict } from './singingEvaluation';
+import { isSingingHit, SingingVerdict } from './singingEvaluation';
 import { SingingExercise } from './singingGenerator';
 
 /**
@@ -70,7 +70,7 @@ export function summarizeSingingRound(records: readonly SingingRecord[]): Singin
   let correctCount = 0;
 
   for (const record of records) {
-    if (record.verdict === 'correct') correctCount += 1;
+    if (isSingingHit(record.verdict)) correctCount += 1;
     else if (!missed.some((target) => sameTarget(target, record.target)))
       missed.push(record.target);
   }

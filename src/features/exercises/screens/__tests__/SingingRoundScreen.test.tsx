@@ -126,7 +126,7 @@ describe('SingingRoundScreen — entonación de intervalos', () => {
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeDisabled();
   });
 
-  it('cantar afinado (en cualquier octava) da "¡Afinado!"', async () => {
+  it('cantar clavado (en cualquier octava) da "¡Perfecto!"', async () => {
     const user = userEvent.setup();
     await renderScreen();
 
@@ -137,8 +137,10 @@ describe('SingingRoundScreen — entonación de intervalos', () => {
     // Do3: una voz grave cantando una octava abajo.
     await sing(48);
 
-    expect(screen.getByText('¡Afinado!')).toBeOnTheScreen();
+    expect(screen.getByText('¡Perfecto!')).toBeOnTheScreen();
     expect(screen.getByText('C5, justo en el centro')).toBeOnTheScreen();
+    // Sobre la hoja, la barra de afinación centrada en la nota pedida.
+    expect(screen.getByLabelText(/^Afinación: -?\d+ cents respecto a C5$/)).toBeOnTheScreen();
     expect(mockMicStop).toHaveBeenCalled();
     expect(screen.getByRole('button', { name: 'Continuar' })).toBeEnabled();
   });
@@ -152,18 +154,30 @@ describe('SingingRoundScreen — entonación de intervalos', () => {
 
     expect(screen.getByText('Esa no era')).toBeOnTheScreen();
     expect(screen.getByText('Cantaste una 5ª justa; era C5')).toBeOnTheScreen();
+    // Otra nota: la aguja se pega al borde y dice hacia qué lado.
+    expect(screen.getByText('« más grave')).toBeOnTheScreen();
     // Al corregir aparece la tecla con la nota que había que cantar.
     expect(screen.getByText('Había que cantar')).toBeOnTheScreen();
   });
 
-  it('desafinado pero en la nota: "Casi", con cuánto y hacia dónde', async () => {
+  it('afinado pero no clavado: "¡Afinado!"', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Cantar' }));
+    await sing(71.82);
+
+    expect(screen.getByText('¡Afinado!')).toBeOnTheScreen();
+  });
+
+  it('desafinado pero en la nota: "¡Casi!", con cuánto y hacia dónde', async () => {
     const user = userEvent.setup();
     await renderScreen();
 
     await user.press(screen.getByRole('button', { name: 'Cantar' }));
     await sing(71.65);
 
-    expect(screen.getByText('Casi')).toBeOnTheScreen();
+    expect(screen.getByText('¡Casi!')).toBeOnTheScreen();
     expect(screen.getByText(/C5, 3\d cents bajo/)).toBeOnTheScreen();
   });
 
@@ -243,6 +257,8 @@ describe('SingingRoundScreen — entonación de notas', () => {
 
     // Nivel 3 con random = 0: tríada de C mayor, se pide la fundamental.
     expect(screen.getByText('Canta la fundamental')).toBeOnTheScreen();
+    // La tecla lleva el nombre del acorde.
+    expect(screen.getByText('C')).toBeOnTheScreen();
     await user.press(screen.getByRole('button', { name: 'Acorde' }));
 
     expect(mockNoteOn.mock.calls.map(([midi]) => midi)).toEqual([60, 64, 67]);
@@ -257,5 +273,25 @@ describe('SingingRoundScreen — entonación de notas', () => {
     await sing(67);
 
     expect(screen.getByText('Cantaste la 5ª; era C4')).toBeOnTheScreen();
+  });
+
+  it('al corregir cambia la tecla por un teclado: cada nota suena sola y se puede oír el acorde', async () => {
+    mockParams = { kind: 'singNote', level: '3' };
+    const user = userEvent.setup();
+    await renderScreen();
+
+    await user.press(screen.getByRole('button', { name: 'Cantar' }));
+    await sing(67);
+
+    expect(screen.queryByRole('button', { name: 'Acorde' })).toBeNull();
+    expect(screen.getByText('Era esta: C4')).toBeOnTheScreen();
+
+    mockNoteOn.mockClear();
+    await user.press(screen.getByRole('button', { name: '3ª: E4' }));
+    expect(mockNoteOn.mock.calls.map(([midi]) => midi)).toEqual([64]);
+
+    mockNoteOn.mockClear();
+    await user.press(screen.getByRole('button', { name: 'Escuchar el acorde completo: C' }));
+    expect(mockNoteOn.mock.calls.map(([midi]) => midi)).toEqual([60, 64, 67]);
   });
 });

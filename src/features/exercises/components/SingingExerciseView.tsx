@@ -1,11 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { SingingExercise } from '@/domain/singing';
+import { chordSymbol, SingingExercise } from '@/domain/singing';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
 import { chordKeyCaption, singingQuestionLabel } from '../labels';
 import { useNoteFormatter } from '../hooks/useNoteFormatter';
 import { NotePlayer } from '../hooks/useNotePlayer';
+import { ChordKeyboard } from './ChordKeyboard';
 import { NoteKey } from './NoteKey';
 
 interface SingingExerciseViewProps {
@@ -19,16 +20,30 @@ interface SingingExerciseViewProps {
  * Enunciado de un ejercicio de entonación: la tecla de referencia y qué cantar.
  *
  * - Intervalo: la nota base, visible por su nombre.
- * - Notas: UNA sola tecla que hace sonar todas las notas a la vez. No muestra
- *   cuáles son: sacar la nota pedida de lo que suena junto es el ejercicio.
+ * - Notas: UNA sola tecla, con el nombre del acorde, que hace sonar todas las
+ *   notas a la vez. Saber cómo se llama no basta: hay que sacar la nota pedida
+ *   de lo que suena junto y cantarla.
  *
  * La nota objetivo NO se puede escuchar antes de cantar (sería dar la
- * respuesta); al corregir aparece su tecla para comparar con lo cantado.
+ * respuesta). Al corregir, en intervalos aparece su tecla junto a la base; en
+ * notas, la tecla del acorde se cambia por un teclado con cada nota por
+ * separado y la pedida señalada.
  */
 export function SingingExerciseView({ exercise, revealed, player }: SingingExerciseViewProps) {
   const { colors } = useTheme();
   const format = useNoteFormatter();
   const targetLabel = format(exercise.target);
+
+  if (exercise.kind === 'singNote' && revealed) {
+    return (
+      <View style={styles.container}>
+        <ChordKeyboard exercise={exercise} player={player} />
+        <Text style={[styles.question, { color: colors.textPrimary }]}>
+          {singingQuestionLabel(exercise)}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -44,7 +59,7 @@ export function SingingExerciseView({ exercise, revealed, player }: SingingExerc
           />
         ) : (
           <NoteKey
-            icon="piano"
+            label={chordSymbol(exercise)}
             caption={chordKeyCaption(exercise.tones.length)}
             disabled={!player.ready}
             accessibilityLabel={chordKeyCaption(exercise.tones.length)}
@@ -58,7 +73,7 @@ export function SingingExerciseView({ exercise, revealed, player }: SingingExerc
           />
         )}
 
-        {revealed && (
+        {revealed && exercise.kind === 'singInterval' && (
           <NoteKey
             label={targetLabel}
             caption="Había que cantar"

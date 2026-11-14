@@ -212,8 +212,9 @@ export function chordKeyCaption(toneCount: number): string {
 }
 
 const SINGING_TITLES: Record<SingingVerdict, string> = {
+  perfect: '¡Perfecto!',
   correct: '¡Afinado!',
-  close: 'Casi',
+  close: '¡Casi!',
   wrong: 'Esa no era',
 };
 
