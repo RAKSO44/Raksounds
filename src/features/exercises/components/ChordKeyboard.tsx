@@ -152,10 +152,11 @@ export function ChordKeyboard({ exercise, player }: ChordKeyboardProps) {
       <PushButton
         variant="solid"
         label={symbol}
-        icon="play"
-        iconPlacement="start"
         labelStyle={typography.noteLarge}
         minWidth={controls.noteTileSize}
+        // `PushButton` se alinea al inicio por defecto; esta tecla va centrada
+        // sobre la consigna y crece con el cifrado (`C/E♭` es más ancho que `C`).
+        style={styles.chordButton}
         disabled={!player.ready}
         accessibilityLabel={`Escuchar el acorde completo: ${symbol}`}
         onPressIn={() => player.pressChord('chord', midis)}
@@ -231,7 +232,12 @@ function PianoKey({
     [interactive, disabled, handlePressIn, handlePressOut],
   );
 
-  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: pressOffset.value }] }));
+  // La cara NO se desplaza: se estira hacia abajo y tapa el labio. Una tecla
+  // de piano está anclada por arriba; si bajara entera, por encima asomaría el
+  // fondo del teclado como una franja blanca.
+  const faceStyle = useAnimatedStyle(() => ({
+    bottom: controls.pianoKeyLip - pressOffset.value,
+  }));
   const tintStyle = useAnimatedStyle(() => ({ opacity: tint.value }));
 
   const black = pianoKey.black;
@@ -333,6 +339,9 @@ const styles = StyleSheet.create({
   arrow: {
     position: 'absolute',
     top: 0,
+  },
+  chordButton: {
+    alignSelf: 'center',
   },
   caption: {
     ...typography.chip,
