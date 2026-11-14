@@ -59,6 +59,15 @@ generan con `scripts/build-piano-samples.mjs` a partir de los de
 
 Resultado: **cromático C4–C6** (MIDI 60–84), 25 archivos, uno por semitono.
 
+### Efectos de los ejercicios — Pixabay
+
+`assets/audio/effects/` (`success`, `error`, `cleared`, `failed`): efectos de
+Pixabay bajo la **Licencia de contenido de Pixabay**
+(<https://pixabay.com/service/license-summary/>). No exige atribución y permite
+el uso comercial dentro de una app; se acreditan igual por transparencia. La
+licencia prohíbe redistribuirlos sueltos ("Standalone"): están en el repo solo
+como parte del código de la app, no para descargarlos por separado.
+
 ### Por qué offline y no transponiendo en el dispositivo
 
 Afinar en caliente con `setPlaybackRate` (expo-audio) no se aplica desde la

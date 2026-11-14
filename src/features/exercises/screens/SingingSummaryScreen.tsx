@@ -9,6 +9,7 @@ import { spacing, useTheme } from '@/shared/theme';
 
 import { SINGING_LABELS } from '../labels';
 import { decodeSingingSummary } from '../summaryParams';
+import { useRoundEndSound } from '../hooks/useSoundEffects';
 import { BottomActionBar, SingingSummaryView } from '../components';
 
 /**
@@ -22,6 +23,8 @@ export function SingingSummaryScreen() {
 
   const kind = parseSingingKind(params.kind) ?? 'singInterval';
   const summary = decodeSingingSummary(params.summary);
+
+  useRoundEndSound(summary?.accuracy ?? null);
 
   const close = useCallback(() => router.dismissAll(), [router]);
   useHardwareBack(

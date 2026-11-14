@@ -10,3 +10,7 @@ El contrato es **note on / note off**, no "reproduce un sonido": una tecla suena
 mientras el dedo la mantiene. `noteOn` devuelve un identificador de voz y
 `noteOff` recibe ESE identificador, no la altura MIDI, para que dos pulsaciones
 de la misma nota puedan solaparse y soltarse por separado.
+
+`ISoundEffects.ts` es el contrato de los efectos de los ejercicios (acierto,
+error, ronda superada / no superada): sonidos de "disparar y olvidar", sin
+note off.

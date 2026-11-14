@@ -13,6 +13,8 @@ import {
 } from '@/domain/ear-training';
 import { hapticError, hapticSuccess } from '@/shared/haptics';
 
+import { useSoundEffects } from './useSoundEffects';
+
 /**
  * Estado de una ronda de ejercicios.
  *
@@ -58,6 +60,7 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
   // por un repintado. `Math.random` entra aquí, en la capa de composición, para
   // que el generador del dominio siga siendo puro.
   const [exercises] = useState(() => createRound({ mode, level, random: Math.random }));
+  const playEffect = useSoundEffects();
 
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<RoundPhase>('answering');
@@ -107,11 +110,16 @@ export function useExerciseRound({ mode, level }: RoundOptions): ExerciseRound {
       replayCount: countReplays(listened.current),
     });
 
-    if (selected === exercise.answer) hapticSuccess();
-    else hapticError();
+    if (selected === exercise.answer) {
+      hapticSuccess();
+      playEffect('success');
+    } else {
+      hapticError();
+      playEffect('error');
+    }
 
     setPhase('revealed');
-  }, [phase, selected, exercise]);
+  }, [phase, selected, exercise, playEffect]);
 
   const advance = useCallback(() => {
     if (phase !== 'revealed') return;

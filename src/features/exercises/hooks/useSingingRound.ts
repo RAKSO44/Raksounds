@@ -15,6 +15,8 @@ import {
 } from '@/domain/singing';
 import { hapticError, hapticSuccess } from '@/shared/haptics';
 
+import { useSoundEffects } from './useSoundEffects';
+
 /**
  * - `answering`: se puede escuchar la referencia y cantar.
  * - `revealed`: la toma ya se calificó; el botón de abajo dice "Continuar".
@@ -54,6 +56,8 @@ export function useSingingRound({ kind, levelNumber }: RoundOptions): SingingRou
     createSingingRound({ kind, levelNumber, random: Math.random }),
   );
 
+  const playEffect = useSoundEffects();
+
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<SingingPhase>('answering');
   const [evaluation, setEvaluation] = useState<SingingEvaluation | null>(null);
@@ -86,13 +90,19 @@ export function useSingingRound({ kind, levelNumber }: RoundOptions): SingingRou
         replayCount: countReplays(listened.current),
       });
 
-      if (isSingingHit(result.verdict)) hapticSuccess();
-      else hapticError();
+      // Un "casi" cuenta como fallo, y suena como tal.
+      if (isSingingHit(result.verdict)) {
+        hapticSuccess();
+        playEffect('success');
+      } else {
+        hapticError();
+        playEffect('error');
+      }
 
       setEvaluation(result);
       setPhase('revealed');
     },
-    [phase, exercise],
+    [phase, exercise, playEffect],
   );
 
   const advance = useCallback(() => {

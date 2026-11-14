@@ -73,7 +73,10 @@ Reglas de negocio clave:
   resultados (`exercise/summary`): aciertos, tiempo medio y repeticiones medias por
   pregunta (cuántas veces hubo que volver a oír una nota YA escuchada),
   intervalos fallados y el acierto más rápido, todo calculado en
-  `domain/ear-training/roundSummary.ts`, no en la pantalla. Ahí el "atrás" del
+  `domain/ear-training/roundSummary.ts`, no en la pantalla. Al corregir suena
+  un efecto de acierto/error y al aparecer el resultado uno de ronda superada
+  (≥ 50 %) o no superada; el corte vive en `domain/ear-training/roundOutcome.ts`
+  y es el mismo que colorea el porcentaje. Ahí el "atrás" del
   sistema equivale a "Continuar"; en la ronda, en cambio, salir (flecha o
   "atrás") pide confirmación con un `ConfirmDialog`. En la raíz de las pestañas
   el "atrás" del sistema también confirma antes de cerrar la app
@@ -129,10 +132,11 @@ src/
     pitch/              # pitchDetection.ts (YIN), singingTake.ts (cuándo termina una toma)
     singing/            # chords.ts, chordLevels.ts, chordSymbol.ts, singingGenerator.ts,
                         #   singingEvaluation.ts, singingSummary.ts, tuningGauge.ts
-    audio/               # IAudioPlayer.ts, IMicrophone.ts (interfaces, sin implementación)
+    audio/               # IAudioPlayer.ts, IMicrophone.ts, ISoundEffects.ts (interfaces, sin implementación)
   infrastructure/
     audio/               # PianoSamplerPlayer.ts (motor real) + pianoPlayer.ts (instancia única)
                          #   + microphone.ts (nativo) / microphone.web.ts (getUserMedia)
+                         #   + SoundEffectsPlayer.ts / soundEffects.ts (acierto, error, fin de ronda)
   features/
     library/
       components/        # RootNotePicker, ScaleFamilySelector, ScaleSubtypeSelector, ScaleDegreeButtons

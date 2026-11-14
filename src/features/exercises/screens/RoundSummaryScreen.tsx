@@ -9,6 +9,7 @@ import { spacing, useTheme } from '@/shared/theme';
 
 import { MODE_LABELS } from '../labels';
 import { decodeRoundSummary } from '../summaryParams';
+import { useRoundEndSound } from '../hooks/useSoundEffects';
 import { BottomActionBar, RoundSummaryView } from '../components';
 
 /**
@@ -26,6 +27,8 @@ export function RoundSummaryScreen() {
 
   const mode = parseExerciseMode(params.mode) ?? 'mixed';
   const summary = decodeRoundSummary(params.summary);
+
+  useRoundEndSound(summary?.accuracy ?? null);
 
   const close = useCallback(() => router.dismissAll(), [router]);
   // Aquí "atrás" significa lo mismo que "Continuar": no hay ronda a la que
