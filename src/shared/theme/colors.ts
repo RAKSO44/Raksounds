@@ -77,6 +77,21 @@ export interface ThemeColors {
   resultSuccessText: string;
   resultDanger: string;
   resultDangerText: string;
+  /** "Casi": la nota correcta pero desafinada. Ámbar, para no desanimar. */
+  resultWarning: string;
+  resultWarningText: string;
+  /** "Perfecto": afinación clavada. Morado de marca. */
+  resultPerfect: string;
+  resultPerfectText: string;
+
+  /**
+   * Teclado de piano. Las teclas blancas siguen siendo claras en oscuro: un
+   * piano con teclas "blancas" grises oscuras ya no se lee como piano.
+   */
+  pianoWhiteKey: string;
+  pianoWhiteKeyEdge: string;
+  pianoBlackKey: string;
+  pianoBlackKeyEdge: string;
 
   /** Velo oscuro tras un diálogo modal. */
   scrim: string;
@@ -133,6 +148,15 @@ export const lightColors: ThemeColors = {
   resultSuccessText: palette.greenTextLight,
   resultDanger: palette.redPanel,
   resultDangerText: palette.redTextLight,
+  resultWarning: palette.yellowPanel,
+  resultWarningText: palette.yellowPanelText,
+  resultPerfect: palette.purplePanel,
+  resultPerfectText: palette.purpleShadow,
+
+  pianoWhiteKey: palette.ivory,
+  pianoWhiteKeyEdge: palette.swanShadow,
+  pianoBlackKey: palette.ebony,
+  pianoBlackKeyEdge: palette.ebonyEdge,
 
   scrim: palette.scrim,
 
@@ -190,6 +214,15 @@ export const darkColors: ThemeColors = {
   resultSuccessText: palette.greenTextLight,
   resultDanger: palette.redPanel,
   resultDangerText: palette.redTextLight,
+  resultWarning: palette.yellowPanel,
+  resultWarningText: palette.yellowPanelText,
+  resultPerfect: palette.purplePanel,
+  resultPerfectText: palette.purpleShadow,
+
+  pianoWhiteKey: palette.swan,
+  pianoWhiteKeyEdge: palette.hare,
+  pianoBlackKey: palette.ebony,
+  pianoBlackKeyEdge: palette.ebonyEdge,
 
   scrim: palette.scrim,
 

@@ -56,6 +56,21 @@ export const controls = {
   micBarMaxHeight: 40,
   /** Diámetro de los puntos del micrófono preparándose o deshabilitado. */
   micDotSize: 8,
+  /** Teclado de piano: ancho máximo de una tecla blanca y alto del teclado. */
+  pianoWhiteKeyMaxWidth: 44,
+  pianoHeight: 148,
+  /** Alto de las teclas negras respecto al de las blancas. */
+  pianoBlackKeyRatio: 0.62,
+  /** Labio 3D de las teclas (más fino que el de un botón: son muchas y juntas). */
+  pianoKeyLip: 3,
+  /** Alto de la flecha que señala la nota pedida bajo el teclado. */
+  pianoArrowSize: 28,
+  /** Barra de afinación: grosor del canal y de la marca, y alto de la marca. */
+  gaugeTrackHeight: 12,
+  gaugeMarkerWidth: 6,
+  gaugeMarkerHeight: 32,
+  /** Raya fina que marca el centro exacto (0 cents). */
+  gaugeTickWidth: 2,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -74,6 +89,10 @@ export const motion = {
   sheet: 220,
   /** Ensanchado del micrófono de cuadrado a píldora (y vuelta). */
   micResize: 180,
+  /** Fundido del contenido del micrófono (ícono, puntos) antes/después de ensancharse. */
+  micContent: 90,
+  /** Recorrido de la marca de la barra de afinación hasta su lectura. */
+  gauge: 420,
   /** Suavizado de las barras de volumen entre un bloque de audio y el siguiente. */
   micLevel: 80,
 } as const;
