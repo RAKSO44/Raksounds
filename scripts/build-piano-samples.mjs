@@ -48,12 +48,15 @@ const SAMPLE_RATE = 44100;
 const GAIN_DB = 7;
 
 /**
- * Las muestras originales duran 6–16 s, mucho más de lo que la app usa: una
- * nota se corta a 1.5 s si es un toque y se libera en 0.7 s al soltar. 4 s dan
- * margen de sobra para notas mantenidas y recortan el bundle a un tercio.
+ * Las muestras originales duran 6–16 s, más de lo que la app usa: un toque
+ * suena 1.5 s y al soltar la nota cae en 0.7 s. Solo una nota MANTENIDA puede
+ * llegar al final del archivo, y con 4 s se cortaba mientras el dedo seguía
+ * puesto. 8 s cubren cualquier nota sostenida razonable (el piano ya se ha
+ * apagado casi del todo para entonces) y el banco sigue siendo pequeño.
  */
-const DURATION_S = 4;
-const TAIL_FADE_S = 0.25;
+const DURATION_S = 8;
+/** Fundido final largo: a los 7 s la nota ya es casi silencio y debe extinguirse, no cortarse. */
+const TAIL_FADE_S = 1;
 
 const NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
 

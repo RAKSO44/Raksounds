@@ -14,7 +14,7 @@
  * solas" a mitad del ataque. Con el banco ya resampleado, el motor reproduce
  * SIEMPRE a rate 1 y esa clase de bug desaparece por construcción.
  *
- * Las muestras llevan además +7 dB y están recortadas a 4 s (con fundido final),
+ * Las muestras llevan además +7 dB y están recortadas a 8 s (con fundido final),
  * que es todo lo que la app puede llegar a usar.
  *
  * Metro exige `require()` con rutas literales, por eso la lista es explícita.

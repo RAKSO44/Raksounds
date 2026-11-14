@@ -53,8 +53,9 @@ generan con `scripts/build-piano-samples.mjs` a partir de los de
    entre −8 y −12 dBFS y en un móvil se oían muy bajos. La ganancia es única a
    propósito: normalizar archivo por archivo aplanaría la curva natural del
    piano, donde los agudos suenan menos que los graves.
-3. **Recorte a 4 s** con fundido final de 0.25 s. La app nunca deja sonar una
-   nota más de eso, y los originales duraban entre 6 y 16 s.
+3. **Recorte a 8 s** con fundido final de 1 s. Solo una nota mantenida llega
+   tan lejos (a esa altura ya casi se apagó), y los originales duraban entre
+   6 y 16 s.
 
 Resultado: **cromático C4–C6** (MIDI 60–84), 25 archivos, uno por semitono.
 

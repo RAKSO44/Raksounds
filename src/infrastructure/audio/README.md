@@ -23,7 +23,8 @@ asíncrono—, así que se resolvieron cambiando el modelo, no parcheando la car
 
 - Ataque: 4 ms, solo para evitar un click. La muestra ya trae su propio golpe.
 - Toque instantáneo: la nota dura 1.5 s en total.
-- Nota mantenida: suena mientras el dedo siga puesto.
+- Nota mantenida: suena mientras el dedo siga puesto (hasta 8 s, el largo
+  de cada muestra del banco).
 - Al soltar: 0.7 s de caída gradual, nunca un corte seco.
 
 Los dos últimos casos son la misma fórmula (`max(ahora, inicio + 0.8 s)` como
