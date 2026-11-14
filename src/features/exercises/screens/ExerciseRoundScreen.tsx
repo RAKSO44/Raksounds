@@ -8,7 +8,7 @@ import { ConfirmDialog, Header } from '@/shared/design-system';
 import { useHardwareBack } from '@/shared/navigation';
 import { motion, spacing, typography, useTheme } from '@/shared/theme';
 
-import { MODE_LABELS } from '../labels';
+import { feedbackDetailLabel, feedbackTitleLabel, MODE_LABELS } from '../labels';
 import { encodeRoundSummary } from '../summaryParams';
 import {
   AnswerFeedbackSheet,
@@ -137,10 +137,14 @@ export function ExerciseRoundScreen() {
       {round.exercise !== null && (
         <AnswerFeedbackSheet
           visible={revealed}
-          correct={round.isCorrect ?? false}
-          kind={round.exercise.kind}
-          answer={round.exercise.answer}
-          chosen={round.selected ?? round.exercise.answer}
+          result={round.isCorrect === true ? 'correct' : 'wrong'}
+          title={feedbackTitleLabel(round.isCorrect ?? false)}
+          detail={feedbackDetailLabel({
+            kind: round.exercise.kind,
+            correct: round.isCorrect ?? false,
+            answer: round.exercise.answer,
+            chosen: round.selected ?? round.exercise.answer,
+          })}
           bottomInset={actionBarHeight}
         />
       )}

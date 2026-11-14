@@ -62,6 +62,13 @@ export function CreditsScreen() {
               Las muestras fueron modificadas: se completó la escala cromática por resampleo, se
               subió su ganancia y se recortó su duración.
             </Text>
+            <Text style={[styles.body, { color: colors.textPrimary }]}>
+              Efectos de sonido de los ejercicios: Pixabay.
+            </Text>
+            <CreditLink
+              label="Licencia de contenido de Pixabay"
+              url="https://pixabay.com/service/license-summary/"
+            />
           </View>
         </SectionCard>
       </ScrollView>

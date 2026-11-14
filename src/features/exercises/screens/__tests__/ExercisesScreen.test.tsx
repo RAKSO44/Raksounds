@@ -62,4 +62,17 @@ describe('ExercisesScreen', () => {
       params: { mode: 'mixed' },
     });
   });
+
+  it('ofrece los dos ejercicios de entonación, que llevan a su selección de nivel', async () => {
+    const user = userEvent.setup();
+    await render(<ExercisesScreen />, { wrapper: Providers });
+
+    expect(screen.getByText('Ejercicios de entonación')).toBeOnTheScreen();
+    await user.press(screen.getByText('Entonación de notas'));
+
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/exercise/levels',
+      params: { mode: 'singNote' },
+    });
+  });
 });

@@ -9,7 +9,8 @@ y arpegios, y pueda reproducirlos con su propia voz de forma precisa.
 
 ## Alcance ACTUAL (MVP) — léelo con atención
 
-Hay tres secciones construidas: **Librería**, **Ejercicios** y **Configuración**.
+Hay tres secciones construidas: **Librería**, **Ejercicios** (auditivos y de
+entonación) y **Configuración**.
 NO implementes todavía:
 
 - Autenticación ni base de datos (llegará después, probablemente con Supabase)
@@ -17,7 +18,8 @@ NO implementes todavía:
 - La sección "Perfil" (logros, diamantes, desbloqueables)
 - Persistencia del progreso de los ejercicios (rachas, historial de rondas):
   hoy el resultado de una ronda se muestra y se descarta
-- Grabación o detección de pitch de la voz del usuario
+- Grabación de la voz a archivo (la entonación solo ESCUCHA en vivo: los
+  bloques del micrófono se analizan y se descartan)
 
 Esas secciones existen como **placeholders vacíos** en la navegación, solo para que la
 arquitectura ya las contemple y no haya que reestructurar después.
@@ -71,11 +73,50 @@ Reglas de negocio clave:
   resultados (`exercise/summary`): aciertos, tiempo medio y repeticiones medias por
   pregunta (cuántas veces hubo que volver a oír una nota YA escuchada),
   intervalos fallados y el acierto más rápido, todo calculado en
-  `domain/ear-training/roundSummary.ts`, no en la pantalla. Ahí el "atrás" del
+  `domain/ear-training/roundSummary.ts`, no en la pantalla. Al corregir suena
+  un efecto de acierto/error y al aparecer el resultado uno de ronda superada
+  (≥ 50 %) o no superada; el corte vive en `domain/ear-training/roundOutcome.ts`
+  y es el mismo que colorea el porcentaje. Ahí el "atrás" del
   sistema equivale a "Continuar"; en la ronda, en cambio, salir (flecha o
   "atrás") pide confirmación con un `ConfirmDialog`. En la raíz de las pestañas
   el "atrás" del sistema también confirma antes de cerrar la app
   (`shared/navigation/ExitConfirmation`).
+
+## Qué SÍ construimos ahora: los Ejercicios de entonación
+
+Se escucha una referencia y se CANTA la respuesta; el micrófono detecta la
+altura cantada. Dos tipos, sin modo Mixto:
+
+1. **Entonación de intervalos**: suena la nota base y hay que cantar el
+   intervalo pedido, **solo ascendente**. Usa los mismos 7 niveles de
+   `levels.ts`.
+2. **Entonación de notas**: una SOLA tecla hace sonar a la vez 1, 2, 3 o 4
+   notas y hay que cantar la de la función pedida (fundamental, 3ª, 5ª, 7ª).
+   Tiene 5 niveles propios (`domain/singing/chordLevels.ts`): una nota →
+   díada → tríada en estado fundamental → tríadas invertidas → cuatríadas.
+   Las inversiones tienen nivel propio porque en estado fundamental la función
+   coincide con la posición y se puede acertar sin oírla.
+
+Reglas de negocio clave:
+
+- Se califica **sin importar la octava** (una voz grave canta una octava abajo
+  del piano C4–C6). Consecuencia aceptada: la 8ª justa se acierta repitiendo la
+  base.
+- ±10 cents = perfecto (hoja morada); ±25 = afinado (verde); ±50 = "casi"
+  (hoja ámbar, cuenta como fallo); más = otra nota (roja), y la corrección dice
+  QUÉ se cantó. Sobre la hoja, una barra de -50 a +50 cents centrada en la nota
+  pedida (`domain/singing/tuningGauge.ts`). Todo en `domain/singing/`.
+- La tecla del acorde lleva su cifrado con bajo (`C/E`; díadas `C–E`,
+  `domain/singing/chordSymbol.ts`). Al corregir se cambia por un teclado
+  dibujado en la app (`ChordKeyboard`, geometría en
+  `domain/music-theory/keyboard.ts`): solo suenan las teclas del acorde, la
+  pedida va señalada con una flecha y otra tecla hace sonar el acorde entero.
+- La nota objetivo NO se puede escuchar antes de cantar; aparece al corregir.
+- Sin "Confirmar": la toma se cierra sola al callar (`domain/pitch/singingTake.ts`)
+  y se califica; solo hay "Continuar". La detección de altura es YIN en TS puro
+  (`domain/pitch/pitchDetection.ts`).
+- El micrófono es `MicButton` (`shared/design-system/`), copia del de Duolingo:
+  cuadrado azul → píldora con puntos → barras con el volumen → gris hundido.
 
 ## Arquitectura — REGLA DE ORO
 
@@ -86,11 +127,16 @@ escalas) y debe ser 100% testeable con Jest sin emulador ni dispositivo.
 ```
 src/
   domain/
-    music-theory/       # note.ts, scale-formulas.ts, scale-builder.ts (puro TS)
+    music-theory/       # note.ts, scale-formulas.ts, scale-builder.ts, keyboard.ts (puro TS)
     ear-training/       # intervals.ts, levels.ts, exerciseGenerator.ts, roundSummary.ts (puro TS)
-    audio/               # IAudioPlayer.ts (interfaz, sin implementación)
+    pitch/              # pitchDetection.ts (YIN), singingTake.ts (cuándo termina una toma)
+    singing/            # chords.ts, chordLevels.ts, chordSymbol.ts, singingGenerator.ts,
+                        #   singingEvaluation.ts, singingSummary.ts, tuningGauge.ts
+    audio/               # IAudioPlayer.ts, IMicrophone.ts, ISoundEffects.ts (interfaces, sin implementación)
   infrastructure/
     audio/               # PianoSamplerPlayer.ts (motor real) + pianoPlayer.ts (instancia única)
+                         #   + microphone.ts (nativo) / microphone.web.ts (getUserMedia)
+                         #   + SoundEffectsPlayer.ts / soundEffects.ts (acierto, error, fin de ronda)
   features/
     library/
       components/        # RootNotePicker, ScaleFamilySelector, ScaleSubtypeSelector, ScaleDegreeButtons
@@ -98,14 +144,17 @@ src/
       hooks/              # useScalePlayer
     exercises/
       components/        # AnswerOption, NoteKey, IntervalExercise, NoteExercise,
-                         #   AnswerFeedbackSheet, ExerciseProgressBar, RoundSummaryView…
+                         #   AnswerFeedbackSheet, ExerciseProgressBar, RoundSummaryView,
+                         #   SingingExerciseView, ChordKeyboard, TuningGauge,
+                         #   SingingSummaryView, SummaryParts…
       screens/           # ExercisesScreen (menú), LevelSelectScreen, ExerciseRoundScreen,
-                         #   RoundSummaryScreen
-      hooks/              # useExerciseRound, useNotePlayer, useNoteFormatter
+                         #   RoundSummaryScreen, SingingRoundScreen, SingingSummaryScreen
+      hooks/              # useExerciseRound, useNotePlayer, useNoteFormatter,
+                         #   useSingingRound, useSingingTake
     home/                 # placeholder, NO implementar lógica todavía
     profile/              # placeholder, NO implementar lógica todavía
   shared/
-    design-system/        # componentes base reutilizables (incl. ConfirmDialog)
+    design-system/        # componentes base reutilizables (incl. ConfirmDialog, MicButton)
     navigation/           # useHardwareBack + ExitConfirmation (atrás del sistema)
     theme/
   app/                    # rutas de Expo Router (reemplaza navigation/)
@@ -118,9 +167,11 @@ src/
       home.tsx             # → HomeScreen placeholder
       profile.tsx          # → ProfileScreen placeholder
     exercise/              # fuera de las tabs: una ronda no se abandona por accidente
-      levels.tsx           # → LevelSelectScreen (?mode=)
+      levels.tsx           # → LevelSelectScreen (?mode=, incluye singInterval/singNote)
       round.tsx            # → ExerciseRoundScreen (?mode=&level=)
       summary.tsx          # → RoundSummaryScreen (?mode=&summary=)
+      sing.tsx             # → SingingRoundScreen (?kind=&level=)
+      sing-summary.tsx     # → SingingSummaryScreen (?kind=&summary=)
 ```
 
 Los archivos de `src/app/` son wrappers finos: la UI real vive en `features/*/screens/`.

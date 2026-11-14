@@ -70,6 +70,10 @@ Reglas concretas:
 - Módulos que SÍ necesitan shim porque son nativos puros (JSI) sin build web:
   - `react-native-mmkv` → `shared/settings/mmkvStorage.ts` (nativo) +
     `shared/settings/mmkvStorage.web.ts` (web, respaldado por `localStorage`).
+  - El `AudioRecorder` de `react-native-audio-api` (micrófono) no tiene build
+    web → `infrastructure/audio/microphone.ts` (nativo) +
+    `microphone.web.ts` (`getUserMedia` + `AnalyserNode`), ambos detrás de
+    `IMicrophone`.
     Mismo patrón a seguir si en el futuro se agrega otro módulo nativo sin
     soporte web (p. ej. algo de sistema de archivos): shim colocado junto al
     original, misma forma de interfaz, sin duplicar el resto del módulo.

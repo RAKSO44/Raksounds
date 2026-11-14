@@ -42,7 +42,12 @@ function Providers({ children }: { children: ReactNode }) {
 
 const renderScreen = () => render(<RoundSummaryScreen />, { wrapper: Providers });
 
+const { soundEffects: mockSoundEffects } = jest.requireMock<{
+  soundEffects: { play: jest.Mock };
+}>('@/infrastructure/audio/soundEffects');
+
 beforeEach(() => {
+  mockSoundEffects.play.mockClear();
   mockParams = { mode: 'interval', summary: encodeRoundSummary(SUMMARY) };
   mockDismissAll.mockClear();
 });
@@ -77,9 +82,28 @@ describe('RoundSummaryScreen', () => {
     expect(mockDismissAll).toHaveBeenCalled();
   });
 
+  it('al aparecer suena UNA vez "superada" si acertó al menos la mitad', async () => {
+    await renderScreen();
+    await screen.rerender(<RoundSummaryScreen />);
+
+    expect(mockSoundEffects.play.mock.calls).toEqual([['cleared']]);
+  });
+
+  it('con menos de la mitad de aciertos suena "no superada"', async () => {
+    mockParams = {
+      mode: 'interval',
+      summary: encodeRoundSummary({ ...SUMMARY, correctCount: 4, accuracy: 0.4 }),
+    };
+    await renderScreen();
+
+    expect(mockSoundEffects.play.mock.calls).toEqual([['failed']]);
+  });
+
   it('sin un resumen válido en la ruta no rompe: solo no pinta nada', async () => {
     mockParams = { mode: 'interval', summary: 'no-es-json' };
     await renderScreen();
+
+    expect(mockSoundEffects.play).not.toHaveBeenCalled();
 
     expect(screen.getByText('Continuar')).toBeOnTheScreen();
     expect(screen.queryByText('por pregunta')).not.toBeOnTheScreen();

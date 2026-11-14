@@ -62,38 +62,51 @@ const MIN_SOUNDING_S = 1.5;
 const SUSTAIN_FLOOR_S = MIN_SOUNDING_S - RELEASE_S;
 
 /**
- * Ganancia fija del bus (≈ -3 dB de headroom). Las muestras pican casi a
- * 0 dBFS, así que al pulsar toda la escala a la vez la suma empujaba el
- * limitador a saturar de forma audible; este margen hace que los acordes lo
- * rocen suave en vez de clavarse en él. No es una preferencia de usuario: el
- * ajuste de volumen se quitó porque por encima de esto no hay techo digital.
+ * Ganancia fija del bus (≈ -7 dB). Deshace a propósito los +7 dB con que
+ * `scripts/build-piano-samples.mjs` sube el banco: una muestra pica casi a
+ * 0 dBFS, así que en cuanto sonaban 3–4 a la vez (el acorde de la entonación,
+ * su tecla "acorde completo", una escala entera) la suma pasaba de 1 y se
+ * oía como estática, aun con el volumen del teléfono bajo — el recorte es
+ * digital, ocurre antes del volumen del sistema. A este nivel una cuatríada
+ * cabe casi siempre sin tocar el limitador. Una nota sola queda al nivel de
+ * la grabación original. No es una preferencia de usuario: subirla es
+ * exactamente lo que satura (ver el commit que quitó el ajuste de volumen).
  */
-const MASTER_GAIN = 0.7;
+const MASTER_GAIN = 0.45;
 
 /**
  * Umbral por debajo del cual el limitador es transparente (≈ -1.9 dBFS). Una
  * nota sola nunca lo alcanza, así que suena sin tocar.
  */
 const LIMIT_THRESHOLD = 0.8;
+/**
+ * Amplitud máxima de entrada que el limitador dobla con suavidad (+12 dB sobre
+ * el fondo de escala). Un WaveShaper solo define su curva para [-1, 1] y FIJA
+ * todo lo que cae fuera al valor del extremo: eso es un recorte duro, el
+ * "cuadrado" que suena a estática. Antes la curva acababa en 1, así que una
+ * suma de 1.3 ya se recortaba en seco; ahora la señal entra dividida entre
+ * este rango y la curva lo vuelve a multiplicar, de modo que hasta ±4 el
+ * exceso se comprime con la tangente y nunca se cuadra.
+ */
+const LIMIT_RANGE = 4;
 /** Resolución de la curva del limitador; de sobra para que no se oigan escalones. */
-const LIMIT_CURVE_POINTS = 1024;
+const LIMIT_CURVE_POINTS = 4096;
 
 /**
- * Curva de "soft clip" para el WaveShaper del bus maestro.
+ * Curva de "soft clip" para el WaveShaper del bus maestro, sobre una entrada
+ * ya dividida entre `LIMIT_RANGE`.
  *
- * Sin ella habría que dejar headroom (bajar el volumen general) para que 5 notas
- * simultáneas no pasaran de 0 dBFS, y eso es exactamente lo contrario de lo que
- * se buscaba al subir las muestras. Con la curva, la mezcla puede ir a ganancia
- * plena: por debajo del umbral es una recta (no colorea nada) y por encima
- * comprime con una tangente hiperbólica, de modo que un acorde se dobla suave en
- * vez de recortarse en cuadrado, que es lo que suena a distorsión sucia.
+ * Por debajo del umbral es una recta (no colorea nada) y por encima comprime
+ * con una tangente hiperbólica que tiende a 1 sin alcanzarlo, de modo que un
+ * pico que se escapa se dobla suave en vez de recortarse en cuadrado.
  */
 function softClipCurve(): Float32Array {
   const curve = new Float32Array(LIMIT_CURVE_POINTS);
   const headroom = 1 - LIMIT_THRESHOLD;
   for (let i = 0; i < LIMIT_CURVE_POINTS; i += 1) {
-    // La curva mapea la entrada [-1, 1] sobre el índice del array.
-    const x = (i / (LIMIT_CURVE_POINTS - 1)) * 2 - 1;
+    // El índice del array recorre la entrada [-1, 1], que representa
+    // [-LIMIT_RANGE, LIMIT_RANGE] de la señal real.
+    const x = ((i / (LIMIT_CURVE_POINTS - 1)) * 2 - 1) * LIMIT_RANGE;
     const magnitude = Math.abs(x);
     curve[i] =
       magnitude <= LIMIT_THRESHOLD
@@ -159,17 +172,16 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       loading ??= (async () => {
         const ctx = new AudioContext();
 
-        // Cadena del bus maestro: voces → ganancia fija → limitador → salida.
-        // Las muestras ya salen con la ganancia del banco (+7 dB de
-        // `scripts/build-piano-samples.mjs`); aquí solo se deja el headroom de
-        // MASTER_GAIN — amplificar por encima es imposible sin saturar, porque
-        // los picos del banco ya rozan 0 dBFS.
+        // Cadena del bus maestro:
+        //   voces → ganancia fija → ÷ LIMIT_RANGE → limitador → salida.
+        // La división se aplica en la misma ganancia del bus (es lineal), y la
+        // curva del limitador devuelve la señal a su escala real.
         const limiter = ctx.createWaveShaper();
         limiter.curve = softClipCurve();
         limiter.connect(ctx.destination);
 
         const bus = ctx.createGain();
-        bus.gain.value = MASTER_GAIN;
+        bus.gain.value = MASTER_GAIN / LIMIT_RANGE;
         bus.connect(limiter);
 
         // En paralelo: 25 muestras cortas decodifican en cientos de ms.

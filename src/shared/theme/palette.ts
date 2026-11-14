@@ -68,6 +68,18 @@ export const palette = {
   yellowTextLight: '#B58500',
   yellowTintDark: '#3A3016',
   yellowTextDark: '#FFD84D',
+  /** Fondo del panel de "casi", en el mismo registro que `greenPanel`. */
+  yellowPanel: '#FFF3C4',
+  /** Texto sobre el panel ámbar: el amarillo puro no se lee sobre él. */
+  yellowPanelText: '#B07B00',
+
+  /** Fondo del panel de "perfecto": velo del morado de marca. */
+  purplePanel: '#F0E2FD',
+
+  // Teclado de piano dibujado en la app (corrección de entonación).
+  ivory: '#FFFFFF',
+  ebony: '#2B2B2B',
+  ebonyEdge: '#111111',
 
   // Neutros del modo oscuro de Duolingo
   midnight: '#131F24',

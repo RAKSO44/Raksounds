@@ -8,3 +8,8 @@ export * from './LevelOption';
 export * from './NoteExercise';
 export * from './NoteKey';
 export * from './RoundSummaryView';
+export * from './SingingExerciseView';
+export * from './SingingSummaryView';
+export * from './SummaryParts';
+export * from './ChordKeyboard';
+export * from './TuningGauge';

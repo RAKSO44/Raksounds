@@ -51,3 +51,14 @@ jest.mock('react-native-mmkv', () => {
   };
   return { createMMKV };
 });
+
+// Los efectos de sonido de los ejercicios abren su propio AudioContext nativo.
+// Se sustituye la instancia única (no el motor: su test lo prueba contra un
+// doble de react-native-audio-api) para que las pantallas puedan afirmar qué
+// efecto sonó con `jest.requireMock('@/infrastructure/audio/soundEffects')`.
+jest.mock('@/infrastructure/audio/soundEffects', () => ({
+  soundEffects: {
+    load: jest.fn().mockResolvedValue(undefined),
+    play: jest.fn(),
+  },
+}));

@@ -61,8 +61,13 @@ const WRONG = '4ª';
 /** Los tests que recorren los diez ejercicios necesitan más margen. */
 const LONG_ROUND_TIMEOUT_MS = 30000;
 
+const { soundEffects: mockSoundEffects } = jest.requireMock<{
+  soundEffects: { play: jest.Mock };
+}>('@/infrastructure/audio/soundEffects');
+
 let nextVoice = 0;
 beforeEach(() => {
+  mockSoundEffects.play.mockClear();
   mockParams = { mode: 'interval', level: '3' };
   useSettingsStore.setState({ showOctave: true });
   jest.spyOn(Math, 'random').mockReturnValue(0);
@@ -126,6 +131,7 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
     await user.press(screen.getByText('Confirmar'));
 
     expect(screen.getByText('¡Correcto!')).toBeOnTheScreen();
+    expect(mockSoundEffects.play).toHaveBeenCalledWith('success');
     // La nota a adivinar deja de ser un "?" y muestra qué era.
     expect(screen.queryByText('?')).not.toBeOnTheScreen();
     expect(screen.getByText('C5')).toBeOnTheScreen();
@@ -143,6 +149,7 @@ describe('ExerciseRoundScreen — identificación de intervalo', () => {
     await user.press(screen.getByText('Confirmar'));
 
     expect(screen.getByText('Era 8ª justa')).toBeOnTheScreen();
+    expect(mockSoundEffects.play).toHaveBeenCalledWith('error');
     expect(screen.getByText('C5')).toBeOnTheScreen();
     expect(screen.getByText('Continuar')).toBeOnTheScreen();
   });

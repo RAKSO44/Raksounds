@@ -4,17 +4,27 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { ExerciseMode } from '@/domain/ear-training';
+import { SINGING_KINDS, SingingKind } from '@/domain/singing';
 import { Header, PushButton } from '@/shared/design-system';
 import { controls, motion, spacing, typography, useTheme } from '@/shared/theme';
 
-import { MIXED_VERTICAL_LABEL, MODE_DESCRIPTIONS, MODE_ICONS, MODE_LABELS } from '../labels';
+import {
+  MIXED_VERTICAL_LABEL,
+  MODE_DESCRIPTIONS,
+  MODE_ICONS,
+  MODE_LABELS,
+  SINGING_DESCRIPTIONS,
+  SINGING_ICONS,
+  SINGING_LABELS,
+} from '../labels';
 
 /** Los dos tipos sueltos, en el orden en que se aprenden. */
 const SINGLE_MODES: readonly ExerciseMode[] = ['interval', 'note'];
 
 /**
- * Menú de la sección Ejercicios: elegir qué tipo de ejercicio auditivo
- * practicar. La dificultad se elige después, en su propia pantalla.
+ * Menú de la sección Ejercicios, en dos bloques: los ejercicios auditivos
+ * (identificar lo que suena) y los de entonación (cantarlo). La dificultad se
+ * elige después, en su propia pantalla.
  *
  * Los dos tipos sueltos se apilan a la izquierda y la mezcla ocupa una columna
  * a su derecha, a color entero y con el nombre en vertical: se lee de un
@@ -25,8 +35,11 @@ export function ExercisesScreen() {
   const { colors } = useTheme();
   const router = useRouter();
 
-  const openLevels = (mode: ExerciseMode) =>
+  const openLevels = (mode: ExerciseMode | SingingKind) =>
     router.push({ pathname: '/exercise/levels', params: { mode } });
+
+  // Los de entonación entran después de los auditivos, siguiendo la cascada.
+  const singingDelay = (SINGLE_MODES.length + 1) * motion.stagger;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -80,6 +93,33 @@ export function ExercisesScreen() {
             />
           </Animated.View>
         </View>
+
+        <View style={[styles.sectionHeader, styles.sectionSpacing]}>
+          <MaterialCommunityIcons name="microphone" size={20} color={colors.textSecondary} />
+          <Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>
+            Ejercicios de entonación
+          </Text>
+        </View>
+
+        {SINGING_KINDS.map((kind, index) => (
+          <Animated.View
+            key={kind}
+            entering={FadeInDown.duration(motion.enter).delay(
+              singingDelay + index * motion.stagger,
+            )}
+          >
+            <PushButton
+              variant="selectable"
+              icon={SINGING_ICONS[kind]}
+              iconPlacement="start"
+              label={SINGING_LABELS[kind]}
+              sublabel={SINGING_DESCRIPTIONS[kind]}
+              fullWidth
+              accessibilityLabel={SINGING_LABELS[kind]}
+              onPress={() => openLevels(kind)}
+            />
+          </Animated.View>
+        ))}
       </ScrollView>
     </View>
   );
@@ -99,6 +139,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  sectionSpacing: {
+    marginTop: spacing.md,
   },
   sectionLabel: {
     ...typography.sectionLabel,
