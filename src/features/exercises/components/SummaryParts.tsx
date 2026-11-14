@@ -3,6 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
+import { roundOutcome } from '@/domain/ear-training';
 import { controls, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 /**
@@ -41,8 +42,11 @@ export function SummaryHero({
   total: number;
 }) {
   const { colors } = useTheme();
-  const color =
-    accuracy >= 0.8 ? colors.successText : accuracy >= 0.5 ? colors.warningText : colors.dangerText;
+  const color = {
+    great: colors.successText,
+    passed: colors.warningText,
+    failed: colors.dangerText,
+  }[roundOutcome(accuracy)];
 
   return (
     <View style={styles.hero}>
