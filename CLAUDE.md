@@ -99,8 +99,15 @@ Reglas de negocio clave:
 - Se califica **sin importar la octava** (una voz grave canta una octava abajo
   del piano C4–C6). Consecuencia aceptada: la 8ª justa se acierta repitiendo la
   base.
-- ±25 cents = afinado (correcto); ±50 = "casi" (cuenta como fallo); más = otra
-  nota, y la corrección dice QUÉ se cantó. Todo en `domain/singing/`.
+- ±10 cents = perfecto (hoja morada); ±25 = afinado (verde); ±50 = "casi"
+  (hoja ámbar, cuenta como fallo); más = otra nota (roja), y la corrección dice
+  QUÉ se cantó. Sobre la hoja, una barra de -50 a +50 cents centrada en la nota
+  pedida (`domain/singing/tuningGauge.ts`). Todo en `domain/singing/`.
+- La tecla del acorde lleva su cifrado con bajo (`C/E`; díadas `C–E`,
+  `domain/singing/chordSymbol.ts`). Al corregir se cambia por un teclado
+  dibujado en la app (`ChordKeyboard`, geometría en
+  `domain/music-theory/keyboard.ts`): solo suenan las teclas del acorde, la
+  pedida va señalada con una flecha y otra tecla hace sonar el acorde entero.
 - La nota objetivo NO se puede escuchar antes de cantar; aparece al corregir.
 - Sin "Confirmar": la toma se cierra sola al callar (`domain/pitch/singingTake.ts`)
   y se califica; solo hay "Continuar". La detección de altura es YIN en TS puro
@@ -117,10 +124,11 @@ escalas) y debe ser 100% testeable con Jest sin emulador ni dispositivo.
 ```
 src/
   domain/
-    music-theory/       # note.ts, scale-formulas.ts, scale-builder.ts (puro TS)
+    music-theory/       # note.ts, scale-formulas.ts, scale-builder.ts, keyboard.ts (puro TS)
     ear-training/       # intervals.ts, levels.ts, exerciseGenerator.ts, roundSummary.ts (puro TS)
     pitch/              # pitchDetection.ts (YIN), singingTake.ts (cuándo termina una toma)
-    singing/            # chords.ts, chordLevels.ts, singingGenerator.ts, singingEvaluation.ts, singingSummary.ts
+    singing/            # chords.ts, chordLevels.ts, chordSymbol.ts, singingGenerator.ts,
+                        #   singingEvaluation.ts, singingSummary.ts, tuningGauge.ts
     audio/               # IAudioPlayer.ts, IMicrophone.ts (interfaces, sin implementación)
   infrastructure/
     audio/               # PianoSamplerPlayer.ts (motor real) + pianoPlayer.ts (instancia única)
@@ -133,7 +141,8 @@ src/
     exercises/
       components/        # AnswerOption, NoteKey, IntervalExercise, NoteExercise,
                          #   AnswerFeedbackSheet, ExerciseProgressBar, RoundSummaryView,
-                         #   SingingExerciseView, SingingSummaryView, SummaryParts…
+                         #   SingingExerciseView, ChordKeyboard, TuningGauge,
+                         #   SingingSummaryView, SummaryParts…
       screens/           # ExercisesScreen (menú), LevelSelectScreen, ExerciseRoundScreen,
                          #   RoundSummaryScreen, SingingRoundScreen, SingingSummaryScreen
       hooks/              # useExerciseRound, useNotePlayer, useNoteFormatter,
