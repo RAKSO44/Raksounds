@@ -30,6 +30,8 @@ const mockGains: { ramps: RampCall[]; setValues: RampCall[] }[] = [];
 const mockGainNodes: { value: number }[] = [];
 
 const mockDecodedIds: number[] = [];
+/** Curvas asignadas al limitador (WaveShaper) del bus. */
+const mockCurves: (Float32Array | null)[] = [];
 
 let mockNow = 0;
 
@@ -63,7 +65,15 @@ jest.mock('react-native-audio-api', () => ({
     }
     destination = {};
     createGain = mockCreateGain;
-    createWaveShaper = () => ({ curve: null, connect: jest.fn() });
+    createWaveShaper = () => {
+      const shaper = {
+        set curve(value: Float32Array | null) {
+          mockCurves.push(value);
+        },
+        connect: jest.fn(),
+      };
+      return shaper;
+    };
     createBufferSource = () => {
       const source: FakeSource = {
         buffer: undefined,
@@ -96,6 +106,7 @@ beforeEach(() => {
   mockGains.length = 0;
   mockGainNodes.length = 0;
   mockDecodedIds.length = 0;
+  mockCurves.length = 0;
   mockNow = 0;
 });
 
@@ -220,6 +231,25 @@ describe('createPianoSamplerPlayer', () => {
     const busGain = mockGainNodes[0].value;
     expect(busGain).toBeGreaterThan(0);
     expect(busGain).toBeLessThan(1);
+  });
+
+  it('un acorde de cuatro notas a fondo de escala nunca cae en el recorte duro', async () => {
+    await loadedPlayer();
+
+    // Un WaveShaper FIJA al extremo de su curva todo lo que sale de [-1, 1]:
+    // eso es un recorte cuadrado, la "estática" de los acordes. Cuatro voces
+    // con el pico en fase deben seguir dentro del dominio de la curva.
+    const busGain = mockGainNodes[0].value;
+    expect(4 * busGain).toBeLessThanOrEqual(1);
+
+    // Y la curva nunca pasa del fondo de escala: el exceso se dobla suave.
+    const curve = mockCurves[mockCurves.length - 1];
+    expect(curve).not.toBeNull();
+    const values = Array.from(curve ?? []);
+    expect(Math.max(...values)).toBeLessThanOrEqual(1);
+    expect(Math.min(...values)).toBeGreaterThanOrEqual(-1);
+    // Monótona: más entrada nunca da menos salida (sin pliegues que suenen raro).
+    expect(values.every((value, i) => i === 0 || value >= values[i - 1])).toBe(true);
   });
 
   it('stopAll libera todas las voces en curso', async () => {

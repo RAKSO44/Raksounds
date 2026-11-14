@@ -25,10 +25,13 @@
 - **Sin boost de volumen.** El banco cromático ya sale con +7 dB y sus picos
   quedan justo bajo 0 dBFS: cualquier ganancia de bus >1 satura (un limitador
   solo cambia recorte duro por saturación). El ajuste de volumen se eliminó a
-  pedido del usuario. El bus lleva `MASTER_GAIN = 0.7` (≈ -3 dB de margen, la
-  escala completa a la vez aún clavaba el limitador) y se conserva el
-  limitador soft-clip para acordes de 5+ notas. No reintroducir un slider que
-  amplifique.
+  pedido del usuario. El bus lleva `MASTER_GAIN = 0.45` (≈ -7 dB: deshace
+  la subida del banco). Con 0.7 los acordes de 3–4 notas de la entonación
+  pasaban de 1 y se oían como estática aun con volumen bajo (el recorte es
+  digital). El limitador soft-clip recibe la señal dividida entre
+  `LIMIT_RANGE` porque un WaveShaper FIJA todo lo que sale de [-1, 1]: con la
+  curva acabando en 1, cualquier exceso era recorte duro. No reintroducir un
+  slider que amplifique.
 
 ## Micrófono (entonación)
 
