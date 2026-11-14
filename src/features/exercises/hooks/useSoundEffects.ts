@@ -4,17 +4,23 @@ import { SoundEffect } from '@/domain/audio/ISoundEffects';
 import { isRoundCleared } from '@/domain/ear-training';
 // Punto de composición con la implementación real de los efectos.
 import { soundEffects } from '@/infrastructure/audio/soundEffects';
+import { useSettingsStore } from '@/shared/settings';
 
 /**
  * Efectos de sonido de los ejercicios. Precarga al montar (memoizado en el
  * motor, así que cada pantalla puede llamarlo) y devuelve el disparador.
+ * Respeta el ajuste "Efectos de sonido": se lee al disparar (no al montar),
+ * igual que la háptica, para que el disparador no cambie de identidad.
  */
 export function useSoundEffects(): (effect: SoundEffect) => void {
   useEffect(() => {
     soundEffects.load();
   }, []);
 
-  return useCallback((effect: SoundEffect) => soundEffects.play(effect), []);
+  return useCallback((effect: SoundEffect) => {
+    if (!useSettingsStore.getState().soundEffectsEnabled) return;
+    soundEffects.play(effect);
+  }, []);
 }
 
 /**

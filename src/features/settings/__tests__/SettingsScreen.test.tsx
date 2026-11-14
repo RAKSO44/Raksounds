@@ -28,6 +28,7 @@ beforeEach(() => {
     hapticsEnabled: true,
     themeMode: 'system',
     showOctave: false,
+    soundEffectsEnabled: true,
   });
 });
 
@@ -38,6 +39,7 @@ describe('SettingsScreen', () => {
     expect(screen.getByText('Configuración')).toBeOnTheScreen();
     expect(screen.getByText('Háptica')).toBeOnTheScreen();
     expect(screen.getByText('Octava')).toBeOnTheScreen();
+    expect(screen.getByText('Efectos de sonido')).toBeOnTheScreen();
     expect(screen.getByText('Créditos')).toBeOnTheScreen();
     for (const option of ['Claro', 'Oscuro', 'Sistema']) {
       expect(screen.getByText(option)).toBeOnTheScreen();
@@ -50,6 +52,17 @@ describe('SettingsScreen', () => {
     fireEvent(screen.getByRole('switch', { name: 'Háptica' }), 'valueChange', false);
 
     expect(useSettingsStore.getState().hapticsEnabled).toBe(false);
+  });
+
+  it('apagar los efectos de sonido lo guarda en el store', async () => {
+    await renderScreen();
+
+    const toggle = screen.getByRole('switch', { name: 'Efectos de sonido' });
+    expect(toggle.props.value).toBe(true);
+
+    fireEvent(toggle, 'valueChange', false);
+
+    expect(useSettingsStore.getState().soundEffectsEnabled).toBe(false);
   });
 
   it('la octava arranca desactivada y encenderla la guarda en el store', async () => {

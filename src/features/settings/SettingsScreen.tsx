@@ -16,6 +16,8 @@ export function SettingsScreen() {
   const setThemeMode = useSettingsStore((state) => state.setThemeMode);
   const showOctave = useSettingsStore((state) => state.showOctave);
   const setShowOctave = useSettingsStore((state) => state.setShowOctave);
+  const soundEffectsEnabled = useSettingsStore((state) => state.soundEffectsEnabled);
+  const setSoundEffectsEnabled = useSettingsStore((state) => state.setSoundEffectsEnabled);
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -30,6 +32,18 @@ export function SettingsScreen() {
               accessibilityLabel="Háptica"
               value={hapticsEnabled}
               onValueChange={setHapticsEnabled}
+            />
+          }
+        />
+
+        <SectionCard
+          icon="volume-high"
+          title="Efectos de sonido"
+          headerRight={
+            <SettingToggle
+              accessibilityLabel="Efectos de sonido"
+              value={soundEffectsEnabled}
+              onValueChange={setSoundEffectsEnabled}
             />
           }
         />

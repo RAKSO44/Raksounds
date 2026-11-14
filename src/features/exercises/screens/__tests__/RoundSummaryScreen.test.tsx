@@ -3,6 +3,7 @@ import { render, screen, userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { RoundSummary } from '@/domain/ear-training';
+import { useSettingsStore } from '@/shared/settings';
 import { ThemeProvider } from '@/shared/theme';
 
 import { encodeRoundSummary } from '../../summaryParams';
@@ -48,6 +49,7 @@ const { soundEffects: mockSoundEffects } = jest.requireMock<{
 
 beforeEach(() => {
   mockSoundEffects.play.mockClear();
+  useSettingsStore.setState({ soundEffectsEnabled: true });
   mockParams = { mode: 'interval', summary: encodeRoundSummary(SUMMARY) };
   mockDismissAll.mockClear();
 });
@@ -97,6 +99,14 @@ describe('RoundSummaryScreen', () => {
     await renderScreen();
 
     expect(mockSoundEffects.play.mock.calls).toEqual([['failed']]);
+  });
+
+  it('con los efectos de sonido desactivados en Ajustes no suena nada', async () => {
+    useSettingsStore.setState({ soundEffectsEnabled: false });
+    await renderScreen();
+
+    expect(mockSoundEffects.play).not.toHaveBeenCalled();
+    expect(screen.getByText('80%')).toBeOnTheScreen();
   });
 
   it('sin un resumen válido en la ruta no rompe: solo no pinta nada', async () => {

@@ -13,9 +13,15 @@ interface SettingsState {
   themeMode: ThemeMode;
   /** Si está en `true`, las notas muestran el número de octava (C4, C5…). */
   showOctave: boolean;
+  /**
+   * Si está en `false`, no suenan los efectos de los ejercicios (acierto,
+   * error, ronda superada / no superada). Las notas suenan siempre.
+   */
+  soundEffectsEnabled: boolean;
   setHapticsEnabled: (enabled: boolean) => void;
   setThemeMode: (mode: ThemeMode) => void;
   setShowOctave: (show: boolean) => void;
+  setSoundEffectsEnabled: (enabled: boolean) => void;
 }
 
 /**
@@ -33,9 +39,11 @@ export const useSettingsStore = create<SettingsState>()(
       hapticsEnabled: true,
       themeMode: 'system',
       showOctave: false,
+      soundEffectsEnabled: true,
       setHapticsEnabled: (hapticsEnabled) => set({ hapticsEnabled }),
       setThemeMode: (themeMode) => set({ themeMode }),
       setShowOctave: (showOctave) => set({ showOctave }),
+      setSoundEffectsEnabled: (soundEffectsEnabled) => set({ soundEffectsEnabled }),
     }),
     {
       name: 'settings',
@@ -44,6 +52,7 @@ export const useSettingsStore = create<SettingsState>()(
         hapticsEnabled: state.hapticsEnabled,
         themeMode: state.themeMode,
         showOctave: state.showOctave,
+        soundEffectsEnabled: state.soundEffectsEnabled,
       }),
     },
   ),
