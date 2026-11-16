@@ -19,6 +19,7 @@ jest.mock('expo-router', () => ({
 const SUMMARY: SingingSummary = {
   total: 10,
   correctCount: 7,
+  closeCount: 0,
   accuracy: 0.7,
   averageMs: 5200,
   averageReplays: 1,
@@ -61,6 +62,17 @@ describe('SingingSummaryScreen', () => {
     expect(
       screen.getByText('Tu voz tiende a quedarse baja (14 cents de media).'),
     ).toBeOnTheScreen();
+  });
+
+  it('nombra los "casi" para que el porcentaje cuadre', async () => {
+    mockParams = {
+      kind: 'singNote',
+      summary: encodeSingingSummary({ ...SUMMARY, correctCount: 8, closeCount: 2, accuracy: 0.9 }),
+    };
+    await renderScreen();
+
+    expect(screen.getByText('90%')).toBeOnTheScreen();
+    expect(screen.getByText('8 de 10 correctas · 2 casi (½ punto)')).toBeOnTheScreen();
   });
 
   it('lista lo que hay que repasar por función del acorde', async () => {

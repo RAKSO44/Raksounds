@@ -35,10 +35,13 @@ export function SummaryRow({ index, children }: { index: number; children: React
 export function SummaryHero({
   accuracy,
   correctCount,
+  closeCount = 0,
   total,
 }: {
   accuracy: number;
   correctCount: number;
+  /** "Casi" de la entonación, que suman medio punto: se nombran para que el % cuadre. */
+  closeCount?: number;
   total: number;
 }) {
   const { colors } = useTheme();
@@ -53,6 +56,7 @@ export function SummaryHero({
       <Text style={[styles.heroValue, { color }]}>{Math.round(accuracy * 100)}%</Text>
       <Text style={[styles.heroCaption, { color: colors.textSecondary }]}>
         {correctCount} de {total} correctas
+        {closeCount > 0 ? ` · ${closeCount} casi (½ punto)` : ''}
       </Text>
     </View>
   );

@@ -103,7 +103,8 @@ Reglas de negocio clave:
   del piano C4–C6). Consecuencia aceptada: la 8ª justa se acierta repitiendo la
   base.
 - ±10 cents = perfecto (hoja morada); ±25 = afinado (verde); ±50 = "casi"
-  (hoja ámbar, cuenta como fallo); más = otra nota (roja), y la corrección dice
+  (hoja ámbar, suena a acierto y vale MEDIO punto: 2 "casi" en 10 dejan la
+  ronda en 90 %, `singingScore`); más = otra nota (roja), y la corrección dice
   QUÉ se cantó. Sobre la hoja, una barra de -50 a +50 cents centrada en la nota
   pedida (`domain/singing/tuningGauge.ts`). Todo en `domain/singing/`.
 - La tecla del acorde lleva su cifrado con bajo (`C/E`; díadas `C–E`,

@@ -29,14 +29,27 @@ export const CLOSE_CENTS = 50;
 /**
  * - `perfect`: clavada (|desviación| ≤ 10 cents). Es un acierto.
  * - `correct`: afinada (|desviación| ≤ 25 cents).
- * - `close`: la nota pedida, pero desafinada (≤ 50 cents). Cuenta como fallo.
+ * - `close`: la nota pedida, pero desafinada (≤ 50 cents). Vale medio punto.
  * - `wrong`: otra nota.
  */
 export type SingingVerdict = 'perfect' | 'correct' | 'close' | 'wrong';
 
-/** Si el veredicto cuenta como acierto en la ronda (`perfect` y `correct`). */
+/** Si el veredicto cuenta como acierto completo en la ronda (`perfect` y `correct`). */
 export function isSingingHit(verdict: SingingVerdict): boolean {
   return verdict === 'perfect' || verdict === 'correct';
+}
+
+/**
+ * Lo que vale un "casi" frente a un acierto completo. Dio con la nota y solo
+ * le faltó afinarla: no es lo mismo que cantar otra nota, así que suma la
+ * mitad (2 "casi" en 10 preguntas dejan la ronda en 90 %, no en 80 %).
+ */
+export const CLOSE_SCORE = 0.5;
+
+/** Puntos que suma una toma a la ronda: 1 acierto, `CLOSE_SCORE` un "casi", 0 otra nota. */
+export function singingScore(verdict: SingingVerdict): number {
+  if (isSingingHit(verdict)) return 1;
+  return verdict === 'close' ? CLOSE_SCORE : 0;
 }
 
 export interface SingingEvaluation {

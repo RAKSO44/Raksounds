@@ -33,6 +33,7 @@ export function SingingSummaryView({ summary }: SingingSummaryViewProps) {
         <SummaryHero
           accuracy={summary.accuracy}
           correctCount={summary.correctCount}
+          closeCount={summary.closeCount}
           total={summary.total}
         />
       </SummaryRow>

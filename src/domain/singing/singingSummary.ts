@@ -1,6 +1,6 @@
 import { IntervalId } from '../ear-training';
 import { ChordFunction } from './chords';
-import { isSingingHit, SingingVerdict } from './singingEvaluation';
+import { isSingingHit, singingScore, SingingVerdict } from './singingEvaluation';
 import { SingingExercise } from './singingGenerator';
 
 /**
@@ -33,8 +33,14 @@ export interface SingingRecord {
 
 export interface SingingSummary {
   readonly total: number;
+  /** Aciertos completos (`perfect` y `correct`). */
   readonly correctCount: number;
-  /** Proporción de aciertos en [0, 1]. Con 0 respuestas es 0. */
+  /** Tomas "casi": la nota pedida, desafinada. Suman medio punto cada una. */
+  readonly closeCount: number;
+  /**
+   * Puntos obtenidos sobre el total, en [0, 1] (ver `singingScore`): un "casi"
+   * suma la mitad de un acierto. Con 0 respuestas es 0.
+   */
   readonly accuracy: number;
   readonly averageMs: number;
   readonly averageReplays: number;
@@ -50,7 +56,10 @@ export interface SingingSummary {
    * tiende a quedarse baja; si es positiva, a subirse. `null` como arriba.
    */
   readonly tendencyCents: number | null;
-  /** Objetivos fallados al menos una vez, sin repetir, en orden de aparición. */
+  /**
+   * Objetivos no acertados del todo al menos una vez (fallos y "casi"), sin
+   * repetir, en orden de aparición: un "casi" también es algo que practicar.
+   */
   readonly missedTargets: readonly SingingTarget[];
 }
 
@@ -68,8 +77,12 @@ export function summarizeSingingRound(records: readonly SingingRecord[]): Singin
   const total = records.length;
   const missed: SingingTarget[] = [];
   let correctCount = 0;
+  let closeCount = 0;
+  let points = 0;
 
   for (const record of records) {
+    points += singingScore(record.verdict);
+    if (record.verdict === 'close') closeCount += 1;
     if (isSingingHit(record.verdict)) correctCount += 1;
     else if (!missed.some((target) => sameTarget(target, record.target)))
       missed.push(record.target);
@@ -84,7 +97,8 @@ export function summarizeSingingRound(records: readonly SingingRecord[]): Singin
   return {
     total,
     correctCount,
-    accuracy: total === 0 ? 0 : correctCount / total,
+    closeCount,
+    accuracy: total === 0 ? 0 : points / total,
     averageMs: mean(records.map((record) => record.elapsedMs)) ?? 0,
     averageReplays: mean(records.map((record) => record.replayCount)) ?? 0,
     averageCentsOff,

@@ -1,6 +1,12 @@
 import { CHORD_LEVELS } from '../chordLevels';
 import { voiceChord } from '../chords';
-import { evaluateSinging, sungChordFunction, sungNoteName, verdictFor } from '../singingEvaluation';
+import {
+  evaluateSinging,
+  singingScore,
+  sungChordFunction,
+  sungNoteName,
+  verdictFor,
+} from '../singingEvaluation';
 import { ChordSingingExercise, IntervalSingingExercise } from '../singingGenerator';
 import { summarizeSingingRound, SingingRecord } from '../singingSummary';
 
@@ -110,6 +116,15 @@ describe('sungChordFunction', () => {
   });
 });
 
+describe('singingScore', () => {
+  it('acierto 1, "casi" medio punto, otra nota 0', () => {
+    expect(singingScore('perfect')).toBe(1);
+    expect(singingScore('correct')).toBe(1);
+    expect(singingScore('close')).toBe(0.5);
+    expect(singingScore('wrong')).toBe(0);
+  });
+});
+
 describe('summarizeSingingRound', () => {
   const record = (overrides: Partial<SingingRecord>): SingingRecord => ({
     target: { kind: 'interval', interval: 'P5' },
@@ -139,14 +154,28 @@ describe('summarizeSingingRound', () => {
     expect(summary.missedTargets).toEqual([{ kind: 'interval', interval: 'M3' }]);
   });
 
-  it('"perfecto" cuenta como acierto y "casi" como fallo', () => {
+  it('"perfecto" cuenta como acierto y "casi" como medio punto', () => {
     const summary = summarizeSingingRound([
       record({ verdict: 'perfect', centsOff: 3 }),
       record({ verdict: 'correct', centsOff: 20 }),
       record({ verdict: 'close', centsOff: 40 }),
+      record({ verdict: 'wrong', centsOff: 300 }),
     ]);
     expect(summary.correctCount).toBe(2);
+    expect(summary.closeCount).toBe(1);
+    expect(summary.accuracy).toBeCloseTo(2.5 / 4);
     expect(summary.missedTargets).toHaveLength(1);
+  });
+
+  it('2 "casi" en 10 preguntas dejan la ronda en 90 %', () => {
+    const summary = summarizeSingingRound([
+      ...Array.from({ length: 8 }, () => record({ verdict: 'correct' })),
+      record({ verdict: 'close', centsOff: 30 }),
+      record({ verdict: 'close', centsOff: -45 }),
+    ]);
+    expect(summary.correctCount).toBe(8);
+    expect(summary.closeCount).toBe(2);
+    expect(summary.accuracy).toBeCloseTo(0.9);
   });
 
   it('agrupa los fallos por función de acorde', () => {

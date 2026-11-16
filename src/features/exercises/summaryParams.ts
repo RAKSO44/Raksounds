@@ -109,6 +109,7 @@ export function decodeSingingSummary(raw: string | undefined): SingingSummary | 
   return {
     total,
     correctCount,
+    closeCount: numberAt(source, 'closeCount') ?? 0,
     accuracy,
     averageMs,
     averageReplays,

@@ -4,11 +4,11 @@ import { countReplays } from '@/domain/ear-training';
 import {
   createSingingRound,
   evaluateSinging,
-  isSingingHit,
   SingingEvaluation,
   SingingExercise,
   SingingKind,
   SingingRecord,
+  singingScore,
   singingTargetOf,
   SingingSummary,
   summarizeSingingRound,
@@ -90,8 +90,8 @@ export function useSingingRound({ kind, levelNumber }: RoundOptions): SingingRou
         replayCount: countReplays(listened.current),
       });
 
-      // Un "casi" cuenta como fallo, y suena como tal.
-      if (isSingingHit(result.verdict)) {
+      // Un "casi" suma medio punto: dio con la nota, así que suena a acierto.
+      if (singingScore(result.verdict) > 0) {
         hapticSuccess();
         playEffect('success');
       } else {
