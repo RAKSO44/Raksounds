@@ -1,4 +1,5 @@
 import { createSoundEffectsPlayer } from '../SoundEffectsPlayer';
+import { MASTER_GAIN } from '../PianoSamplerPlayer';
 
 interface FakeSource {
   buffer: unknown;
@@ -74,9 +75,10 @@ describe('createSoundEffectsPlayer', () => {
     expect(mockSources.every((source) => source.startedAt === 2)).toBe(true);
   });
 
-  it('no amplifica: los efectos van por debajo del fondo de escala', async () => {
+  it('suena al mismo nivel que el piano: misma ganancia de bus, sin amplificar', async () => {
     const effects = createSoundEffectsPlayer();
     await effects.load();
+    expect(mockGains[0].value).toBe(MASTER_GAIN);
     expect(mockGains[0].value).toBeLessThanOrEqual(1);
   });
 

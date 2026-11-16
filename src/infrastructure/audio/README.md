@@ -7,7 +7,11 @@ Implementación real del contrato `IAudioPlayer` (definido en `src/domain/audio/
   así que la polifonía es ilimitada y no hay estado que rebobinar entre notas.
 - `pianoSampleMap.ts` — banco **cromático** C4–C6, un archivo por semitono.
 - `SoundEffectsPlayer.ts` — efectos de los ejercicios (`assets/audio/effects/`),
-  con su propio contexto para no pasar por el limitador del piano.
+  con su propio contexto para no pasar por el limitador del piano, pero con la
+  misma ganancia de bus (`MASTER_GAIN`). Los archivos están nivelados a la
+  sonoridad media de las notas (≈ -18 LUFS) con
+  `scripts/level-sound-effects.mjs`: si se cambia o añade un efecto, se vuelve
+  a correr ese script en vez de tocar ganancias en el código.
 
 Esta es la única capa que conoce react-native-audio-api. Si cambiamos de motor,
 solo se toca esta carpeta.

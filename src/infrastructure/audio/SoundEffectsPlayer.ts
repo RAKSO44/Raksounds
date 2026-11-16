@@ -2,6 +2,8 @@ import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
 import { ISoundEffects, SoundEffect } from '@/domain/audio/ISoundEffects';
 
+import { MASTER_GAIN } from './PianoSamplerPlayer';
+
 /**
  * Efectos de los ejercicios (acierto, error, ronda superada / no superada)
  * sobre react-native-audio-api, igual que el piano: se decodifican una vez y
@@ -20,11 +22,13 @@ const SOURCES: Record<SoundEffect, number> = {
 };
 
 /**
- * Nivel de los efectos frente al piano (que va a ≈ -7 dB). Un sonido de
- * feedback acompaña a la corrección; no debe tapar la nota que se está
- * comparando ni sonar más fuerte que ella.
+ * La MISMA ganancia que el bus del piano. Los archivos ya están nivelados a la
+ * sonoridad media de las notas (`scripts/level-sound-effects.mjs`), así que
+ * con igual ganancia un efecto suena exactamente tan fuerte como una nota: ni
+ * la tapa ni queda por debajo. Para cambiar el nivel de un efecto se regenera
+ * el archivo, no se toca esta constante.
  */
-const EFFECTS_GAIN = 0.5;
+const EFFECTS_GAIN = MASTER_GAIN;
 
 export function createSoundEffectsPlayer(): ISoundEffects {
   let context: AudioContext | undefined;

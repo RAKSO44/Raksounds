@@ -72,7 +72,7 @@ const SUSTAIN_FLOOR_S = MIN_SOUNDING_S - RELEASE_S;
  * la grabación original. No es una preferencia de usuario: subirla es
  * exactamente lo que satura (ver el commit que quitó el ajuste de volumen).
  */
-const MASTER_GAIN = 0.45;
+export const MASTER_GAIN = 0.45;
 
 /**
  * Umbral por debajo del cual el limitador es transparente (≈ -1.9 dBFS). Una
