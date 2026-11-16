@@ -17,6 +17,8 @@ import {
   SINGING_ICONS,
   SINGING_LABELS,
 } from '../labels';
+import { MicPermissionDialog } from '../components';
+import { useMicrophoneGate } from '../hooks/useMicrophoneGate';
 
 /** Los dos tipos sueltos, en el orden en que se aprenden. */
 const SINGLE_MODES: readonly ExerciseMode[] = ['interval', 'note'];
@@ -35,8 +37,12 @@ export function ExercisesScreen() {
   const { colors } = useTheme();
   const router = useRouter();
 
+  const micGate = useMicrophoneGate();
+
   const openLevels = (mode: ExerciseMode | SingingKind) =>
     router.push({ pathname: '/exercise/levels', params: { mode } });
+  // Sin micrófono no se puede cantar: el permiso se pide antes de entrar.
+  const openSinging = (kind: SingingKind) => micGate.requestThen(() => openLevels(kind));
 
   // Los de entonación entran después de los auditivos, siguiendo la cascada.
   const singingDelay = (SINGLE_MODES.length + 1) * motion.stagger;
@@ -116,11 +122,13 @@ export function ExercisesScreen() {
               sublabel={SINGING_DESCRIPTIONS[kind]}
               fullWidth
               accessibilityLabel={SINGING_LABELS[kind]}
-              onPress={() => openLevels(kind)}
+              onPress={() => openSinging(kind)}
             />
           </Animated.View>
         ))}
       </ScrollView>
+
+      <MicPermissionDialog visible={micGate.denied} onClose={micGate.dismiss} />
     </View>
   );
 }

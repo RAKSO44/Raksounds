@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
@@ -14,6 +14,7 @@ import {
   AnswerFeedbackSheet,
   BottomActionBar,
   ExerciseProgressBar,
+  MicPermissionDialog,
   SingingExerciseView,
   TuningGauge,
 } from '../components';
@@ -82,11 +83,6 @@ export function SingingRoundScreen() {
   // tocar el micrófono. Si aun así no hay permiso (lo negó, o Android ya no
   // vuelve a preguntar), se ofrece ir a los ajustes de la app a activarlo.
   const clearProblem = take.clearProblem;
-  const openPermissionSettings = useCallback(() => {
-    clearProblem();
-    Linking.openSettings().catch(() => undefined);
-  }, [clearProblem]);
-
   const leave = useCallback(() => router.dismissAll(), [router]);
   const askToLeave = useCallback(() => setLeaving(true), []);
   useHardwareBack(
@@ -185,16 +181,7 @@ export function SingingRoundScreen() {
         onHeight={setActionBarHeight}
       />
 
-      <ConfirmDialog
-        visible={take.problem === 'denied'}
-        title="Activa el micrófono"
-        message="Raksound necesita el micrófono para escucharte cantar. Actívalo en los permisos de la app y vuelve a intentarlo."
-        confirmLabel="Activar"
-        confirmTone="secondary"
-        cancelLabel="Ahora no"
-        onConfirm={openPermissionSettings}
-        onCancel={clearProblem}
-      />
+      <MicPermissionDialog visible={take.problem === 'denied'} onClose={clearProblem} />
 
       <ConfirmDialog
         visible={leaving}

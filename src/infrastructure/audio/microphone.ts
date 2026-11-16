@@ -1,6 +1,11 @@
 import { AudioManager, AudioRecorder } from 'react-native-audio-api';
 
-import { IMicrophone, MicrophoneFrame, MicrophoneStartResult } from '@/domain/audio/IMicrophone';
+import {
+  IMicrophone,
+  MicrophoneFrame,
+  MicrophonePermission,
+  MicrophoneStartResult,
+} from '@/domain/audio/IMicrophone';
 
 /**
  * Micrófono nativo (Android/iOS) sobre el `AudioRecorder` de
@@ -20,10 +25,19 @@ const BUFFER_LENGTH = 2048;
 
 let recorder: AudioRecorder | null = null;
 
-async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<MicrophoneStartResult> {
+async function requestPermission(): Promise<MicrophonePermission> {
   try {
     const permission = await AudioManager.requestRecordingPermissions();
-    if (permission !== 'Granted') return 'denied';
+    return permission === 'Granted' ? 'granted' : 'denied';
+  } catch {
+    return 'unavailable';
+  }
+}
+
+async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<MicrophoneStartResult> {
+  try {
+    const permission = await requestPermission();
+    if (permission !== 'granted') return permission;
 
     // iOS necesita una sesión que grabe Y reproduzca (el piano sigue sonando en
     // el mismo ejercicio); `defaultToSpeaker` evita que el audio pase al
@@ -62,4 +76,4 @@ async function stop(): Promise<void> {
 }
 
 /** Instancia única: solo hay un micrófono. */
-export const microphone: IMicrophone = { start, stop };
+export const microphone: IMicrophone = { requestPermission, start, stop };

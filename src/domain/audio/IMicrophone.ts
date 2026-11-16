@@ -21,7 +21,19 @@ export interface MicrophoneFrame {
  */
 export type MicrophoneStartResult = 'started' | 'denied' | 'unavailable';
 
+/**
+ * - `granted`: se puede abrir el micrófono.
+ * - `denied`: el usuario no dio permiso.
+ * - `unavailable`: no hay micrófono o el sistema no pudo preguntar.
+ */
+export type MicrophonePermission = 'granted' | 'denied' | 'unavailable';
+
 export interface IMicrophone {
+  /**
+   * Pide el permiso sin abrir el micrófono (antes de entrar a un ejercicio de
+   * entonación). Si ya se concedió, responde sin preguntar. Nunca lanza.
+   */
+  requestPermission(): Promise<MicrophonePermission>;
   /**
    * Pide permiso si hace falta y empieza a escuchar. Nunca lanza: un fallo se
    * devuelve como resultado, porque se llama desde un botón.

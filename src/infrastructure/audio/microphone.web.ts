@@ -1,4 +1,9 @@
-import { IMicrophone, MicrophoneFrame, MicrophoneStartResult } from '@/domain/audio/IMicrophone';
+import {
+  IMicrophone,
+  MicrophoneFrame,
+  MicrophonePermission,
+  MicrophoneStartResult,
+} from '@/domain/audio/IMicrophone';
 
 /**
  * Micrófono en web. El `AudioRecorder` de react-native-audio-api no tiene
@@ -27,15 +32,16 @@ async function stop(): Promise<void> {
   await context.close().catch(() => undefined);
 }
 
-async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<MicrophoneStartResult> {
-  await stop();
+/**
+ * Abre el micrófono del navegador (y con ello pide permiso si hace falta).
+ * Devuelve el problema en vez del stream cuando no se puede.
+ */
+async function openStream(): Promise<MediaStream | Exclude<MicrophonePermission, 'granted'>> {
   if (typeof navigator === 'undefined' || navigator.mediaDevices?.getUserMedia == null) {
     return 'unavailable';
   }
-
-  let stream: MediaStream;
   try {
-    stream = await navigator.mediaDevices.getUserMedia({
+    return await navigator.mediaDevices.getUserMedia({
       // El procesado "de llamada" del navegador deforma la voz cantada: la
       // supresión de ruido corta notas largas y el control de ganancia aplana
       // el volumen que pintan las barras.
@@ -45,6 +51,24 @@ async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<Microph
     const denied = error instanceof DOMException && error.name === 'NotAllowedError';
     return denied ? 'denied' : 'unavailable';
   }
+}
+
+/**
+ * El navegador no tiene un "pedir permiso" aparte: se abre el micrófono, lo
+ * que muestra el aviso, y se cierra en el acto. Concedido una vez, `start()`
+ * ya no vuelve a preguntar.
+ */
+async function requestPermission(): Promise<MicrophonePermission> {
+  const stream = await openStream();
+  if (typeof stream === 'string') return stream;
+  stream.getTracks().forEach((track) => track.stop());
+  return 'granted';
+}
+
+async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<MicrophoneStartResult> {
+  await stop();
+  const stream = await openStream();
+  if (typeof stream === 'string') return stream;
 
   const context = new AudioContext();
   const analyser = context.createAnalyser();
@@ -62,4 +86,4 @@ async function start(onFrame: (frame: MicrophoneFrame) => void): Promise<Microph
   return 'started';
 }
 
-export const microphone: IMicrophone = { start, stop };
+export const microphone: IMicrophone = { requestPermission, start, stop };

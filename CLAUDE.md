@@ -118,6 +118,10 @@ Reglas de negocio clave:
   (`domain/pitch/pitchDetection.ts`).
 - El micrófono es `MicButton` (`shared/design-system/`), copia del de Duolingo:
   cuadrado azul → píldora con puntos → barras con el volumen → gris hundido.
+- El permiso del micrófono se pide al ELEGIR "Entonación de intervalos/notas"
+  en el menú (`useMicrophoneGate`): si se niega, `MicPermissionDialog` avisa y
+  no deja entrar; volver a pulsar vuelve a pedirlo. El micrófono del ejercicio
+  lo sigue pidiendo por si acaso.
 
 ## Arquitectura — REGLA DE ORO
 

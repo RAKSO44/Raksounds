@@ -44,6 +44,7 @@ let mockStartResult: MicrophoneStartResult = 'started';
 const mockMicStop = jest.fn().mockResolvedValue(undefined);
 jest.mock('@/infrastructure/audio/microphone', () => ({
   microphone: {
+    requestPermission: () => Promise.resolve('granted'),
     start: (onFrame: (frame: MicrophoneFrame) => void) => {
       mockOnFrame = onFrame;
       return Promise.resolve(mockStartResult);

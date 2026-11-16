@@ -5,6 +5,7 @@ export * from './ExerciseProgressBar';
 export * from './ExerciseView';
 export * from './IntervalExercise';
 export * from './LevelOption';
+export * from './MicPermissionDialog';
 export * from './NoteExercise';
 export * from './NoteKey';
 export * from './RoundSummaryView';
