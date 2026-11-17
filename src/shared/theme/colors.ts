@@ -92,6 +92,12 @@ export interface ThemeColors {
   pianoWhiteKeyEdge: string;
   pianoBlackKey: string;
   pianoBlackKeyEdge: string;
+  /**
+   * Texto sobre una tecla blanca. Oscuro en los DOS temas: la tecla sigue
+   * siendo clara en oscuro, y un texto del tema (claro) no se leería encima.
+   */
+  pianoKeyText: string;
+  pianoKeyTextMuted: string;
 
   /** Velo oscuro tras un diálogo modal. */
   scrim: string;
@@ -157,6 +163,8 @@ export const lightColors: ThemeColors = {
   pianoWhiteKeyEdge: palette.swanShadow,
   pianoBlackKey: palette.ebony,
   pianoBlackKeyEdge: palette.ebonyEdge,
+  pianoKeyText: palette.eel,
+  pianoKeyTextMuted: palette.wolf,
 
   scrim: palette.scrim,
 
@@ -223,6 +231,8 @@ export const darkColors: ThemeColors = {
   pianoWhiteKeyEdge: palette.hare,
   pianoBlackKey: palette.ebony,
   pianoBlackKeyEdge: palette.ebonyEdge,
+  pianoKeyText: palette.eel,
+  pianoKeyTextMuted: palette.wolf,
 
   scrim: palette.scrim,
 

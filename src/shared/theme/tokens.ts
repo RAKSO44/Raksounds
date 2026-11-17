@@ -24,6 +24,8 @@ export const radii = {
 export const elevation = {
   /** Alto del labio en reposo; al presionar se colapsa a 0. */
   buttonLip: 4,
+  /** Labio de los nodos de la ruta del Home: más grueso, para que su color se lea. */
+  nodeLip: 6,
 } as const;
 
 /** Medidas de controles que se repiten entre pantallas de ejercicios. */
@@ -71,6 +73,29 @@ export const controls = {
   gaugeMarkerHeight: 32,
   /** Raya fina que marca el centro exacto (0 cents). */
   gaugeTickWidth: 2,
+  /** Ruta del Home: diámetro de un nodo de módulo. */
+  moduleNodeSize: 76,
+  /** Ancho de cada botón (Teoría, Práctica) de la tarjeta de un módulo. */
+  moduleCardButtonWidth: 64,
+  /** Ancho máximo de la columna de la ruta en pantallas anchas. */
+  pathMaxWidth: 560,
+  /** Lado de la punta del globo de una definición (teoría). */
+  tooltipArrowSize: 12,
+  /** Alto de las teclas blancas dibujadas en la teoría. */
+  theoryKeyHeight: 128,
+  /** Grosor de la llave que une dos teclas en la teoría. */
+  bracketStroke: 3,
+  /** Escalera DO…SI: alto de la primera ficha y cuánto sube cada una. */
+  stepTileMinHeight: 48,
+  stepTileRise: 12,
+  /** Ficha de una fila de nombres de nota (con o sin hueco). */
+  noteCellSize: 60,
+  /** Luz del pulso: el círculo que destella con cada golpe. */
+  pulseLightSize: 96,
+  /** Marcas de pulso bajo la luz (una por golpe). */
+  beatMarkSize: 14,
+  /** Alto del botón TAP. */
+  tapPadHeight: 112,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -95,6 +120,14 @@ export const motion = {
   gauge: 420,
   /** Suavizado de las barras de volumen entre un bloque de audio y el siguiente. */
   micLevel: 80,
+  /** Apagado de la luz del pulso tras cada golpe (se enciende de golpe). */
+  flash: 180,
+  /** Un nodo de la ruta se abre en tarjeta (o vuelve a círculo). */
+  morph: 300,
+  /** Cambio de color de un nodo al completar su teoría o su práctica. */
+  statusChange: 520,
+  /** Destello que cruza el nodo tras ese cambio. */
+  shine: 700,
 } as const;
 
 /**
@@ -150,6 +183,8 @@ export const typography = {
   stat: { fontSize: 24, fontFamily: fonts.extrabold },
   /** Cifra principal del resumen de una ronda (el porcentaje de aciertos). */
   heroValue: { fontSize: 52, fontFamily: fonts.extrabold },
+  /** Texto corrido de la teoría: legible, con aire entre líneas. */
+  body: { fontSize: 17, lineHeight: 26, fontFamily: fonts.medium },
   caption: { fontSize: 12, fontFamily: fonts.semibold },
   tabLabel: { fontSize: 11, fontFamily: fonts.bold },
 } as const satisfies Record<string, TextStyle>;

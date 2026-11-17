@@ -1,0 +1,163 @@
+import { useCallback, useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+import { moduleById, ModuleId } from '@/domain/lessons';
+import {
+  AnswerFeedbackSheet,
+  BottomActionBar,
+  ConfirmDialog,
+  ExerciseProgressBar,
+  Header,
+} from '@/shared/design-system';
+import { useHardwareBack } from '@/shared/navigation';
+import { motion, spacing, typography, useTheme } from '@/shared/theme';
+
+import { LessonExerciseView } from '../components/practice/LessonExerciseView';
+import { useClipPlayer } from '../hooks/useClipPlayer';
+import { usePracticeSession } from '../hooks/usePracticeSession';
+import { feedbackTitle } from '../labels';
+import { useLessonProgressStore } from '../progressStore';
+
+/**
+ * La práctica de un módulo: 15 ejercicios seguidos, con corrección inmediata.
+ * Al responder el último se registra el intento y se REEMPLAZA esta pantalla
+ * por el resultado, para no volver a ejercicios ya respondidos.
+ */
+export function PracticeScreen() {
+  const router = useRouter();
+  const params = useLocalSearchParams<{ module?: string }>();
+  const module = moduleById(params.module);
+
+  if (module === undefined) {
+    return <Header title="Práctica" onBack={() => router.back()} />;
+  }
+  return <PracticeRound moduleId={module.id} moduleNumber={module.number} />;
+}
+
+function PracticeRound({ moduleId, moduleNumber }: { moduleId: ModuleId; moduleNumber: number }) {
+  const { colors } = useTheme();
+  const router = useRouter();
+  // La semilla se fija al abrir la práctica: el intento no cambia al repintar.
+  const [seed] = useState(() => Date.now() >>> 0);
+  const session = usePracticeSession(moduleId, seed);
+  const player = useClipPlayer();
+  const recordPractice = useLessonProgressStore((state) => state.recordPractice);
+
+  const [leaving, setLeaving] = useState(false);
+  const [actionBarHeight, setActionBarHeight] = useState(0);
+
+  const revealed = session.phase === 'revealed';
+  const answering = session.phase === 'answering';
+
+  // Pasar de ejercicio corta lo que estuviera sonando del anterior.
+  const { stop } = player;
+  useEffect(() => stop, [session.index, stop]);
+
+  useEffect(() => {
+    if (session.finalScore === null) return;
+    recordPractice(moduleId, session.finalScore);
+    router.replace({
+      pathname: '/lesson/result',
+      params: { module: moduleId, score: String(session.finalScore) },
+    });
+  }, [session.finalScore, recordPractice, moduleId, router]);
+
+  const askToLeave = useCallback(() => setLeaving(true), []);
+  useHardwareBack(
+    useCallback(() => {
+      askToLeave();
+      return true;
+    }, [askToLeave]),
+  );
+
+  return (
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <Header title={`Módulo ${moduleNumber} · Práctica`} onBack={askToLeave} />
+
+      <View style={styles.progress}>
+        <ExerciseProgressBar
+          completed={session.index}
+          total={Math.max(1, session.exercises.length - 1)}
+        />
+      </View>
+
+      <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+        {session.exercise !== null && (
+          <Animated.View
+            key={session.index}
+            entering={FadeIn.duration(motion.enter)}
+            style={styles.exercise}
+          >
+            <LessonExerciseView
+              exercise={session.exercise}
+              revealed={revealed}
+              player={player}
+              onAnswer={session.setAnswer}
+            />
+          </Animated.View>
+        )}
+        {!player.ready && (
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
+        )}
+      </ScrollView>
+
+      {session.exercise !== null && (
+        <AnswerFeedbackSheet
+          visible={revealed}
+          result={session.isCorrect === true ? 'correct' : 'wrong'}
+          title={feedbackTitle(session.isCorrect ?? false)}
+          detail={session.exercise.explanation}
+          bottomInset={actionBarHeight}
+        />
+      )}
+
+      <BottomActionBar
+        label={answering ? 'Comprobar' : 'Continuar'}
+        disabled={answering && session.answer === null}
+        transparent={revealed}
+        onPress={answering ? session.confirm : session.advance}
+        onHeight={setActionBarHeight}
+      />
+
+      <ConfirmDialog
+        visible={leaving}
+        title="¿Salir de la práctica?"
+        message="Perderás las respuestas de este intento y tendrás que empezar de nuevo."
+        confirmLabel="Salir"
+        cancelLabel="Seguir"
+        onConfirm={() => router.back()}
+        onCancel={() => setLeaving(false)}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  progress: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.md,
+  },
+  scroll: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+    padding: spacing.md,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
+    gap: spacing.md,
+  },
+  exercise: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  hint: {
+    ...typography.caption,
+    textAlign: 'center',
+  },
+});

@@ -56,6 +56,16 @@ jest.mock('react-native-mmkv', () => {
 // Se sustituye la instancia única (no el motor: su test lo prueba contra un
 // doble de react-native-audio-api) para que las pantallas puedan afirmar qué
 // efecto sonó con `jest.requireMock('@/infrastructure/audio/soundEffects')`.
+// El metrónomo de las lecciones, por el mismo motivo (su motor tiene su propio
+// test). `play` devuelve la referencia de reloj como lo haría el real.
+jest.mock('@/infrastructure/audio/metronome', () => ({
+  metronome: {
+    load: jest.fn().mockResolvedValue(undefined),
+    play: jest.fn(() => 0),
+    stop: jest.fn(),
+  },
+}));
+
 jest.mock('@/infrastructure/audio/soundEffects', () => ({
   soundEffects: {
     load: jest.fn().mockResolvedValue(undefined),
