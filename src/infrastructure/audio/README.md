@@ -12,6 +12,12 @@ Implementación real del contrato `IAudioPlayer` (definido en `src/domain/audio/
   sonoridad media de las notas (≈ -18 LUFS) con
   `scripts/level-sound-effects.mjs`: si se cambia o añade un efecto, se vuelve
   a correr ese script en vez de tocar ganancias en el código.
+- `MetronomePlayer.ts` — golpes del metrónomo de las lecciones del Home. El
+  "toc" se sintetiza una vez al cargar y cada golpe se programa con
+  `start(when)` en el reloj del contexto: un `setTimeout` por golpe tiembla y
+  no serviría para calificar un toque. `play` devuelve el instante del primer
+  golpe en el reloj de `performance.now()`, el mismo con el que se miden los
+  toques.
 
 Esta es la única capa que conoce react-native-audio-api. Si cambiamos de motor,
 solo se toca esta carpeta.
