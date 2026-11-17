@@ -31,11 +31,14 @@ suelto en un feature).
   Créditos; vive en `shared/` porque lo usan 2+ features.
 - **`ConfirmDialog`** — diálogo modal para una acción que se pierde si se hace
   sin querer (abandonar una ronda). Dos `PushButton`: el destructivo en rojo
-  (`solid`) y el de quedarse como `selectable` neutro.
+  (`solid`) y el de quedarse como `selectable` neutro. Sin `cancelLabel` es un
+  aviso de un solo botón (el "Próximamente" de los módulos sin lección).
 - **`Header`** — cabecera morada que pinta el área de la status bar. Con
-  `onBack` muestra una flecha de volver a la izquierda del título.
+  `onBack` muestra una flecha de volver a la izquierda del título; con `action`,
+  un ícono a la derecha (el engranaje de Configuración en el Home).
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
-  redondeados y juguetones (`MaterialCommunityIcons`).
+  redondeados y juguetones (`MaterialCommunityIcons`): Home, Librería,
+  Ejercicios y Perfil. Configuración NO es pestaña.
 - **`MicButton`** — el micrófono de los ejercicios de hablar de Duolingo, en el
   azul secundario: cuadrado con ícono en reposo → se ENSANCHA (cambio de
   ancho con `Easing.out`, nunca escala) a una píldora con 9 puntos mientras se
@@ -44,6 +47,14 @@ suelto en un feature).
   Mismo labio, snap y háptica que `PushButton`. El contenido NUNCA cambia a
   la vez que el ancho: se desvanece, el botón cambia de ancho vacío y el
   contenido nuevo entra al terminar (si no, los puntos se salen del cuadrado).
+
+- **Piezas de lección** (`AnswerOption`, `AnswerFeedbackSheet`,
+  `BottomActionBar`, `ExerciseProgressBar`) — las de una ronda de Ejercicios,
+  compartidas con las lecciones del Home. `answerOptionState` es genérico
+  sobre el tipo de opción.
+
+`PushButton` con `diameter` es circular (los nodos de la ruta del Home): mismo
+labio, snap y háptica, solo cambia la forma. No crees un botón redondo aparte.
 
 `PushButton` acepta un `icon` opcional (nombre de `MaterialCommunityIcons`) que
 se pinta encima del label con el color del texto del botón. Para un **selector

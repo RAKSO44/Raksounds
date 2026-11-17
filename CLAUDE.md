@@ -9,20 +9,58 @@ y arpegios, y pueda reproducirlos con su propia voz de forma precisa.
 
 ## Alcance ACTUAL (MVP) — léelo con atención
 
-Hay tres secciones construidas: **Librería**, **Ejercicios** (auditivos y de
-entonación) y **Configuración**.
+Hay cuatro secciones construidas: **Home** ("Inicio": ruta de aprendizaje,
+con lección solo en los Módulos 1 y 2), **Librería**, **Ejercicios**
+(auditivos y de entonación) y **Configuración** (ya no es pestaña: se abre
+desde el engranaje de la cabecera del Home, ruta `/settings`).
 NO implementes todavía:
 
 - Autenticación ni base de datos (llegará después, probablemente con Supabase)
-- La sección "Home" (roadmap gamificado estilo Duolingo)
+- Contenido de los módulos del Home más allá del 2: se trabajan de uno en uno y
+  solo cuando el usuario lo pida (`.claude/rules/roadmap.md`). En la ruta ya
+  aparecen los Módulos 3–10 (Etapas 1 y 2) como "Próximamente", solo con su
+  título y temario
 - La sección "Perfil" (logros, diamantes, desbloqueables)
-- Persistencia del progreso de los ejercicios (rachas, historial de rondas):
-  hoy el resultado de una ronda se muestra y se descarta
+- Persistencia del progreso de los Ejercicios (rachas, historial de rondas):
+  hoy el resultado de una ronda se muestra y se descarta. El progreso de los
+  módulos del Home SÍ se guarda, en el dispositivo (MMKV)
 - Grabación de la voz a archivo (la entonación solo ESCUCHA en vivo: los
   bloques del micrófono se analizan y se descartan)
 
-Esas secciones existen como **placeholders vacíos** en la navegación, solo para que la
-arquitectura ya las contemple y no haya que reestructurar después.
+Perfil existe como **placeholder** ("Próximamente") con su pestaña en el tab
+bar, solo para que la arquitectura ya lo contemple.
+
+## Qué SÍ construimos ahora: el Home (ruta de aprendizaje)
+
+Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
+(Pulso y tempo)**. Documento de partida y decisiones en `docs/roadmap/etapa-1/`
+(las decisiones de `modulos-1-2.md` prevalecen sobre la especificación).
+
+- Las etapas y módulos de la ruta viven en `domain/lessons/stages.ts`. Cada
+  etapa tiene una tarjeta FIJA arriba que la siguiente empuja al llegar
+  (`stickyHeaderIndices`, como las secciones de Duolingo).
+- Cada módulo es un círculo con su título al lado (`ModuleRow`); al tocarlo, el
+  mismo círculo se estira (ancho y alto, nunca escala) hasta una tarjeta con su
+  temario y DOS botones: **Teoría** (libro) y **Ejercicios** (play). Abrir uno
+  cierra el otro; tocar el temario lo devuelve a círculo.
+- **NADA SE BLOQUEA**: se entra a cualquier módulo, teoría o práctica en
+  cualquier orden. El progreso solo se indica: teoría leída → labio dorado;
+  práctica completada (≥ 12/15) → cara dorada; en la tarjeta, cada botón se
+  vuelve dorado. El cambio se anima al volver al Home (color + un destello
+  que cruza el nodo, `useStatusTransition`), nunca a escondidas.
+- Teoría: hasta 3 hojas que se pasan con ← n → (el ✓ final la marca como
+  leída); nada obliga a interactuar para avanzar. Los términos destacados
+  (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`).
+- Práctica: 15 ejercicios generados de una semilla, plantilla fija por módulo.
+  Reglas en `domain/lessons/progress.ts`; guardado en
+  `features/home/progressStore.ts`.
+- Los ejercicios son DATOS (`domain/lessons/exercise.ts`): mecánicas `choice`,
+  `clip-choice` (cada opción es un sonido o una luz), `sequence` (ordenar
+  tocando, sin arrastrar) y `tap` (seguir el pulso, calificado en
+  `domain/lessons/tapSync.ts`). Los estímulos son `Clip`s; los hace sonar
+  `useClipPlayer` (piano para notas, metrónomo para golpes).
+- El metrónomo (`IMetronome`) programa cada golpe en el reloj de audio, nunca
+  con `setTimeout`: así se puede calificar un toque contra el golpe real.
 
 ## Qué SÍ construimos ahora: la Librería
 
@@ -137,40 +175,55 @@ src/
     pitch/              # pitchDetection.ts (YIN), singingTake.ts (cuándo termina una toma)
     singing/            # chords.ts, chordLevels.ts, chordSymbol.ts, singingGenerator.ts,
                         #   singingEvaluation.ts, singingSummary.ts, tuningGauge.ts
-    audio/               # IAudioPlayer.ts, IMicrophone.ts, ISoundEffects.ts (interfaces, sin implementación)
+    lessons/            # Home: stages.ts (etapas/módulos), progress.ts, exercise.ts, clip.ts,
+                        #   module1Practice.ts, module2Practice.ts, tapSync.ts, tempo.ts…
+    audio/               # IAudioPlayer.ts, IMicrophone.ts, ISoundEffects.ts, IMetronome.ts
+                         #   (interfaces, sin implementación)
   infrastructure/
     audio/               # PianoSamplerPlayer.ts (motor real) + pianoPlayer.ts (instancia única)
                          #   + microphone.ts (nativo) / microphone.web.ts (getUserMedia)
                          #   + SoundEffectsPlayer.ts / soundEffects.ts (acierto, error, fin de ronda)
+                         #   + MetronomePlayer.ts / metronome.ts (golpes del Home)
   features/
     library/
       components/        # RootNotePicker, ScaleFamilySelector, ScaleSubtypeSelector, ScaleDegreeButtons
       screens/
       hooks/              # useScalePlayer
     exercises/
-      components/        # AnswerOption, NoteKey, IntervalExercise, NoteExercise,
-                         #   AnswerFeedbackSheet, ExerciseProgressBar, RoundSummaryView,
+      components/        # NoteKey, IntervalExercise, NoteExercise, RoundSummaryView,
                          #   SingingExerciseView, ChordKeyboard, TuningGauge,
                          #   SingingSummaryView, SummaryParts…
       screens/           # ExercisesScreen (menú), LevelSelectScreen, ExerciseRoundScreen,
                          #   RoundSummaryScreen, SingingRoundScreen, SingingSummaryScreen
       hooks/              # useExerciseRound, useNotePlayer, useNoteFormatter,
                          #   useSingingRound, useSingingTake
-    home/                 # placeholder, NO implementar lógica todavía
+    home/                 # ruta de aprendizaje (Módulos 1–2)
+      components/        # StagePath, ModuleNode, ModuleActionCard, NoteSteps, PulseLight…
+        practice/        #   vistas por mecánica (LessonExerciseView elige)
+        theory/          #   páginas de teoría (theoryPages.ts: ≤ 3 por módulo)
+      screens/           # HomeScreen, TheoryScreen, PracticeScreen, PracticeResultScreen
+      hooks/              # useClipPlayer, useTapRun, usePracticeSession, useLessonSounds
+      progressStore.ts    # progreso persistido (MMKV)
     profile/              # placeholder, NO implementar lógica todavía
   shared/
-    design-system/        # componentes base reutilizables (incl. ConfirmDialog, MicButton)
+    design-system/        # componentes base reutilizables (incl. ConfirmDialog, MicButton,
+                          #   AnswerOption, AnswerFeedbackSheet, BottomActionBar,
+                          #   ExerciseProgressBar — los usan Ejercicios y Home)
     navigation/           # useHardwareBack + ExitConfirmation (atrás del sistema)
     theme/
   app/                    # rutas de Expo Router (reemplaza navigation/)
     _layout.tsx            # layout raíz
     (tabs)/
-      _layout.tsx          # bottom tabs: Librería (inicial), Ejercicios, Configuración
-      index.tsx            # → LibraryScreen (wrapper fino)
+      _layout.tsx          # bottom tabs: Home (inicial), Librería, Ejercicios, Perfil
+      index.tsx            # → HomeScreen (ruta de aprendizaje; la app abre en `/`)
+      library.tsx          # → LibraryScreen (wrapper fino)
       exercises.tsx        # → ExercisesScreen (menú de ejercicios)
-      settings.tsx         # → SettingsScreen
-      home.tsx             # → HomeScreen placeholder
-      profile.tsx          # → ProfileScreen placeholder
+      profile.tsx          # → ProfileScreen placeholder ("Próximamente")
+    settings.tsx           # → SettingsScreen (desde el engranaje del Home)
+    lesson/                # fuera de las tabs, como las rondas
+      theory.tsx           # → TheoryScreen (?module=)
+      practice.tsx         # → PracticeScreen (?module=)
+      result.tsx           # → PracticeResultScreen (?module=&score=)
     exercise/              # fuera de las tabs: una ronda no se abandona por accidente
       levels.tsx           # → LevelSelectScreen (?mode=, incluye singInterval/singNote)
       round.tsx            # → ExerciseRoundScreen (?mode=&level=)
