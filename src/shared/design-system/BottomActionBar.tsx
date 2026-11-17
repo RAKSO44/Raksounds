@@ -1,8 +1,9 @@
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PushButton } from '@/shared/design-system';
 import { spacing, typography, useTheme } from '@/shared/theme';
+
+import { PushButton } from './PushButton';
 
 interface BottomActionBarProps {
   label: string;

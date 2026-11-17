@@ -9,9 +9,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { IntervalId } from '@/domain/ear-training';
-import { PushButton, PushButtonTone } from '@/shared/design-system';
 import { controls, motion } from '@/shared/theme';
+
+import { PushButton, PushButtonTone } from './PushButton';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -33,12 +33,12 @@ const STATE_TONES: Record<AnswerOptionState, PushButtonTone> = {
   answer: 'brand',
 };
 
-interface AnswerOptionStateInput {
-  option: IntervalId;
+interface AnswerOptionStateInput<T> {
+  option: T;
   /** Opción marcada por el usuario. */
-  selected: IntervalId | null;
+  selected: T | null;
   /** Opción correcta del ejercicio. */
-  answer: IntervalId;
+  answer: T;
   /** `true` cuando ya se confirmó y toca mostrar la corrección. */
   revealed: boolean;
 }
@@ -48,12 +48,12 @@ interface AnswerOptionStateInput {
  * corregir solo hay elegida/no elegida; después, la elegida se pinta según
  * acierte o falle y la correcta se destaca aunque no se haya elegido.
  */
-export function answerOptionState({
+export function answerOptionState<T>({
   option,
   selected,
   answer,
   revealed,
-}: AnswerOptionStateInput): AnswerOptionState {
+}: AnswerOptionStateInput<T>): AnswerOptionState {
   if (!revealed) return option === selected ? 'selected' : 'idle';
   if (option === selected) return option === answer ? 'correct' : 'wrong';
   return option === answer ? 'answer' : 'idle';

@@ -6,7 +6,7 @@ import { spacing, typography, useTheme } from '@/shared/theme';
 import { intervalNumberLabel, intervalQualityLabel } from '../labels';
 import { useNoteFormatter } from '../hooks/useNoteFormatter';
 import { NotePlayer } from '../hooks/useNotePlayer';
-import { AnswerOption, answerOptionState } from './AnswerOption';
+import { AnswerOption, answerOptionState } from '@/shared/design-system';
 import { NoteKey } from './NoteKey';
 
 /** Texto de la tecla oculta mientras no se corrige el ejercicio. */
