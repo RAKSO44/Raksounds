@@ -46,7 +46,7 @@ interface ToneColors {
  * la pantalla toma el control, de modo que arrastrar sigue haciendo scroll en
  * vez de quedarse pulsando el botón.
  */
-const PRESS_SLOP = 20;
+export const PRESS_SLOP = 20;
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -109,6 +109,11 @@ interface PushButtonProps {
    * cara mide lo que su texto y el labio asomaría por todo el hueco sobrante.
    */
   fillHeight?: boolean;
+  /**
+   * Botón circular de este diámetro (los nodos de la ruta del Home). Mismo
+   * labio, snap y háptica: solo cambia la forma.
+   */
+  diameter?: number;
   accessibilityLabel?: string;
   minWidth?: number;
   fullWidth?: boolean;
@@ -148,6 +153,7 @@ export function PushButton({
   size = 'regular',
   iconPlacement = 'above',
   fillHeight = false,
+  diameter,
   accessibilityLabel,
   minWidth,
   fullWidth,
@@ -261,17 +267,30 @@ export function PushButton({
         style={[
           styles.container,
           fullWidth && styles.fullWidth,
+          diameter != null && { width: diameter },
           minWidth != null && { minWidth },
           style,
         ]}
       >
         {/* Labio inferior: caja desplazada hacia abajo que asoma bajo la cara. */}
-        <View style={[styles.lip, { backgroundColor: lipColor }]} />
+        <View
+          style={[
+            styles.lip,
+            diameter != null && { borderRadius: diameter / 2 },
+            { backgroundColor: lipColor },
+          ]}
+        />
         <Animated.View
           style={[
             styles.face,
             fillHeight && styles.faceFill,
             size === 'compact' && styles.faceCompact,
+            diameter != null && {
+              width: diameter,
+              height: diameter,
+              borderRadius: diameter / 2,
+              padding: 0,
+            },
             iconStart && styles.faceRow,
             { backgroundColor: faceColor, borderColor, borderWidth: isSolid ? 0 : 2 },
             faceAnimatedStyle,
