@@ -73,7 +73,8 @@ adivinar no suena hasta corregir.
   verdad: tras SI, el DO de la octava siguiente); el hueco no, hasta
   comprobar. Las alternativas NO suenan.
 - **11 / 12** "¿Cuál X es más agudo / grave?": sin luz ni texto de ayuda;
-  "Comprobar" se habilita con solo haber tocado las dos. Corrección: "Los dos
+  "Comprobar" se habilita con una opción elegida (pulsarla de nuevo la
+  deselecciona). Corrección: "Los dos
   son X; pero en octavas diferentes".
 - **13** "¿Las dos notas tienen el mismo nombre?": dos botones celestes con el
   parlante, una nota cada uno, que se pueden tocar a la vez. Corrección: "el
@@ -113,11 +114,10 @@ adivinar no suena hasta corregir.
   volver a escuchar también después de corregir.
 - En las secuencias, las fichas bien puestas quedan en verde y la primera que
   rompe el orden en rojo.
-- Ningún ejercicio auditivo se puede responder sin haber escuchado sus
-  sonidos. Una nota suelta cuenta al tocarla; un clip largo (pulsos del Módulo
-  2), al terminar (si el audio no arranca, la respuesta sigue cerrada).
+- Escuchar no es requisito para responder: las opciones se pueden elegir
+  desde el principio (decisión del usuario, 2026-11-18).
 - Resultado: sin "Volver a practicar". Si hubo fallos, "Reintentar fallos"
-  (amarillo, sobre "Continuar") repite solo esas posiciones con ejercicios
+  (neutro, sobre "Continuar") repite solo esas posiciones con ejercicios
   NUEVOS del mismo tipo. Al volver, el resultado muestra "+N" y sube a la nueva
   cuenta; ese total cuenta para completar la práctica y no suma un intento.
 
@@ -126,3 +126,15 @@ adivinar no suena hasta corregir.
 - Latencia real del tap en Android (con y sin auriculares Bluetooth).
 - Lector de pantalla, pantallas pequeñas, app en segundo plano a mitad de un
   metrónomo.
+
+### Ajustes 2026-11-18
+
+- Ningún ejercicio exige escuchar antes de responder: las opciones se eligen
+  desde el principio y no hay aviso de "Escucha antes de responder".
+- ¿Cuál es más agudo/grave?: "Comprobar" se activa con una opción elegida;
+  pulsar la elegida la deselecciona.
+- El resultado ya no muestra el número de intentos (se sigue guardando).
+- "Reintentar fallos" pasa a ser un botón neutro (el amarillo era demasiado
+  fuerte junto a "Continuar").
+- Definiciones de la teoría: globo sin color (superficie y borde, como los de
+  Duolingo), letra un poco más grande y una sola frase corta.

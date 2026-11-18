@@ -53,7 +53,8 @@ suelto en un feature).
   compartidas con las lecciones del Home. `answerOptionState` es genérico
   sobre el tipo de opción.
 - **`BottomActionBar`** acepta una acción `secondary` encima de la principal,
-  con su misma forma y otro tono ("Reintentar fallos" en amarillo).
+  con su misma forma pero neutra, como el "Revisar lección" de Duolingo
+  ("Reintentar fallos").
 - **`Overlay` / `OverlayHost`** — capa por encima de toda la app (pestañas y
   cabeceras incluidas) en el MISMO árbol de vistas. Úsala en vez de `Modal`
   cuando algo debe crecer desde una pieza de la pantalla: un `Modal` abre otra

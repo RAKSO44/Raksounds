@@ -59,11 +59,13 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   que cruza el nodo, `useStatusTransition`), nunca a escondidas.
 - Teoría: hasta 3 hojas que se pasan con ← n → (el ✓ final la marca como
   leída); nada obliga a interactuar para avanzar. Los términos destacados
-  (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`).
+  (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`):
+  globo sin color (superficie + borde, como Duolingo) con UNA frase corta,
+  del ancho que pide esa frase y centrado bajo el término.
 - Práctica: 15 ejercicios generados de una semilla, plantilla fija por módulo.
   Reglas en `domain/lessons/progress.ts`; guardado en
   `features/home/progressStore.ts`. En el resultado, si hubo fallos,
-  "Reintentar fallos" (amarillo) repite SOLO esas posiciones, regeneradas; lo
+  "Reintentar fallos" (botón neutro) repite SOLO esas posiciones, regeneradas; lo
   recuperado se suma al intento ("+3", 12 → 15) y cuenta para completarlo
   (`recordRetry`: no suma un intento nuevo).
 - Los ejercicios son DATOS (`domain/lessons/exercise.ts`): mecánicas `choice`,
