@@ -11,12 +11,12 @@ import { useTooltip } from './TooltipHost';
 
 /** Las columnas de la tabla y lo que explica cada título al tocarlo. */
 const COLUMNS = [
-  { title: 'Nota', tip: 'El nombre de la nota, tal como se dice en español: DO, RE, MI…' },
+  { title: 'Nota', tip: 'El nombre' },
   {
     title: 'Cifrado',
-    tip: 'La misma nota escrita con una letra (de la A a la G). Es como se nombran en los acordes y en las canciones.',
+    tip: 'El sistema universal de nombramiento',
   },
-  { title: 'Sonido', tip: 'Toca el altavoz para escuchar cómo suena cada nota.' },
+  { title: 'Sonido', tip: 'Toca el altavoz para escucharla.' },
 ] as const;
 
 /**

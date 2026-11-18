@@ -84,7 +84,9 @@ export const controls = {
   /** Ancho máximo de la columna de la ruta en pantallas anchas. */
   pathMaxWidth: 560,
   /** Lado de la punta del globo de una definición (teoría). */
-  tooltipArrowSize: 12,
+  tooltipArrowSize: 16,
+  /** Borde del globo de una definición (y de su punta). */
+  tooltipBorder: 2,
   /** Alto de las teclas blancas dibujadas en la teoría. */
   theoryKeyHeight: 128,
   /** Grosor de la llave que une dos teclas en la teoría. */
@@ -94,6 +96,8 @@ export const controls = {
   stepTileRise: 12,
   /** Ficha de una fila de nombres de nota (con o sin hueco). */
   noteCellSize: 60,
+  /** Cuánto se sube el texto de un botón cuando la fuente lo asienta bajo. */
+  labelNudge: 2,
   /** Ancho mínimo de un botón de escuchar que es solo el parlante. */
   listenButtonMinWidth: 96,
   /** Luz del pulso: el círculo que destella con cada golpe. */
@@ -198,5 +202,7 @@ export const typography = {
   /** Texto corrido de la teoría: legible, con aire entre líneas. */
   body: { fontSize: 17, lineHeight: 26, fontFamily: fonts.medium },
   caption: { fontSize: 12, fontFamily: fonts.semibold },
+  /** Frase de un globo de definición: corta y un poco más grande que el texto chico. */
+  tooltip: { fontSize: 16, lineHeight: 22, fontFamily: fonts.semibold },
   tabLabel: { fontSize: 11, fontFamily: fonts.bold },
 } as const satisfies Record<string, TextStyle>;

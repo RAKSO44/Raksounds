@@ -85,10 +85,10 @@ describe('TheoryScreen (Módulo 1)', () => {
     expect(mockNoteOn).toHaveBeenCalledWith(67);
 
     await user.press(screen.getByLabelText('¿Qué es cifrado?'));
-    expect(screen.getByText(/de la A a la G/)).toBeTruthy();
+    expect(screen.getByText(/sistema universal de nombramiento/)).toBeTruthy();
     // Volver a tocar el título la cierra.
     await user.press(screen.getByLabelText('¿Qué es cifrado?'));
-    expect(screen.queryByText(/de la A a la G/)).toBeNull();
+    expect(screen.queryByText(/sistema universal de nombramiento/)).toBeNull();
   });
 
   it('las teclas de la página 2 suenan y "octava" se define al tocarla', async () => {
@@ -102,7 +102,7 @@ describe('TheoryScreen (Módulo 1)', () => {
     expect(mockNoteOn).toHaveBeenCalledWith(72);
 
     await user.press(screen.getByText('octava'));
-    expect(screen.getByText(/Un intervalo musical/)).toBeTruthy();
+    expect(screen.getByText(/entre dos notas con el mismo nombre/)).toBeTruthy();
   });
 
   it('nunca tiene más de 3 páginas', async () => {

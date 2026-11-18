@@ -33,12 +33,20 @@ interface Tip {
   text: string;
   /** Centro del término y su borde inferior, relativos al host; null hasta medir. */
   anchor: { x: number; y: number } | null;
+  /** Ancho natural de la tarjeta (lo que pide su texto); null hasta medir. */
+  width: number | null;
 }
 
 /**
  * Las definiciones de la teoría ("¿qué es el cifrado?"): un globo bajo el
- * término tocado, a todo el ancho del contenido y con la punta señalando el
- * término. Tocar fuera (o el propio globo) lo cierra.
+ * término tocado, del ancho que pida su frase (nunca más que el contenido),
+ * centrado bajo el término sin salirse de los bordes y con la punta
+ * señalándolo. Como los de Duolingo: sin color (la superficie con su borde) y
+ * con una frase corta. Tocar fuera (o el propio globo) lo cierra.
+ *
+ * El globo no se pinta hasta medir el término. Luego se mide la tarjeta para
+ * centrarla: mientras tanto se oculta una capa INTERIOR, nunca la que lleva
+ * la animación de entrada (Reanimated pisaría su `opacity`).
  */
 export function TooltipHost({ children }: { children: ReactNode }) {
   const { colors } = useTheme();
@@ -53,7 +61,7 @@ export function TooltipHost({ children }: { children: ReactNode }) {
     const justClosed = closedByTouch.current === key;
     closedByTouch.current = null;
     if (justClosed) return;
-    setTip((current) => (current?.key === key ? null : { key, text, anchor: null }));
+    setTip((current) => (current?.key === key ? null : { key, text, anchor: null, width: null }));
     if (anchor === null || host.current === null) return;
     anchor.measureLayout(host.current, (x, y, width, height) =>
       setTip((current) =>
@@ -66,6 +74,11 @@ export function TooltipHost({ children }: { children: ReactNode }) {
 
   const api = useMemo(() => ({ toggle }), [toggle]);
   const arrow = controls.tooltipArrowSize;
+  // La tarjeta, centrada bajo el término pero dentro del contenido.
+  const cardLeft =
+    tip?.anchor && tip.width !== null
+      ? Math.min(Math.max(tip.anchor.x - tip.width / 2, 0), hostWidth - tip.width)
+      : 0;
 
   return (
     <TooltipContext.Provider value={api}>
@@ -78,41 +91,56 @@ export function TooltipHost({ children }: { children: ReactNode }) {
         }}
       >
         {children}
-        {tip !== null && (
+        {tip !== null && tip.anchor !== null && (
           <Animated.View
             key={tip.key}
             entering={FadeIn.duration(motion.enter)}
-            style={[
-              styles.bubble,
-              {
-                top: (tip.anchor?.y ?? 0) + arrow / 2 + spacing.xs,
-                opacity: tip.anchor === null ? 0 : 1,
-              },
-            ]}
+            style={[styles.bubble, { top: tip.anchor.y + arrow / 2 + spacing.xs }]}
           >
-            <View
-              style={[
-                styles.arrow,
-                {
-                  width: arrow,
-                  height: arrow,
-                  top: -arrow / 2,
-                  left: Math.min(
-                    Math.max((tip.anchor?.x ?? 0) - arrow / 2, radii.lg),
-                    hostWidth - radii.lg - arrow,
-                  ),
-                  backgroundColor: colors.brand,
-                },
-              ]}
-            />
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={`${tip.text} Cerrar`}
-              onPress={() => setTip(null)}
-              style={[styles.card, { backgroundColor: colors.brand }]}
-            >
-              <Text style={[styles.text, { color: colors.textOnBrand }]}>{tip.text}</Text>
-            </Pressable>
+            <View style={{ opacity: tip.width === null ? 0 : 1 }}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={`${tip.text} Cerrar`}
+                onPress={() => setTip(null)}
+                onLayout={(event) => {
+                  const width = event.nativeEvent.layout.width;
+                  setTip((current) =>
+                    current?.key === tip.key && current.width === null
+                      ? { ...current, width }
+                      : current,
+                  );
+                }}
+                style={[
+                  styles.card,
+                  {
+                    marginLeft: cardLeft,
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              >
+                <Text style={[styles.text, { color: colors.textPrimary }]}>{tip.text}</Text>
+              </Pressable>
+              {/* La punta va DESPUÉS de la tarjeta: su mitad de abajo tapa el
+                borde de la tarjeta y la punta queda unida a ella. */}
+              <View
+                pointerEvents="none"
+                style={[
+                  styles.arrow,
+                  {
+                    width: arrow,
+                    height: arrow,
+                    top: -arrow / 2,
+                    left: Math.min(
+                      Math.max(tip.anchor.x - arrow / 2, cardLeft + radii.lg),
+                      cardLeft + (tip.width ?? hostWidth) - radii.lg - arrow,
+                    ),
+                    backgroundColor: colors.surface,
+                    borderColor: colors.border,
+                  },
+                ]}
+              />
+            </View>
           </Animated.View>
         )}
       </View>
@@ -130,15 +158,21 @@ const styles = StyleSheet.create({
   },
   arrow: {
     position: 'absolute',
+    // Solo los dos lados que asoman por encima de la tarjeta llevan borde.
+    borderTopWidth: controls.tooltipBorder,
+    borderLeftWidth: controls.tooltipBorder,
     transform: [{ rotate: '45deg' }],
   },
   card: {
-    borderRadius: radii.md,
+    // Del ancho de su frase, no del contenido entero.
+    alignSelf: 'flex-start',
+    borderRadius: radii.lg,
+    borderWidth: controls.tooltipBorder,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
   },
   text: {
-    ...typography.subtitle,
+    ...typography.tooltip,
     flexShrink: 0,
   },
 });

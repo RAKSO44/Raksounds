@@ -81,3 +81,13 @@ jest.mock('@/infrastructure/audio/soundEffects', () => ({
     play: jest.fn(),
   },
 }));
+
+// En Node no hay layout: `measureLayout` de una vista simulada es un jest.fn
+// que nunca responde. Se responde como una vista ya colocada (en el origen),
+// para que lo que espera esa medida (el globo de una definición) aparezca.
+{
+  const { View } = require('react-native');
+  View.prototype.measureLayout = function measureLayout(_relativeTo, onSuccess) {
+    onSuccess?.(0, 0, 0, 0);
+  };
+}
