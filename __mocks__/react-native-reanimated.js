@@ -64,5 +64,11 @@ module.exports = {
   FadeOutDown: animationBuilder,
   LinearTransition: animationBuilder,
   // Algunos consumidores esperan también estos helpers de React.
-  useAnimatedRef: () => React.createRef(),
+  // Estable entre renders, como el real (un ref nuevo por render rompería deps).
+  useAnimatedRef: () => React.useRef(null),
+  // Scroll animado (la ruta del Home): en Node no hay hilo de UI ni scroll real.
+  useAnimatedScrollHandler: () => () => {},
+  useAnimatedReaction: () => {},
+  scrollTo: () => {},
+  cancelAnimation: () => {},
 };

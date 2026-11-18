@@ -14,7 +14,7 @@ import Animated, {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { PathModule } from '@/domain/lessons';
-import { PRESS_SLOP } from '@/shared/design-system';
+import { PRESS_SLOP, PushButtonTone, resolveTone } from '@/shared/design-system';
 import { hapticPressIn } from '@/shared/haptics';
 import { controls, elevation, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
@@ -26,6 +26,11 @@ const D = controls.moduleNodeSize;
 /** Borde de la tarjeta abierta (el círculo sólido no lleva). */
 const BORDER = 2;
 const MORPH = { duration: motion.morph, easing: Easing.out(Easing.cubic) };
+/**
+ * Un dedo que se queda apoyado sigue contando como toque (el `Tap` de
+ * gesture-handler falla por defecto a los 500 ms).
+ */
+const HOLD_LIMIT_MS = 10_000;
 
 /**
  * 1 → 0 en el primer tramo `end` del morph. Es un worklet porque se llama
@@ -40,6 +45,8 @@ function fadeOut(value: number, end: number): number {
 
 interface ModuleRowProps {
   module: PathModule;
+  /** Color de la etapa del módulo (círculo, etiqueta y botones). */
+  tone: PushButtonTone;
   open: boolean;
   theoryDone: boolean;
   practiceDone: boolean;
@@ -66,6 +73,7 @@ interface ModuleRowProps {
  */
 export function ModuleRow({
   module,
+  tone,
   open,
   theoryDone,
   practiceDone,
@@ -75,6 +83,7 @@ export function ModuleRow({
   onPractice,
 }: ModuleRowProps) {
   const { colors } = useTheme();
+  const stage = resolveTone(tone, colors);
   const upcoming = module.lessonId === null;
   const status = useStatusTransition({ theory: theoryDone, practice: practiceDone }, visible);
 
@@ -113,11 +122,11 @@ export function ModuleRow({
   };
 
   const faceOf = (s: NodeStatus) =>
-    upcoming ? colors.surface : s.practice ? colors.warning : colors.brand;
+    upcoming ? colors.surface : s.practice ? colors.warning : stage.face;
   const lipOf = (s: NodeStatus) =>
-    upcoming ? colors.surfaceShadow : s.theory ? colors.warningShadow : colors.brandShadow;
+    upcoming ? colors.surfaceShadow : s.theory ? colors.warningShadow : stage.lip;
   const iconColorOf = (s: NodeStatus) =>
-    upcoming ? colors.textSecondary : s.practice ? colors.textOnWarning : colors.textOnBrand;
+    upcoming ? colors.textSecondary : s.practice ? colors.textOnWarning : stage.onFace;
   const from = { face: faceOf(status.from), lip: lipOf(status.from) };
   const to = { face: faceOf(status.to), lip: lipOf(status.to) };
   const { surface, surfaceShadow, border, progressShine } = colors;
@@ -167,13 +176,17 @@ export function ModuleRow({
     transform: [{ translateX: interpolate(shine.value, [0, 1], [-D, D]) }, { rotate: '20deg' }],
   }));
 
+  // Un `Tap`, no un `LongPress` que se activa al apoyar el dedo: mientras el
+  // dedo no se levanta el toque no se ha "ganado", así que si empieza a
+  // arrastrar el ScrollView se lleva el gesto y la ruta hace scroll. La cara
+  // se hunde igualmente al apoyar (`onBegin`), como un PushButton.
   const pressGesture = useCallback(
-    (): ReturnType<typeof Gesture.LongPress> =>
-      Gesture.LongPress()
-        .minDuration(0)
+    (): ReturnType<typeof Gesture.Tap> =>
+      Gesture.Tap()
         .maxDistance(PRESS_SLOP)
+        .maxDuration(HOLD_LIMIT_MS)
         .runOnJS(true)
-        .onStart(() => {
+        .onBegin(() => {
           // Mismo snap instantáneo y misma háptica que un PushButton.
           pressed.value = 1;
           hapticPressIn();
@@ -196,16 +209,21 @@ export function ModuleRow({
 
   return (
     <View style={styles.row} onLayout={onRowLayout}>
-      <Animated.View pointerEvents={open ? 'none' : 'auto'} style={[styles.titleArea, titleStyle]}>
-        <GestureDetector gesture={titleGesture}>
-          <View importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-            <Text style={[styles.title, { color: colors.textPrimary }]}>{module.title}</Text>
-            {upcoming && (
-              <Text style={[styles.soon, { color: colors.textSecondary }]}>Próximamente</Text>
-            )}
-          </View>
-        </GestureDetector>
-      </Animated.View>
+      {/* Toda la franja a la derecha del círculo (de arriba abajo, no solo el
+          texto) abre el módulo: es un blanco cómodo para el dedo. */}
+      <GestureDetector gesture={titleGesture}>
+        <Animated.View
+          pointerEvents={open ? 'none' : 'auto'}
+          importantForAccessibility="no-hide-descendants"
+          accessibilityElementsHidden
+          style={[styles.titleArea, titleStyle]}
+        >
+          <Text style={[styles.title, { color: colors.textPrimary }]}>{module.title}</Text>
+          {upcoming && (
+            <Text style={[styles.soon, { color: colors.textSecondary }]}>Próximamente</Text>
+          )}
+        </Animated.View>
+      </GestureDetector>
 
       <Animated.View style={shellStyle}>
         <Animated.View style={[styles.lip, lipStyle]} />
@@ -237,6 +255,7 @@ export function ModuleRow({
             >
               <ModuleCardContent
                 module={module}
+                tone={tone}
                 theoryDone={theoryDone}
                 practiceDone={practiceDone}
                 onTheory={onTheory}
@@ -268,8 +287,8 @@ function statusLabel(theory: boolean, practice: boolean): string {
   return 'Sin empezar';
 }
 
-/** Lo que ocupan los dos botones de la derecha, que la zona de cierre no tapa. */
-const ACTIONS_WIDTH = controls.moduleCardButtonWidth * 2 + spacing.sm * 3;
+/** Lo que ocupa la columna de botones de la derecha, que la zona de cierre no tapa. */
+const ACTIONS_WIDTH = controls.moduleCardButtonWidth + spacing.sm * 2;
 
 const styles = StyleSheet.create({
   row: {
@@ -277,10 +296,12 @@ const styles = StyleSheet.create({
   },
   titleArea: {
     position: 'absolute',
-    left: D + spacing.md,
+    left: D,
     right: 0,
     top: 0,
-    height: D,
+    // Alto del círculo con su labio: la fila entera, no solo las letras.
+    height: D + elevation.nodeLip,
+    paddingLeft: spacing.md,
     justifyContent: 'center',
   },
   title: {

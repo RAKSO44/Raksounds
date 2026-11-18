@@ -7,6 +7,7 @@ import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { OverlayHost } from '@/shared/design-system';
 import { ThemeProvider, useTheme } from '@/shared/theme';
 
 function ThemedApp() {
@@ -19,7 +20,7 @@ function ThemedApp() {
   }, [colors.background]);
 
   return (
-    <>
+    <OverlayHost>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -32,6 +33,8 @@ function ThemedApp() {
             con la flecha de la cabecera. */}
         <Stack.Screen name="settings" />
         <Stack.Screen name="credits" />
+        {/* La lista de etapas, desde la tarjeta de etapa del Home. */}
+        <Stack.Screen name="stages" />
         {/* La elección de nivel y la ronda también viven fuera de las tabs:
             una ronda empezada no debe poder abandonarse por accidente
             tocando otra pestaña. */}
@@ -48,7 +51,7 @@ function ThemedApp() {
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />
-    </>
+    </OverlayHost>
   );
 }
 
