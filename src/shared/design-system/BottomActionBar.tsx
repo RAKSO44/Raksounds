@@ -3,10 +3,19 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { spacing, typography, useTheme } from '@/shared/theme';
 
-import { PushButton } from './PushButton';
+import { PushButton, PushButtonTone } from './PushButton';
+
+/** Una segunda acción, encima de la principal y con su misma forma. */
+export interface SecondaryAction {
+  label: string;
+  tone: PushButtonTone;
+  onPress: () => void;
+}
 
 interface BottomActionBarProps {
   label: string;
+  /** Acción adicional sobre la principal (p. ej. "Reintentar fallos"). */
+  secondary?: SecondaryAction;
   disabled?: boolean;
   onPress: () => void;
   /**
@@ -33,6 +42,7 @@ interface BottomActionBarProps {
  */
 export function BottomActionBar({
   label,
+  secondary,
   disabled = false,
   transparent = false,
   onPress,
@@ -56,6 +66,17 @@ export function BottomActionBar({
           : { backgroundColor: colors.background, borderTopColor: colors.border },
       ]}
     >
+      {secondary !== undefined && (
+        <PushButton
+          variant="solid"
+          tone={secondary.tone}
+          size="compact"
+          label={secondary.label}
+          labelStyle={typography.headerTitle}
+          fullWidth
+          onPress={secondary.onPress}
+        />
+      )}
       <PushButton
         variant="solid"
         tone="secondary"
@@ -77,6 +98,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 2,
     borderTopColor: 'transparent',
     padding: spacing.md,
+    gap: spacing.sm,
   },
   barTransparent: {
     backgroundColor: 'transparent',

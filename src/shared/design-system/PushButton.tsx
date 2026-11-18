@@ -22,10 +22,10 @@ export type PushButtonVariant = 'solid' | 'selectable';
  * los roles semánticos que necesitan los ejercicios (acierto, error, aviso) y
  * el celeste secundario. El tono NO cambia la forma del botón, solo su color.
  */
-export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning';
+export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning' | 'accent';
 
 /** Colores que aporta cada tono, resueltos desde el tema activo. */
-interface ToneColors {
+export interface ToneColors {
   /** Cara del botón sólido. */
   face: string;
   /** Labio 3D. */
@@ -209,7 +209,7 @@ export function PushButton({
   const iconStart = iconPlacement === 'start';
   const isSolid = variant === 'solid';
   const isSelected = variant === 'selectable' && selected;
-  const toneColors = TONES[tone](colors);
+  const toneColors = resolveTone(tone, colors);
 
   // Un botón deshabilitado no es un botón atenuado: pierde el color, el relieve
   // y el gesto, como el "Continuar" de Duolingo antes de elegir respuesta.
@@ -360,6 +360,13 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
     text: colors.dangerText,
     onFace: colors.textOnBrand,
   }),
+  accent: (colors) => ({
+    face: colors.accent,
+    lip: colors.accentShadow,
+    tint: colors.accentTint,
+    text: colors.accentText,
+    onFace: colors.textOnBrand,
+  }),
   warning: (colors) => ({
     face: colors.warning,
     lip: colors.warningShadow,
@@ -369,6 +376,14 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
     onFace: colors.textOnWarning,
   }),
 };
+
+/**
+ * Los colores de un tono en el tema activo, para piezas que no son un
+ * `PushButton` pero deben ir a juego con uno (los nodos de la ruta del Home).
+ */
+export function resolveTone(tone: PushButtonTone, colors: ThemeColors): ToneColors {
+  return TONES[tone](colors);
+}
 
 const styles = StyleSheet.create({
   container: {

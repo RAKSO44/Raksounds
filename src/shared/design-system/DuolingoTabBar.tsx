@@ -118,6 +118,8 @@ const styles = StyleSheet.create({
   },
   item: {
     flex: 1,
+    // Aire arriba y abajo del ícono: una barra apretada se siente baja.
+    paddingVertical: spacing.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },

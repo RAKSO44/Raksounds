@@ -73,6 +73,15 @@ export const palette = {
   /** Texto sobre el panel ámbar: el amarillo puro no se lee sobre él. */
   yellowPanelText: '#B07B00',
 
+  // Rosa de acento: color de una etapa de la ruta del Home (las etapas no usan
+  // el morado de marca, que ya es el de la cabecera, ni el dorado del progreso).
+  pink: '#E85BBF',
+  pinkShadow: '#C2459C',
+  pinkTintLight: '#FDF0F9',
+  pinkTextLight: '#C2459C',
+  pinkTintDark: '#3D2537',
+  pinkTextDark: '#F5A3DC',
+
   /** Fondo del panel de "perfecto": velo del morado de marca. */
   purplePanel: '#F0E2FD',
 

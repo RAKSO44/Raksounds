@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { hapticTap } from '@/shared/haptics';
-import { spacing, typography, useTheme } from '@/shared/theme';
+import { controls, spacing, typography, useTheme } from '@/shared/theme';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   bar: {
-    height: 56,
+    height: controls.headerHeight,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,

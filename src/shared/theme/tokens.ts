@@ -73,10 +73,14 @@ export const controls = {
   gaugeMarkerHeight: 32,
   /** Raya fina que marca el centro exacto (0 cents). */
   gaugeTickWidth: 2,
+  /** Alto de la barra de la cabecera (sin contar la status bar). */
+  headerHeight: 64,
   /** Ruta del Home: diámetro de un nodo de módulo. */
   moduleNodeSize: 76,
   /** Ancho de cada botón (Teoría, Práctica) de la tarjeta de un módulo. */
   moduleCardButtonWidth: 64,
+  /** Grosor de la línea que separa dos etapas en la ruta. */
+  stageDividerStroke: 2,
   /** Ancho máximo de la columna de la ruta en pantallas anchas. */
   pathMaxWidth: 560,
   /** Lado de la punta del globo de una definición (teoría). */
@@ -90,6 +94,8 @@ export const controls = {
   stepTileRise: 12,
   /** Ficha de una fila de nombres de nota (con o sin hueco). */
   noteCellSize: 60,
+  /** Ancho mínimo de un botón de escuchar que es solo el parlante. */
+  listenButtonMinWidth: 96,
   /** Luz del pulso: el círculo que destella con cada golpe. */
   pulseLightSize: 96,
   /** Marcas de pulso bajo la luz (una por golpe). */
@@ -128,6 +134,12 @@ export const motion = {
   statusChange: 520,
   /** Destello que cruza el nodo tras ese cambio. */
   shine: 700,
+  /** Pausa antes de que el resultado sume lo recuperado en "Reintentar fallos". */
+  scoreGainDelay: 600,
+  /** Cada paso del contador del resultado al sumar lo recuperado (+1). */
+  scoreTick: 140,
+  /** Cambio de color de la tarjeta de etapa al pasar a otra etapa. */
+  stageColor: 220,
 } as const;
 
 /**

@@ -52,6 +52,12 @@ export interface ThemeColors {
   dangerTint: string;
   dangerText: string;
 
+  /** Acento (rosa). Un color más para distinguir las etapas de la ruta. */
+  accent: string;
+  accentShadow: string;
+  accentTint: string;
+  accentText: string;
+
   /** Aviso (amarillo). Dificultad intermedia. */
   warning: string;
   warningShadow: string;
@@ -140,6 +146,11 @@ export const lightColors: ThemeColors = {
   dangerTint: palette.redTintLight,
   dangerText: palette.redTextLight,
 
+  accent: palette.pink,
+  accentShadow: palette.pinkShadow,
+  accentTint: palette.pinkTintLight,
+  accentText: palette.pinkTextLight,
+
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,
   warningTint: palette.yellowTintLight,
@@ -207,6 +218,11 @@ export const darkColors: ThemeColors = {
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,
   dangerText: palette.redTextDark,
+
+  accent: palette.pink,
+  accentShadow: palette.pinkShadow,
+  accentTint: palette.pinkTintDark,
+  accentText: palette.pinkTextDark,
 
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,
