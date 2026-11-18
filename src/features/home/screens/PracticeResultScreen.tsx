@@ -48,7 +48,7 @@ function useCountUp(from: number, to: number): number {
  * Resultado de un intento: aciertos de 15 y si con eso se completa la práctica
  * (12 o más). No aprobar no penaliza, y un completado anterior nunca se pierde.
  *
- * Si hubo fallos, "Reintentar fallos" (amarillo, sobre "Continuar") repite
+ * Si hubo fallos, "Reintentar fallos" (neutro, sobre "Continuar") repite
  * SOLO esas posiciones con ejercicios nuevos; al volver, el resultado suma lo
  * recuperado ("+3", 12 → 15) y eso cuenta para completar la práctica.
  */
@@ -127,8 +127,7 @@ export function PracticeResultScreen() {
           <Text style={[styles.message, { color: colors.textPrimary }]}>{message}</Text>
           {progress !== null && progress.bestScore !== null && (
             <Text style={[styles.caption, { color: colors.textSecondary }]}>
-              Tu mejor resultado: {progress.bestScore}/{PRACTICE_LENGTH} · intentos:{' '}
-              {progress.attempts}
+              Tu mejor resultado: {progress.bestScore}/{PRACTICE_LENGTH}
             </Text>
           )}
         </Animated.View>
@@ -139,7 +138,7 @@ export function PracticeResultScreen() {
         onPress={finish}
         secondary={
           failed !== '' && score < PRACTICE_LENGTH
-            ? { label: 'Reintentar fallos', tone: 'warning', onPress: retryFailed }
+            ? { label: 'Reintentar fallos', onPress: retryFailed }
             : undefined
         }
       />

@@ -1,14 +1,17 @@
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { spacing, typography, useTheme } from '@/shared/theme';
+import { controls, spacing, typography, useTheme } from '@/shared/theme';
 
-import { PushButton, PushButtonTone } from './PushButton';
+import { PushButton } from './PushButton';
 
-/** Una segunda acción, encima de la principal y con su misma forma. */
+/**
+ * Una segunda acción, encima de la principal y con su misma forma, pero
+ * neutra (cara de superficie con borde), como el "Revisar lección" de
+ * Duolingo junto a "Continuar": se ve, pero no compite con la principal.
+ */
 export interface SecondaryAction {
   label: string;
-  tone: PushButtonTone;
   onPress: () => void;
 }
 
@@ -68,11 +71,10 @@ export function BottomActionBar({
     >
       {secondary !== undefined && (
         <PushButton
-          variant="solid"
-          tone={secondary.tone}
+          variant="selectable"
           size="compact"
           label={secondary.label}
-          labelStyle={typography.headerTitle}
+          labelStyle={styles.secondaryLabel}
           fullWidth
           onPress={secondary.onPress}
         />
@@ -102,5 +104,10 @@ const styles = StyleSheet.create({
   },
   barTransparent: {
     backgroundColor: 'transparent',
+  },
+  secondaryLabel: {
+    ...typography.headerTitle,
+    // Poppins asienta el texto bajo en Android: sobre la cara neutra se nota.
+    transform: [{ translateY: -controls.labelNudge }],
   },
 });
