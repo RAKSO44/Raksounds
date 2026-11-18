@@ -7,6 +7,10 @@ import { ThemeProvider } from '@/shared/theme';
 
 import { LibraryScreen } from '../LibraryScreen';
 
+jest.mock('expo-router', () => ({
+  useRouter: () => ({ push: jest.fn(), back: jest.fn() }),
+}));
+
 // Se mockea solo la frontera nativa: el flujo UI → dominio → IAudioPlayer es real.
 const mockNoteOn = jest.fn<number, [number]>();
 const mockNoteOff = jest.fn();

@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ExerciseMode } from '@/domain/ear-training';
 import { SINGING_KINDS, SingingKind } from '@/domain/singing';
 import { Header, PushButton } from '@/shared/design-system';
+import { useSettingsAction } from '@/shared/navigation';
 import { controls, motion, spacing, typography, useTheme } from '@/shared/theme';
 
 import {
@@ -35,6 +36,7 @@ const SINGLE_MODES: readonly ExerciseMode[] = ['interval', 'note'];
  */
 export function ExercisesScreen() {
   const { colors } = useTheme();
+  const settings = useSettingsAction();
   const router = useRouter();
 
   const micGate = useMicrophoneGate();
@@ -49,7 +51,7 @@ export function ExercisesScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Header title="Ejercicios" />
+      <Header title="Ejercicios" action={settings} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.sectionHeader}>
