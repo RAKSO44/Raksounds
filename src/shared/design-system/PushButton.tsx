@@ -207,6 +207,7 @@ export function PushButton({
   );
 
   const iconStart = iconPlacement === 'start';
+  const hasText = (label != null && label !== '') || sublabel != null;
   const isSolid = variant === 'solid';
   const isSelected = variant === 'selectable' && selected;
   const toneColors = resolveTone(tone, colors);
@@ -297,30 +298,34 @@ export function PushButton({
           ]}
         >
           {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
-          <View
-            style={[
-              styles.texts,
-              iconStart && styles.textsStart,
-              align === 'spread' && styles.textsSpread,
-            ]}
-          >
-            {label != null && label !== '' && (
-              <Text style={[typography.chip, styles.label, labelStyle, { color: labelColor }]}>
-                {label}
-              </Text>
-            )}
-            {sublabel != null && (
-              <Text
-                style={[
-                  styles.sublabel,
-                  align === 'spread' && styles.sublabelSpread,
-                  { color: sublabelColor },
-                ]}
-              >
-                {sublabel}
-              </Text>
-            )}
-          </View>
+          {/* Sin texto no hay caja de texto: con el ícono al inicio, esa caja
+              vacía (flex: 1) empujaba el ícono a la izquierda en vez de centrarlo. */}
+          {hasText && (
+            <View
+              style={[
+                styles.texts,
+                iconStart && styles.textsStart,
+                align === 'spread' && styles.textsSpread,
+              ]}
+            >
+              {label != null && label !== '' && (
+                <Text style={[typography.chip, styles.label, labelStyle, { color: labelColor }]}>
+                  {label}
+                </Text>
+              )}
+              {sublabel != null && (
+                <Text
+                  style={[
+                    styles.sublabel,
+                    align === 'spread' && styles.sublabelSpread,
+                    { color: sublabelColor },
+                  ]}
+                >
+                  {sublabel}
+                </Text>
+              )}
+            </View>
+          )}
         </Animated.View>
       </View>
     </GestureDetector>
