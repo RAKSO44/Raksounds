@@ -144,6 +144,58 @@ export const STAGES: readonly Stage[] = [
       },
     ],
   },
+  {
+    number: 3,
+    title: 'Escalas y tonalidades',
+    modules: [
+      {
+        number: 11,
+        title: 'Escalas mayores',
+        topics: [
+          'Qué es una escala',
+          'Fórmula de tonos y semitonos',
+          'Construcción de Do mayor',
+          'Otras escalas mayores',
+        ],
+        lessonId: null,
+      },
+      {
+        number: 12,
+        title: 'Grados de la escala',
+        topics: [
+          'Qué son los grados',
+          'Grados I al VII',
+          'La tónica',
+          'Función básica de cada grado',
+          'Introducción al solfeo relativo',
+        ],
+        lessonId: null,
+      },
+      {
+        number: 13,
+        title: 'Escalas menores',
+        topics: [
+          'Escala menor natural',
+          'Escala menor armónica',
+          'Escala menor melódica',
+          'Relación entre mayores y menores',
+        ],
+        lessonId: null,
+      },
+      {
+        number: 14,
+        title: 'Tonalidades y armaduras',
+        topics: [
+          'Qué es una tonalidad',
+          'Armaduras',
+          'Tonalidades mayores y menores',
+          'Tonalidades relativas',
+          'Círculo de quintas',
+        ],
+        lessonId: null,
+      },
+    ],
+  },
 ];
 
 export function moduleById(id: string | undefined): LessonModule | undefined {

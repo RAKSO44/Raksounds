@@ -7,12 +7,13 @@ import { useTooltip } from './TooltipHost';
 
 /**
  * Un trozo de un párrafo de teoría: texto llano o una palabra destacada.
- * - `underline`: subrayada (la idea que hay que quedarse).
+ * - `highlight`: pintada en el color de marca (la idea que hay que quedarse).
  * - `circle`: dentro de un óvalo (el dato clave, "siete").
- * - `tip`: además se puede tocar y abre su definición.
+ * - `tip`: además se puede tocar y abre su definición. Solo entonces una
+ *   palabra `highlight` va subrayada: el subrayado promete una definición.
  */
 export type Segment =
-  string | { readonly text: string; readonly mark: 'underline' | 'circle'; readonly tip?: string };
+  string | { readonly text: string; readonly mark: 'highlight' | 'circle'; readonly tip?: string };
 
 interface RichTextProps {
   segments: readonly Segment[];
@@ -48,7 +49,7 @@ export function RichText({ segments, strong = false }: RichTextProps) {
   );
 }
 
-function Mark({ text, mark, tip }: { text: string; mark: 'underline' | 'circle'; tip?: string }) {
+function Mark({ text, mark, tip }: { text: string; mark: 'highlight' | 'circle'; tip?: string }) {
   const { colors } = useTheme();
   const tooltip = useTooltip();
   const ref = useRef<View>(null);
@@ -67,7 +68,7 @@ function Mark({ text, mark, tip }: { text: string; mark: 'underline' | 'circle';
         style={[
           styles.text,
           styles.strong,
-          mark === 'underline' && styles.underline,
+          mark === 'highlight' && tip !== undefined && styles.underline,
           { color: colors.brandText },
         ]}
       >

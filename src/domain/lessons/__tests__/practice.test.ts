@@ -11,8 +11,26 @@ const MIN_MIDI = 60;
 const MAX_MIDI = 84;
 
 function clipsOf(exercise: LessonExercise): Clip[] {
-  const options = exercise.mechanic === 'clip-choice' ? exercise.options.map((o) => o.clip) : [];
+  const options =
+    exercise.mechanic === 'clip-choice' || exercise.mechanic === 'pick'
+      ? exercise.options.map((o) => o.clip)
+      : [];
   return [...stimulusClips(exercise), ...options];
+}
+
+/** Toda altura suelta que un ejercicio hace sonar al tocar algo. */
+function midisOf(exercise: LessonExercise): number[] {
+  const own: number[] = [];
+  if (exercise.mechanic === 'choice' || exercise.mechanic === 'sequence') {
+    const items = exercise.mechanic === 'choice' ? exercise.options : exercise.tiles;
+    items.forEach((item) => item.midi !== undefined && own.push(item.midi));
+  }
+  if (exercise.mechanic === 'choice' && exercise.stimulus !== null) {
+    const stimulus = exercise.stimulus;
+    if (stimulus.kind === 'steps') own.push(...stimulus.midis);
+    if (stimulus.kind === 'row') own.push(...stimulus.cells.map((cell) => cell.midi));
+  }
+  return own;
 }
 
 /** Invariantes comunes a cualquier práctica: lo que hace válido un ejercicio. */
@@ -39,6 +57,17 @@ function expectValid(exercise: LessonExercise) {
       expect(exercise.beats).toBeGreaterThanOrEqual(4);
       expect(exercise.guideBeats).toBeGreaterThanOrEqual(exercise.countIn);
       break;
+    case 'pick': {
+      const ids = exercise.options.map((o) => o.id);
+      expect(new Set(ids).size).toBe(ids.length);
+      expect(exercise.answer.every((id) => ids.includes(id))).toBe(true);
+      expect(exercise.answer.length).toBeLessThan(ids.length);
+      break;
+    }
+  }
+  for (const midi of midisOf(exercise)) {
+    expect(midi).toBeGreaterThanOrEqual(MIN_MIDI);
+    expect(midi).toBeLessThanOrEqual(MAX_MIDI);
   }
   for (const clip of clipsOf(exercise)) {
     if (clip.kind === 'notes') {
@@ -97,9 +126,31 @@ describe('práctica del Módulo 1 (notas)', () => {
       const exercise = at(seed, 10);
       if (exercise.mechanic !== 'choice' || exercise.stimulus?.kind !== 'row') throw new Error();
       const cells = exercise.stimulus.cells;
-      const gap = cells.indexOf(null);
-      if (gap > 0) expect(cells[gap - 1]).toBe('SI');
-      if (gap < cells.length - 1) expect(cells[gap + 1]).toBe('RE');
+      const gap = cells.findIndex((cell) => cell.label === null);
+      if (gap > 0) expect(cells[gap - 1].label).toBe('SI');
+      if (gap < cells.length - 1) expect(cells[gap + 1].label).toBe('RE');
+      // Tras SI el DO suena más agudo, no siete notas más abajo.
+      const midis = cells.map((cell) => cell.midi);
+      expect(midis.every((midi, i) => i === 0 || midi > midis[i - 1])).toBe(true);
+    }
+  });
+
+  it('las notas de las filas, la escala y las fichas suenan en su orden', () => {
+    for (const seed of SEEDS) {
+      for (const exercise of generatePractice('notes', seed)) {
+        if (exercise.mechanic === 'sequence') {
+          const byId = new Map(exercise.tiles.map((tile) => [tile.id, tile.midi!]));
+          const ordered = exercise.answer.map((id) => byId.get(id)!);
+          const up = exercise.position !== 9;
+          expect(
+            ordered.every((m, i) => i === 0 || (up ? m > ordered[i - 1] : m < ordered[i - 1])),
+          ).toBe(true);
+        }
+        if (exercise.mechanic === 'choice' && exercise.stimulus?.kind === 'row') {
+          const midis = exercise.stimulus.cells.map((cell) => cell.midi);
+          expect(midis.every((m, i) => i === 0 || m > midis[i - 1])).toBe(true);
+        }
+      }
     }
   });
 
@@ -127,23 +178,28 @@ describe('práctica del Módulo 1 (notas)', () => {
   it('"¿mismo nombre?" responde "same" solo cuando las dos notas están a una octava', () => {
     for (const seed of SEEDS) {
       const exercise = at(seed, 13);
-      const [clip] = stimulusClips(exercise);
-      if (exercise.mechanic !== 'choice' || clip.kind !== 'notes') throw new Error();
-      const [a, b] = clip.notes.map((n) => n.midi);
+      const clips = stimulusClips(exercise);
+      if (exercise.mechanic !== 'choice') throw new Error();
+      // Dos botones, una nota cada uno: se pueden tocar por separado o a la vez.
+      expect(clips).toHaveLength(2);
+      const [a, b] = clips.map((clip) => (clip.kind === 'notes' ? clip.notes[0].midi : NaN));
       expect(exercise.answer).toBe((b - a) % 12 === 0 ? 'same' : 'different');
     }
   });
 
-  it('la pareja correcta del 15 es la única a distancia de octava', () => {
+  it('en el 15 hay que marcar justo las dos notas que están a una octava', () => {
     for (const seed of SEEDS) {
       const exercise = at(seed, 15);
-      if (exercise.mechanic !== 'clip-choice') throw new Error();
-      const octaves = exercise.options.filter((option) => {
-        if (option.clip.kind !== 'notes') return false;
-        const [a, b] = option.clip.notes.map((n) => n.midi);
-        return b - a === 12;
-      });
-      expect(octaves.map((o) => o.id)).toEqual([exercise.answer]);
+      if (exercise.mechanic !== 'pick') throw new Error();
+      expect(exercise.options).toHaveLength(3);
+      const midi = (id: string) => {
+        const clip = exercise.options.find((o) => o.id === id)!.clip;
+        return clip.kind === 'notes' ? clip.notes[0].midi : NaN;
+      };
+      const [x, y] = exercise.answer;
+      expect(Math.abs(midi(x) - midi(y))).toBe(12);
+      const odd = exercise.options.find((o) => !exercise.answer.includes(o.id))!;
+      expect((midi(odd.id) - midi(x)) % 12).not.toBe(0);
     }
   });
 });

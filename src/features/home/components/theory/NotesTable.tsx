@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -20,18 +20,14 @@ const COLUMNS = [
 ] as const;
 
 /**
- * Las siete notas naturales: nombre, cifrado y un botón para oírla. La fila
- * que suena se ilumina, y cada título de columna explica qué es al tocarlo.
+ * Las siete notas naturales: nombre, cifrado y un botón para oírla (solo
+ * suena: ni la fila ni el botón cambian de color). Cada título de columna
+ * explica qué es al tocarlo.
  */
 export function NotesTable() {
   const { colors } = useTheme();
   const player = useClipPlayer();
-  const [lit, setLit] = useState<number | null>(null);
-
-  const play = (index: number) => {
-    setLit(index);
-    player.play(noteClip(index), { onEnd: () => setLit(null) });
-  };
+  const play = (index: number) => player.play(noteClip(index));
 
   return (
     <View style={[styles.table, { borderColor: colors.border, backgroundColor: colors.surface }]}>
@@ -47,10 +43,7 @@ export function NotesTable() {
       </View>
 
       {NOTE_NAMES.map((name, index) => (
-        <View
-          key={name}
-          style={[styles.row, { backgroundColor: lit === index ? colors.brandTint : undefined }]}
-        >
+        <View key={name} style={styles.row}>
           <View style={[styles.cell, { borderRightColor: colors.border }]}>
             <Text style={[styles.name, { color: colors.textPrimary }]}>{name}</Text>
           </View>
@@ -60,11 +53,11 @@ export function NotesTable() {
           <View style={[styles.cell, styles.lastCell]}>
             <PushButton
               variant="selectable"
-              tone="secondary"
-              selected={lit === index}
               size="compact"
               icon="volume-high"
               accessibilityLabel={`Escuchar ${name}`}
+              // `PushButton` se alinea al inicio por defecto: aquí va al centro de su columna.
+              style={styles.listen}
               onPressIn={() => play(index)}
             />
           </View>
@@ -115,6 +108,9 @@ const styles = StyleSheet.create({
   },
   lastCell: {
     borderRightWidth: 0,
+  },
+  listen: {
+    alignSelf: 'center',
   },
   header: {
     flexDirection: 'row',

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { NO_VOICE, VoiceHandle } from '@/domain/audio/IAudioPlayer';
-import { Clip, clipDurationMs, clipEventTimes } from '@/domain/lessons';
+import { Clip, CLIP_NOTE_MS, clipDurationMs, clipEventTimes } from '@/domain/lessons';
 // Punto de composición con los motores reales: el piano (notas) y el
 // metrónomo (golpes con precisión de muestra).
 import { metronome } from '@/infrastructure/audio/metronome';
@@ -26,6 +26,11 @@ export interface ClipPlayer {
    * `null` si el audio no está listo y no sonó nada.
    */
   play: (clip: Clip, handlers?: ClipHandlers) => number | null;
+  /**
+   * Hace sonar UNA nota sin cortar nada: es una tecla. Varias pulsadas a la
+   * vez suenan juntas (regla de toda tecla que suena en pantalla).
+   */
+  playNote: (midi: number) => void;
   stop: () => void;
 }
 
@@ -37,11 +42,14 @@ export interface ClipPlayer {
  *
  * Solo hay un clip sonando a la vez: reproducir otro corta el anterior, y
  * salir de la pantalla corta todo (no quedan metrónomos sonando de fondo).
+ * Las notas sueltas (`playNote`) son la excepción: son teclas y se suman.
  */
 export function useClipPlayer(): ClipPlayer {
   const [ready, setReady] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const voices = useRef<VoiceHandle[]>([]);
+  const keys = useRef(new Set<VoiceHandle>());
+  const keyTimers = useRef(new Set<ReturnType<typeof setTimeout>>());
 
   useEffect(() => {
     let mounted = true;
@@ -99,8 +107,32 @@ export function useClipPlayer(): ClipPlayer {
     [ready, stop, at],
   );
 
+  const playNote = useCallback(
+    (midi: number) => {
+      if (!ready) return;
+      const voice = pianoPlayer.noteOn(midi);
+      if (voice === NO_VOICE) return;
+      keys.current.add(voice);
+      const timer = setTimeout(() => {
+        keyTimers.current.delete(timer);
+        keys.current.delete(voice);
+        pianoPlayer.noteOff(voice);
+      }, CLIP_NOTE_MS);
+      keyTimers.current.add(timer);
+    },
+    [ready],
+  );
+
   // Al salir de la pantalla no debe quedar nada sonando.
   useEffect(() => stop, [stop]);
+  useEffect(() => {
+    const sounding = keys.current;
+    const pending = keyTimers.current;
+    return () => {
+      pending.forEach(clearTimeout);
+      sounding.forEach((voice) => pianoPlayer.noteOff(voice));
+    };
+  }, []);
 
-  return { ready, play, stop };
+  return { ready, play, playNote, stop };
 }

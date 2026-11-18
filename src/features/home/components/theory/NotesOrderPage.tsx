@@ -19,14 +19,13 @@ const ORDER_KEYS: readonly WhiteKey[] = [
   { midi: noteMidi(0, 5), main: '?' },
 ];
 
-/** La respuesta: tras SI vuelve DO (la 8.ª tecla), y el teclado sigue. */
+/** La respuesta: tras SI vuelve DO (la 8.ª tecla). */
 const REPEAT_KEYS: readonly WhiteKey[] = [
   ...Array.from({ length: NOTE_COUNT }, (_, index) => ({
     midi: noteMidi(index),
     main: noteLetterAt(index),
   })),
   { midi: noteMidi(0, 5), top: '8', main: noteLetterAt(0), bottom: noteNameAt(0), highlight: true },
-  { midi: noteMidi(1, 5), main: noteLetterAt(1), ghost: true },
 ];
 
 /** Módulo 1 · Página 2: el orden de las notas y que, al acabar, vuelven a empezar. */
@@ -43,7 +42,7 @@ export function NotesOrderPage() {
       <RichText
         segments={[
           '¿Y al acabar? ',
-          { text: 'Pues volvemos al principio', mark: 'underline' },
+          { text: 'Pues volvemos al principio', mark: 'highlight' },
           ' 😄, pero más agudo:',
         ]}
       />
@@ -55,7 +54,7 @@ export function NotesOrderPage() {
       <RichText
         segments={[
           'Son la misma nota, pero en diferente ',
-          { text: 'octava', mark: 'underline', tip: OCTAVE_TIP },
+          { text: 'octava', mark: 'highlight', tip: OCTAVE_TIP },
           '.',
         ]}
       />

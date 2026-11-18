@@ -13,7 +13,12 @@ const SHORT_LABEL = 4;
 
 /**
  * Elegir una respuesta escrita. Si el ejercicio trae sonidos, las opciones se
- * habilitan al terminar de escucharlos: no se responde a algo que no sonó.
+ * habilitan al escucharlos: no se responde a algo que no sonó. Una opción con
+ * nota (`midi`) suena al tocarla.
+ *
+ * Cuando hay que reconocer de oído una nota en la escala, la pregunta va
+ * DEBAJO de la escala, junto a la pista de que las barras suenan: primero se
+ * escucha, luego se pregunta.
  */
 export function ChoiceExerciseView({
   exercise,
@@ -31,37 +36,56 @@ export function ChoiceExerciseView({
     onAnswer({ kind: 'option', id });
   };
 
+  const stimulus = exercise.stimulus;
+  const byEar = stimulus?.kind === 'steps' && stimulus.listen !== null;
   const inRow = exercise.options.every((option) => option.label.length <= SHORT_LABEL);
-  const options = exercise.options.map((option, index) => (
-    <AnswerOption
-      key={option.id}
-      index={index}
-      label={option.label}
-      labelStyle={inRow ? typography.note : undefined}
-      state={answerOptionState({
-        option: option.id,
-        selected,
-        answer: exercise.answer,
-        revealed,
-      })}
-      disabled={!heard || revealed}
-      accessibilityLabel={option.label}
-      onPress={() => select(option.id)}
-    />
-  ));
+  const options = exercise.options.map((option, index) => {
+    const midi = option.midi;
+    return (
+      <AnswerOption
+        key={option.id}
+        index={index}
+        label={option.label}
+        labelStyle={inRow ? typography.note : undefined}
+        state={answerOptionState({
+          option: option.id,
+          selected,
+          answer: exercise.answer,
+          revealed,
+        })}
+        disabled={!heard || revealed}
+        accessibilityLabel={option.label}
+        onPressIn={midi === undefined ? undefined : () => player.playNote(midi)}
+        onPress={() => select(option.id)}
+      />
+    );
+  });
+
+  const prompt = (
+    <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
+      {!byEar && prompt}
 
-      {exercise.stimulus !== null && (
+      {stimulus !== null && (
         <StimulusView
-          stimulus={exercise.stimulus}
+          stimulus={stimulus}
           player={player}
           solution={exercise.options.find((o) => o.id === exercise.answer)?.label ?? null}
           revealed={revealed}
           onHeard={markHeard}
         />
+      )}
+
+      {byEar && (
+        <View style={styles.askBlock}>
+          {prompt}
+          <Text style={[styles.hint, { color: colors.textSecondary }]}>
+            Tip: presiona las barras para escuchar las notas
+          </Text>
+        </View>
       )}
 
       {!heard && (
@@ -92,6 +116,9 @@ const styles = StyleSheet.create({
   prompt: {
     ...typography.question,
     textAlign: 'center',
+  },
+  askBlock: {
+    gap: spacing.xs,
   },
   hint: {
     ...typography.caption,

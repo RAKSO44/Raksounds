@@ -46,11 +46,11 @@ export function NotesOctavePage() {
       <RichText
         segments={[
           'Para que una nota se repita, hay una ',
-          { text: 'distancia', mark: 'underline' },
+          { text: 'distancia', mark: 'highlight' },
           ' de ',
           { text: 'ocho', mark: 'circle' },
           ' ',
-          { text: 'notas naturales', mark: 'underline' },
+          { text: 'notas naturales', mark: 'highlight' },
           ':',
         ]}
       />

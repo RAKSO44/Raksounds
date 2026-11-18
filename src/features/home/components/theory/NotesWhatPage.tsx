@@ -13,7 +13,7 @@ export function NotesWhatPage() {
       <RichText
         segments={[
           'Son los ',
-          { text: 'bloques de construcción básicos', mark: 'underline' },
+          { text: 'bloques de construcción básicos', mark: 'highlight' },
           ' de la música.',
         ]}
       />

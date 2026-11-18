@@ -18,14 +18,23 @@ jest.mock('react-native-gesture-handler', () => {
   return {
     ...actual,
     GestureHandlerRootView: View,
-    GestureDetector: ({ gesture, children }) => {
-      const { onStart, onEnd, onFinalize } = gesture.handlers ?? {};
+    GestureDetector: ({ gesture: composed, children }) => {
+      // Un gesto compuesto (tocar O arrastrar una ficha) se prueba por su
+      // parte de toque: arrastrar necesita coordenadas que Node no tiene.
+      const gesture = composed.gestures
+        ? (composed.gestures.find((g) => g.handlerName === 'TapGestureHandler') ??
+          composed.gestures[0])
+        : composed;
+      const { onBegin, onStart, onEnd, onFinalize } = gesture.handlers ?? {};
       const event = {};
       return React.createElement(
         Pressable,
         {
           disabled: gesture.config?.enabled === false,
-          onPressIn: () => onStart?.(event),
+          onPressIn: () => {
+            onBegin?.(event);
+            onStart?.(event);
+          },
           onPress: () => {
             onEnd?.(event, true);
             onFinalize?.(event, true);

@@ -1,8 +1,8 @@
 import { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { render, screen, userEvent } from '@testing-library/react-native';
+import { act, render, screen, userEvent } from '@testing-library/react-native';
 
-import { generatePractice } from '@/domain/lessons';
+import { generatePractice, noteMidi } from '@/domain/lessons';
 import { ThemeProvider } from '@/shared/theme';
 
 import { PracticeScreen } from '../PracticeScreen';
@@ -26,10 +26,11 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({ module: 'notes' }),
 }));
 
+const mockNoteOn = jest.fn((_midi: number) => 1);
 jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
   createPianoSamplerPlayer: () => ({
     load: jest.fn().mockResolvedValue(undefined),
-    noteOn: jest.fn(() => 1),
+    noteOn: (midi: number) => mockNoteOn(midi),
     noteOff: jest.fn(),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
@@ -51,6 +52,7 @@ beforeEach(() => {
   jest.spyOn(Date, 'now').mockReturnValue(SEED);
   mockSoundEffects.play.mockClear();
   mockBack.mockClear();
+  mockNoteOn.mockClear();
 });
 
 const renderScreen = () => render(<PracticeScreen />, { wrapper: Providers });
@@ -82,6 +84,32 @@ describe('PracticeScreen', () => {
     expect(screen.getByText('No es correcto')).toBeTruthy();
     expect(screen.getByText(first.explanation)).toBeTruthy();
     expect(mockSoundEffects.play).toHaveBeenCalledWith('error');
+  });
+
+  it('la nota marcada: cada alternativa y cada barra suenan al tocarlas', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+    await act(async () => {}); // carga de las muestras
+
+    await user.press(screen.getByLabelText(RIGHT));
+    expect(mockNoteOn).toHaveBeenCalledWith(first.options.find((o) => o.id === RIGHT)!.midi);
+
+    mockNoteOn.mockClear();
+    await user.press(screen.getByLabelText('Nota DO'));
+    expect(mockNoteOn).toHaveBeenCalledWith(noteMidi(0));
+  });
+
+  it('al comprobar, la escala muestra el nombre de todas las notas', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+    expect(screen.queryByLabelText('Nota SI')).toBeNull();
+
+    await user.press(screen.getByLabelText(RIGHT));
+    await user.press(screen.getByRole('button', { name: 'Comprobar' }));
+
+    for (const name of ['DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI']) {
+      expect(screen.getByLabelText(`Nota ${name}`)).toBeTruthy();
+    }
   });
 
   it('salir pide confirmación', async () => {

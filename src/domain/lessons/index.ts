@@ -9,3 +9,4 @@ export * from './random';
 export * from './stages';
 export * from './tapSync';
 export * from './tempo';
+export * from './sequenceBoard';

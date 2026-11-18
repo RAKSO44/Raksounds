@@ -1,6 +1,6 @@
 import { RandomSource } from '../../ear-training';
 import { firstSequenceError, isAnswerCorrect } from '../exercise';
-import { generatePractice } from '../practice';
+import { generatePractice, generateRetry } from '../practice';
 import {
   nextNoteIndex,
   NOTE_LETTERS,
@@ -11,7 +11,7 @@ import {
   previousNoteIndex,
   runMidis,
 } from '../noteNames';
-import { completeTheory, EMPTY_PROGRESS, recordPractice } from '../progress';
+import { completeTheory, EMPTY_PROGRESS, recordPractice, recordRetry } from '../progress';
 import { seededRandom, shuffleUnordered } from '../random';
 import { LESSON_MODULES, moduleById, STAGES } from '../stages';
 import { judgeTaps, TAP_RULES } from '../tapSync';
@@ -160,6 +160,24 @@ describe('progreso', () => {
     });
   });
 
+  it('reintentar fallos termina el mismo intento: no suma intentos y puede completar', () => {
+    const first = recordPractice(EMPTY_PROGRESS, 10, at);
+    const retried = recordRetry(first, 15, later);
+    expect(retried).toMatchObject({
+      attempts: 1,
+      lastScore: 15,
+      bestScore: 15,
+      practiceCompleted: true,
+      practiceCompletedAt: later,
+    });
+  });
+
+  it('reintentar fallos genera solo esas posiciones, con ejercicios nuevos', () => {
+    const retry = generateRetry('notes', 99, [2, 9, 15]);
+    expect(retry.map((exercise) => exercise.position)).toEqual([2, 9, 15]);
+    expect(retry.map((exercise) => exercise.mechanic)).toEqual(['choice', 'sequence', 'pick']);
+  });
+
   it('11/15 no completa la práctica; 12/15 sí', () => {
     expect(recordPractice(EMPTY_PROGRESS, 11, at).practiceCompleted).toBe(false);
     expect(recordPractice(EMPTY_PROGRESS, 12, at).practiceCompleted).toBe(true);
@@ -172,10 +190,11 @@ describe('progreso', () => {
 });
 
 describe('etapas de la ruta', () => {
-  it('la etapa 1 tiene los módulos 1–6 y la 2 los 7–10, numerados seguidos', () => {
+  it('las etapas 1–3 tienen los módulos 1–14, numerados seguidos', () => {
     expect(STAGES.map((stage) => stage.modules.map((module) => module.number))).toEqual([
       [1, 2, 3, 4, 5, 6],
       [7, 8, 9, 10],
+      [11, 12, 13, 14],
     ]);
   });
 

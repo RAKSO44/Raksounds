@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { useSharedValue } from 'react-native-reanimated';
 
-import { PRESS_SLOP } from '@/shared/design-system';
+import { PianoKeyBody, PRESS_SLOP } from '@/shared/design-system';
 import { hapticPressIn } from '@/shared/haptics';
 import { controls, radii, spacing, typography, useTheme } from '@/shared/theme';
 
@@ -19,8 +20,6 @@ export interface WhiteKey {
   readonly highlight?: boolean;
   /** Rodea el rótulo central con un óvalo (las dos notas que se comparan). */
   readonly ring?: boolean;
-  /** Tecla "fantasma" (punteada): el teclado sigue más allá. */
-  readonly ghost?: boolean;
 }
 
 interface WhiteKeysProps {
@@ -30,12 +29,15 @@ interface WhiteKeysProps {
 
 /**
  * Teclas blancas de piano, sin las negras: la teoría del Módulo 1 solo habla
- * de las notas naturales. No es un instrumento, es un dibujo que suena: cada
- * tecla toca su nota al apoyar el dedo y se ilumina mientras se pulsa.
+ * de las notas naturales. Son las mismas teclas que el teclado de la
+ * corrección de entonación (`PianoKeyBody`): juntas sobre el fondo del
+ * teclado, con una ranura entre ellas, y al pulsarlas se hunden sin cambiar de
+ * color, como un piano.
  */
 export function WhiteKeys({ keys, onPlay }: WhiteKeysProps) {
+  const { colors } = useTheme();
   return (
-    <View style={styles.keyboard}>
+    <View style={[styles.keyboard, { backgroundColor: colors.pianoWhiteKeyEdge }]}>
       {keys.map((key, index) => (
         <Key key={index} spec={key} onPlay={onPlay} />
       ))}
@@ -45,7 +47,7 @@ export function WhiteKeys({ keys, onPlay }: WhiteKeysProps) {
 
 function Key({ spec, onPlay }: { spec: WhiteKey; onPlay: (midi: number) => void }) {
   const { colors } = useTheme();
-  const [pressed, setPressed] = useState(false);
+  const pressOffset = useSharedValue(0);
   const { midi } = spec;
 
   const gesture = useMemo(
@@ -56,25 +58,21 @@ function Key({ spec, onPlay }: { spec: WhiteKey; onPlay: (midi: number) => void 
         .enabled(midi !== null)
         .runOnJS(true)
         .onStart(() => {
-          setPressed(true);
+          // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
+          pressOffset.value = controls.pianoKeyLip;
           hapticPressIn();
           if (midi !== null) onPlay(midi);
         })
-        .onFinalize(() => setPressed(false)),
-    [midi, onPlay],
+        .onFinalize(() => {
+          // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
+          pressOffset.value = 0;
+        }),
+    [midi, onPlay, pressOffset],
   );
 
-  const solid = pressed || spec.highlight === true;
-  const face = pressed
-    ? spec.highlight
-      ? colors.brandShadow
-      : colors.brand
-    : spec.highlight
-      ? colors.brand
-      : colors.pianoWhiteKey;
-  const edge = solid ? colors.brandShadow : colors.pianoWhiteKeyEdge;
-  const strong = solid ? colors.textOnBrand : colors.pianoKeyText;
-  const soft = solid ? colors.textOnBrand : colors.pianoKeyTextMuted;
+  const highlight = spec.highlight === true;
+  const strong = highlight ? colors.textOnBrand : colors.pianoKeyText;
+  const soft = highlight ? colors.textOnBrand : colors.pianoKeyTextMuted;
 
   return (
     <GestureDetector gesture={gesture}>
@@ -82,19 +80,25 @@ function Key({ spec, onPlay }: { spec: WhiteKey; onPlay: (midi: number) => void 
         accessible
         accessibilityRole={midi === null ? undefined : 'button'}
         accessibilityLabel={[spec.bottom, spec.main].filter(Boolean).join(' ')}
-        style={[
-          styles.key,
-          spec.ghost && styles.ghost,
-          { backgroundColor: face, borderColor: edge },
-        ]}
+        style={styles.key}
       >
-        <Text style={[styles.small, { color: solid ? colors.textOnBrand : colors.brandShadow }]}>
-          {spec.top ?? ' '}
-        </Text>
-        <View style={spec.ring && [styles.ring, { borderColor: colors.brand }]}>
-          <Text style={[styles.main, { color: strong }]}>{spec.main}</Text>
-        </View>
-        <Text style={[styles.small, { color: soft }]}>{spec.bottom ?? ' '}</Text>
+        <PianoKeyBody
+          pressOffset={pressOffset}
+          face={highlight ? colors.brand : colors.pianoWhiteKey}
+          lip={highlight ? colors.brandShadow : colors.pianoWhiteKeyEdge}
+        >
+          <View style={styles.labels}>
+            <Text
+              style={[styles.small, { color: highlight ? colors.textOnBrand : colors.brandShadow }]}
+            >
+              {spec.top ?? ' '}
+            </Text>
+            <View style={spec.ring && [styles.ring, { borderColor: colors.brand }]}>
+              <Text style={[styles.main, { color: strong }]}>{spec.main}</Text>
+            </View>
+            <Text style={[styles.small, { color: soft }]}>{spec.bottom ?? ' '}</Text>
+          </View>
+        </PianoKeyBody>
       </View>
     </GestureDetector>
   );
@@ -109,7 +113,7 @@ interface KeyLabelsProps {
 export function KeyLabels({ labels }: KeyLabelsProps) {
   const { colors } = useTheme();
   return (
-    <View style={styles.keyboard}>
+    <View style={styles.labelRow}>
       {labels.map((label, index) => (
         <Text key={index} style={[styles.cell, { color: colors.textPrimary }]}>
           {label ?? ''}
@@ -147,20 +151,25 @@ export function KeyBracket({ count, from, to }: KeyBracketProps) {
 const styles = StyleSheet.create({
   keyboard: {
     flexDirection: 'row',
+    height: controls.theoryKeyHeight,
+    borderRadius: radii.sm,
+    overflow: 'hidden',
   },
   key: {
     flex: 1,
-    height: controls.theoryKeyHeight,
-    borderWidth: 2,
-    borderBottomWidth: controls.pianoKeyLip + 2,
-    borderRadius: radii.sm,
+    // Ranura entre teclas: deja ver el fondo del teclado como línea divisoria.
+    borderLeftWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: StyleSheet.hairlineWidth,
+    borderColor: 'transparent',
+  },
+  labelRow: {
+    flexDirection: 'row',
+  },
+  labels: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
-  },
-  ghost: {
-    borderStyle: 'dashed',
-    opacity: 0.45,
   },
   small: {
     ...typography.caption,

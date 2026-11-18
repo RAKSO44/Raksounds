@@ -9,24 +9,48 @@ import { Clip } from './clip';
 export interface LessonOption {
   readonly id: string;
   readonly label: string;
+  /** Nota que suena al tocar la opción (una ficha de nota que se oye). */
+  readonly midi?: number;
 }
 
-/** Algo que se puede escuchar con nombre propio ("Primero", "Sonido"). */
+/**
+ * Algo que se puede escuchar con nombre propio ("Primero", "Segundo"). Sin
+ * `label` el botón es solo el ícono de escuchar (no debe delatar qué suena) y
+ * `name` lo describe para el lector de pantalla.
+ */
 export interface LabeledClip {
-  readonly label: string;
+  readonly label?: string;
+  readonly name?: string;
   readonly clip: Clip;
+}
+
+/** Una casilla de una fila de notas: su nombre (`null` = el hueco) y su altura. */
+export interface RowCell {
+  readonly label: string | null;
+  readonly midi: number;
 }
 
 /** Lo que acompaña a la pregunta, encima de las opciones. */
 export type Stimulus =
   /**
-   * La escalera DO…SI (siete fichas que suben). Solo la primera lleva nombre,
-   * como ancla para contar. `clip`: la ficha marcada solo se ilumina al
-   * escucharla (asociación guiada sonido → posición).
+   * La escala DO…SI como barras que suben; cada barra suena al tocarla
+   * (`midis`). Al corregir, todas muestran su nombre.
+   * - Sin `listen`: la barra `highlight` va marcada desde el principio y solo
+   *   DO lleva nombre, como ancla para contar.
+   * - Con `listen`: suena una nota y ninguna barra lleva nombre ni marca; la
+   *   que sonó se pinta recién al corregir.
    */
-  | { readonly kind: 'steps'; readonly highlight: number; readonly clip: Clip | null }
-  /** Una fila de nombres con un hueco (`null`) que hay que completar. */
-  | { readonly kind: 'row'; readonly cells: readonly (string | null)[] }
+  | {
+      readonly kind: 'steps';
+      readonly highlight: number;
+      readonly midis: readonly number[];
+      readonly listen: Clip | null;
+    }
+  /**
+   * Una fila de notas con un hueco que hay que completar. Las notas suenan al
+   * tocarlas; el hueco, solo después de corregir.
+   */
+  | { readonly kind: 'row'; readonly cells: readonly RowCell[] }
   /** Uno o varios sonidos que hay que escuchar antes de responder. */
   | { readonly kind: 'clips'; readonly clips: readonly LabeledClip[] };
 
@@ -59,7 +83,10 @@ export interface ClipChoiceExercise extends ExerciseBase {
   readonly answer: string;
 }
 
-/** Ordenar fichas tocándolas en orden (sin arrastrar: accesible). */
+/**
+ * Ordenar fichas: se tocan en orden o se arrastran a su hueco. Si traen
+ * `midi`, suenan al tocarlas.
+ */
 export interface SequenceExercise extends ExerciseBase {
   readonly mechanic: 'sequence';
   /** Fichas barajadas. */
@@ -84,7 +111,17 @@ export interface TapExercise extends ExerciseBase {
   readonly guideBeats: number;
 }
 
-export type LessonExercise = ChoiceExercise | ClipChoiceExercise | SequenceExercise | TapExercise;
+/** Marcar, entre varios sonidos, los `answer.length` que van juntos. */
+export interface PickExercise extends ExerciseBase {
+  readonly mechanic: 'pick';
+  /** Cada opción es un sonido; `reveal` es la nota que era, visible al corregir. */
+  readonly options: readonly ClipOption[];
+  /** Ids que hay que marcar (en cualquier orden). */
+  readonly answer: readonly string[];
+}
+
+export type LessonExercise =
+  ChoiceExercise | ClipChoiceExercise | SequenceExercise | TapExercise | PickExercise;
 
 export type ExerciseMechanic = LessonExercise['mechanic'];
 
@@ -92,6 +129,8 @@ export type ExerciseMechanic = LessonExercise['mechanic'];
 export type LessonAnswer =
   | { readonly kind: 'option'; readonly id: string }
   | { readonly kind: 'sequence'; readonly ids: readonly string[] }
+  /** Las opciones marcadas, sin orden. */
+  | { readonly kind: 'set'; readonly ids: readonly string[] }
   /** El tap ya se calificó al terminar (`judgeTaps`); aquí llega su veredicto. */
   | { readonly kind: 'tap'; readonly passed: boolean };
 
@@ -108,6 +147,12 @@ export function isAnswerCorrect(exercise: LessonExercise, answer: LessonAnswer):
       );
     case 'tap':
       return answer.kind === 'tap' && answer.passed;
+    case 'pick':
+      return (
+        answer.kind === 'set' &&
+        answer.ids.length === exercise.answer.length &&
+        exercise.answer.every((id) => answer.ids.includes(id))
+      );
   }
 }
 
@@ -134,6 +179,6 @@ export function stimulusClips(exercise: LessonExercise): readonly Clip[] {
 /** Sonidos de un estímulo, en el orden en que se muestran sus botones. */
 export function clipsOfStimulus(stimulus: Stimulus): readonly Clip[] {
   if (stimulus.kind === 'clips') return stimulus.clips.map((item) => item.clip);
-  if (stimulus.kind === 'steps' && stimulus.clip !== null) return [stimulus.clip];
+  if (stimulus.kind === 'steps' && stimulus.listen !== null) return [stimulus.listen];
   return [];
 }

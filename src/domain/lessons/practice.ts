@@ -17,3 +17,16 @@ export function generatePractice(id: ModuleId, seed: number): LessonExercise[] {
       return generateModule2Practice(random);
   }
 }
+
+/**
+ * "Reintentar fallos": solo las posiciones que se fallaron, pero NUEVAS (otra
+ * semilla da otra nota marcada, otra fila…). Se repite el tipo de ejercicio,
+ * no la respuesta que ya se vio en la corrección.
+ */
+export function generateRetry(
+  id: ModuleId,
+  seed: number,
+  positions: readonly number[],
+): LessonExercise[] {
+  return generatePractice(id, seed).filter((exercise) => positions.includes(exercise.position));
+}

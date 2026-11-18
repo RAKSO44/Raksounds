@@ -7,6 +7,7 @@ import {
   progressOf,
   ProgressMap,
   recordPractice,
+  recordRetry,
 } from '@/domain/lessons';
 import { mmkvStorage } from '@/shared/settings';
 
@@ -14,6 +15,8 @@ interface LessonProgressState {
   modules: ProgressMap;
   completeTheory: (id: ModuleId) => void;
   recordPractice: (id: ModuleId, score: number) => void;
+  /** Cierra un intento con sus fallos recuperados (`score` = total). */
+  recordRetry: (id: ModuleId, score: number) => void;
 }
 
 /**
@@ -41,6 +44,13 @@ export const useLessonProgressStore = create<LessonProgressState>()(
           modules: {
             ...state.modules,
             [id]: recordPractice(progressOf(state.modules, id), score, new Date().toISOString()),
+          },
+        })),
+      recordRetry: (id, score) =>
+        set((state) => ({
+          modules: {
+            ...state.modules,
+            [id]: recordRetry(progressOf(state.modules, id), score, new Date().toISOString()),
           },
         })),
     }),

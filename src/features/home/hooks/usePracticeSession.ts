@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 
 import {
   generatePractice,
+  generateRetry,
   isAnswerCorrect,
   LessonAnswer,
   LessonExercise,
@@ -25,6 +26,8 @@ export interface PracticeSession {
   score: number;
   /** Aciertos finales; `null` hasta responder el último. */
   finalScore: number | null;
+  /** Posiciones de la plantilla falladas en esta tanda (para reintentarlas). */
+  failed: readonly number[];
   setAnswer: (answer: LessonAnswer | null) => void;
   confirm: () => void;
   advance: () => void;
@@ -36,8 +39,17 @@ export interface PracticeSession {
  * el ejercicio en curso. Qué es correcto lo decide el dominio
  * (`isAnswerCorrect`); aquí solo se avanza.
  */
-export function usePracticeSession(moduleId: ModuleId, seed: number): PracticeSession {
-  const exercises = useMemo(() => generatePractice(moduleId, seed), [moduleId, seed]);
+export function usePracticeSession(
+  moduleId: ModuleId,
+  seed: number,
+  /** Solo estas posiciones ("Reintentar fallos"); `null` = el intento entero. */
+  retry: readonly number[] | null = null,
+): PracticeSession {
+  const exercises = useMemo(
+    () =>
+      retry === null ? generatePractice(moduleId, seed) : generateRetry(moduleId, seed, retry),
+    [moduleId, seed, retry],
+  );
   const playEffect = useLessonSounds();
 
   const [index, setIndex] = useState(0);
@@ -49,6 +61,10 @@ export function usePracticeSession(moduleId: ModuleId, seed: number): PracticeSe
   const exercise = exercises[index] ?? null;
   const isCorrect = phase === 'revealed' ? (results[index] ?? null) : null;
   const score = results.filter(Boolean).length;
+  const failed = useMemo(
+    () => exercises.filter((_, i) => results[i] === false).map((e) => e.position),
+    [exercises, results],
+  );
 
   const setAnswer = useCallback(
     (next: LessonAnswer | null) => {
@@ -85,6 +101,7 @@ export function usePracticeSession(moduleId: ModuleId, seed: number): PracticeSe
     isCorrect,
     score,
     finalScore,
+    failed,
     setAnswer,
     confirm,
     advance,

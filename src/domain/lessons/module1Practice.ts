@@ -1,7 +1,15 @@
 import { RandomSource } from '../ear-training';
 import { melodyClip } from './clip';
-import { ChoiceExercise, ClipChoiceExercise, LessonExercise, SequenceExercise } from './exercise';
 import {
+  ChoiceExercise,
+  ClipChoiceExercise,
+  LessonExercise,
+  PickExercise,
+  RowCell,
+  SequenceExercise,
+} from './exercise';
+import {
+  BASE_OCTAVE,
   NOTE_COUNT,
   NoteIndex,
   nextNoteIndex,
@@ -22,6 +30,9 @@ import { pickOne, randomInt, shuffle, shuffleUnordered } from './random';
  * - 1–5 guiadas: nombre de una posición, orden corto, siguiente/anterior.
  * - 6–10 aplicación: huecos, descendente y el salto del ciclo SI→DO.
  * - 11–15 consolidación: la octava (mismo nombre, otra altura) de oído.
+ *
+ * Toda nota que se ve se puede tocar y suena (salvo la que hay que adivinar,
+ * hasta corregir): el nombre siempre va unido a su sonido.
  */
 
 /**
@@ -54,15 +65,48 @@ function nameChoice(
   };
 }
 
-/** Fichas barajadas de un tramo; los ids son posiciones para admitir repetidos. */
+/** Alturas de la escala DO4…SI4, una por barra. */
+const STEP_MIDIS = Array.from({ length: NOTE_COUNT }, (_, index) => noteMidi(index));
+
+/** Opciones de nombre que además suenan (cada una en su altura de la escala). */
+function soundingNameOptions(answer: NoteIndex, random: RandomSource) {
+  return nameOptions(answer, random).map((option) => ({
+    ...option,
+    midi: STEP_MIDIS[STEP_MIDIS.findIndex((_, index) => noteNameAt(index) === option.id)],
+  }));
+}
+
+/**
+ * Fila de `length` notas seguidas desde `start`, con el hueco en `gap`. Las
+ * alturas SUBEN de verdad: tras SI, el DO es el de la octava siguiente.
+ */
+function rowCells(start: NoteIndex, length: number, gap: number): RowCell[] {
+  return runMidis(start, length, 'up', BASE_OCTAVE).map((midi, order) => ({
+    label: order === gap ? null : noteNameAt(start + order),
+    midi,
+  }));
+}
+
+/**
+ * Fichas barajadas de un tramo que sube o baja de verdad; los ids son
+ * posiciones para admitir repetidos.
+ */
 function runSequence(
   position: number,
   prompt: string,
-  run: readonly NoteIndex[],
+  start: NoteIndex,
+  length: number,
+  direction: 'up' | 'down',
   explanation: string,
   random: RandomSource,
 ): SequenceExercise {
-  const tiles = run.map((index, order) => ({ id: `t${order}`, label: noteNameAt(index) }));
+  const run = noteRun(start, length, direction);
+  const midis = runMidis(start, length, direction);
+  const tiles = run.map((index, order) => ({
+    id: `t${order}`,
+    label: noteNameAt(index),
+    midi: midis[order],
+  }));
   return {
     position,
     mechanic: 'sequence',
@@ -86,39 +130,40 @@ function freshIndex(min: number, max: number, avoid: number, random: RandomSourc
 }
 
 export function generateModule1Practice(random: RandomSource): LessonExercise[] {
-  // 01 — nombre de la ficha marcada en la escalera.
+  // 01 — nombre de la nota marcada en la escala. Las opciones suenan.
   const marked = randomInt(1, NOTE_COUNT - 1, random);
-  const p01 = nameChoice(
-    {
-      position: 1,
-      prompt: '¿Cómo se llama la ficha marcada?',
-      explanation: `Contando desde DO, la ficha ${marked + 1} es ${noteNameAt(marked)}.`,
-      stimulus: { kind: 'steps', highlight: marked, clip: null },
-    },
-    marked,
-    random,
-  );
+  const p01: ChoiceExercise = {
+    position: 1,
+    mechanic: 'choice',
+    prompt: '¿Cómo se llama la nota marcada?',
+    explanation: `Contando desde DO, la nota ${marked + 1} es ${noteNameAt(marked)}.`,
+    stimulus: { kind: 'steps', highlight: marked, midis: STEP_MIDIS, listen: null },
+    options: soundingNameOptions(marked, random),
+    answer: noteNameAt(marked),
+  };
 
-  // 02 — la misma escalera, ahora guiada por el oído: suena y se ilumina.
+  // 02 — la misma escala, ahora de oído: suena una nota y hay que ubicarla.
   const heard = freshIndex(1, NOTE_COUNT - 1, marked, random);
   const p02 = nameChoice(
     {
       position: 2,
-      prompt: 'Escucha: ¿qué ficha sonó?',
-      explanation: `Sonó la ficha ${heard + 1}: ${noteNameAt(heard)}.`,
-      stimulus: { kind: 'steps', highlight: heard, clip: noteClip(heard) },
+      prompt: '¿Qué nota sonó?',
+      explanation: `Sonó la nota ${heard + 1}: ${noteNameAt(heard)}.`,
+      stimulus: { kind: 'steps', highlight: heard, midis: STEP_MIDIS, listen: noteClip(heard) },
     },
     heard,
     random,
   );
 
   // 03 — ordenar tres consecutivas, sin dar la vuelta al ciclo.
-  const run3 = noteRun(randomInt(0, NOTE_COUNT - 3, random), 3);
+  const start3 = randomInt(0, NOTE_COUNT - 3, random);
   const p03 = runSequence(
     3,
-    'Ordena las notas subiendo, como DO · RE · MI',
-    run3,
-    `Subiendo, el orden es ${runLabel(run3)}.`,
+    'Ordena las notas de forma ascendente',
+    start3,
+    3,
+    'up',
+    `Subiendo, el orden es ${runLabel(noteRun(start3, 3))}.`,
     random,
   );
 
@@ -129,7 +174,7 @@ export function generateModule1Practice(random: RandomSource): LessonExercise[] 
       position: 4,
       prompt: `¿Qué nota va después de ${noteNameAt(afterOf)}?`,
       explanation: `Después de ${noteNameAt(afterOf)} viene ${noteNameAt(afterOf + 1)}.`,
-      stimulus: { kind: 'row', cells: [noteNameAt(afterOf), null] },
+      stimulus: { kind: 'row', cells: rowCells(afterOf, 2, 1) },
     },
     afterOf + 1,
     random,
@@ -142,61 +187,62 @@ export function generateModule1Practice(random: RandomSource): LessonExercise[] 
       position: 5,
       prompt: `¿Qué nota va antes de ${noteNameAt(beforeOf)}?`,
       explanation: `Antes de ${noteNameAt(beforeOf)} va ${noteNameAt(beforeOf - 1)}.`,
-      stimulus: { kind: 'row', cells: [null, noteNameAt(beforeOf)] },
+      stimulus: { kind: 'row', cells: rowCells(beforeOf - 1, 2, 0) },
     },
     beforeOf - 1,
     random,
   );
 
   // 06 — secuencia de 4 con un hueco.
-  const run4 = noteRun(randomInt(0, NOTE_COUNT - 4, random), 4);
+  const start4 = randomInt(0, NOTE_COUNT - 4, random);
+  const run4 = noteRun(start4, 4);
   const gap = randomInt(1, 3, random);
   const p06 = nameChoice(
     {
       position: 6,
       prompt: 'Completa la secuencia',
       explanation: `La secuencia es ${runLabel(run4)}.`,
-      stimulus: {
-        kind: 'row',
-        cells: run4.map((index, order) => (order === gap ? null : noteNameAt(index))),
-      },
+      stimulus: { kind: 'row', cells: rowCells(start4, 4, gap) },
     },
     run4[gap],
     random,
   );
 
-  // 07 — el ciclo hacia arriba: después de SI vuelve DO.
+  // 07 — el ciclo hacia arriba: después de SI vuelve DO (LA · SI · ?).
+  const la = NOTE_COUNT - 2;
   const si = NOTE_COUNT - 1;
   const p07 = nameChoice(
     {
       position: 7,
       prompt: '¿Qué nota va después de SI?',
       explanation: 'Después de SI vuelve DO: los nombres se repiten en ciclo.',
-      stimulus: { kind: 'row', cells: ['LA', 'SI', null] },
+      stimulus: { kind: 'row', cells: rowCells(la, 3, 2) },
     },
     nextNoteIndex(si),
     random,
   );
 
-  // 08 — el ciclo hacia abajo: antes de DO va SI.
+  // 08 — el ciclo hacia abajo: antes de DO va SI (? · DO · RE).
   const p08 = nameChoice(
     {
       position: 8,
       prompt: '¿Qué nota va antes de DO?',
       explanation: 'Bajando desde DO se llega a SI: el ciclo también va hacia atrás.',
-      stimulus: { kind: 'row', cells: [null, 'DO', 'RE'] },
+      stimulus: { kind: 'row', cells: rowCells(si, 3, 0) },
     },
     previousNoteIndex(0),
     random,
   );
 
   // 09 — ordenar cuatro bajando, sin dar la vuelta.
-  const down4 = noteRun(randomInt(3, NOTE_COUNT - 1, random), 4, 'down');
+  const startDown = randomInt(3, NOTE_COUNT - 1, random);
   const p09 = runSequence(
     9,
-    'Ordena las notas bajando, como MI · RE · DO',
-    down4,
-    `Bajando, el orden es ${runLabel(down4)}.`,
+    'Ordena las notas de forma descendente',
+    startDown,
+    4,
+    'down',
+    `Bajando, el orden es ${runLabel(noteRun(startDown, 4, 'down'))}.`,
     random,
   );
 
@@ -209,10 +255,7 @@ export function generateModule1Practice(random: RandomSource): LessonExercise[] 
       position: 10,
       prompt: 'Completa la secuencia',
       explanation: `Tras SI el ciclo vuelve a DO: ${runLabel(cross)}.`,
-      stimulus: {
-        kind: 'row',
-        cells: cross.map((index, order) => (order === doAt ? null : noteNameAt(index))),
-      },
+      stimulus: { kind: 'row', cells: rowCells(crossStart, 4, doAt) },
     },
     0,
     random,
@@ -228,19 +271,21 @@ export function generateModule1Practice(random: RandomSource): LessonExercise[] 
   // 13 — ¿las dos notas se llaman igual?
   const p13 = sameNameQuestion(random);
 
-  // 14 — ordenar seis desde una nota, pudiendo cruzar SI→DO.
+  // 14 — ordenar seis desde una nota, pudiendo cruzar SI→DO. Hay que decir
+  // desde dónde: al cruzar el ciclo, cualquier nota podría ser la primera.
   const start14 = randomInt(1, NOTE_COUNT - 1, random);
-  const run6 = noteRun(start14, 6);
   const p14 = runSequence(
     14,
-    `Ordena 6 notas subiendo, empezando en ${noteNameAt(start14)}`,
-    run6,
-    `Desde ${noteNameAt(start14)}: ${runLabel(run6)}.`,
+    `Ordena las notas de forma ascendente, empezando en ${noteNameAt(start14)}`,
+    start14,
+    6,
+    'up',
+    `Desde ${noteNameAt(start14)}: ${runLabel(noteRun(start14, 6))}.`,
     random,
   );
 
-  // 15 — de dos parejas, ¿cuál es una octava?
-  const p15 = octavePairQuestion(random);
+  // 15 — de tres sonidos, ¿cuáles dos comparten nombre?
+  const p15 = sameNamePickQuestion(random);
 
   return [p01, p02, p03, p04, p05, p06, p07, p08, p09, p10, p11, p12, p13, p14, p15];
 }
@@ -271,15 +316,16 @@ function octaveCompare(
     position,
     mechanic: 'clip-choice',
     prompt: target === 'higher' ? `¿Cuál ${name} es más agudo?` : `¿Cuál ${name} es más grave?`,
-    explanation:
-      target === 'higher'
-        ? `Los dos son ${name}; el agudo suena más arriba.`
-        : `Los dos son ${name}; el grave suena más abajo.`,
+    explanation: `Los dos son ${name}; pero en octavas diferentes.`,
     options,
     answer: target === 'higher' ? 'high' : 'low',
   };
 }
 
+/**
+ * Dos botones, una nota cada uno: ¿se llaman igual? Se pueden tocar a la vez
+ * (oírlas juntas es otra forma de comparar).
+ */
 function sameNameQuestion(random: RandomSource): ChoiceExercise {
   const index = randomInt(0, NOTE_COUNT - 1, random);
   const same = random() < 0.5;
@@ -294,9 +340,15 @@ function sameNameQuestion(random: RandomSource): ChoiceExercise {
     mechanic: 'choice',
     prompt: '¿Las dos notas tienen el mismo nombre?',
     explanation: same
-      ? `Eran ${noteNameAt(index)} y ${noteNameAt(index)}: el mismo nombre en otra altura.`
+      ? `Eran ${noteNameAt(index)} y ${noteNameAt(index)}: el mismo nombre en diferente octava.`
       : `Eran ${noteNameAt(index)} y ${noteNameAt(other)}: dos notas distintas.`,
-    stimulus: { kind: 'clips', clips: [{ label: 'Escuchar', clip: melodyClip(midis) }] },
+    stimulus: {
+      kind: 'clips',
+      clips: midis.map((midi, order) => ({
+        name: order === 0 ? 'Primera nota' : 'Segunda nota',
+        clip: melodyClip([midi]),
+      })),
+    },
     options: [
       { id: 'same', label: 'Sí, el mismo' },
       { id: 'different', label: 'No, distintas' },
@@ -305,37 +357,35 @@ function sameNameQuestion(random: RandomSource): ChoiceExercise {
   };
 }
 
-function octavePairQuestion(random: RandomSource): ClipChoiceExercise {
+/**
+ * Tres sonidos: dos son la misma nota en octavas distintas y el tercero es
+ * otra. Hay que marcar la pareja. El tercero cae en cualquiera de las dos
+ * octavas: si no, bastaría con buscar "el que está solo en su registro".
+ */
+function sameNamePickQuestion(random: RandomSource): PickExercise {
   const index = randomInt(0, NOTE_COUNT - 1, random);
   const other = wrapIndex(index + randomInt(2, 5, random));
   const name = noteNameAt(index);
-  const pairs = shuffle(
+  const sounds = shuffle(
     [
-      {
-        id: 'octave',
-        midis: [noteMidi(index, 4), noteMidi(index, 5)],
-        reveal: `${name} · ${name}`,
-      },
-      {
-        id: 'different',
-        midis: [noteMidi(index, 4), noteMidi(other, 4)],
-        reveal: `${name} · ${noteNameAt(other)}`,
-      },
+      { id: 'low', midi: noteMidi(index, 4), reveal: name },
+      { id: 'high', midi: noteMidi(index, 5), reveal: name },
+      { id: 'other', midi: noteMidi(other, pickOne([4, 5], random)), reveal: noteNameAt(other) },
     ],
     random,
   );
   return {
     position: 15,
-    mechanic: 'clip-choice',
-    prompt: '¿En qué pareja suena el mismo nombre en dos alturas?',
-    explanation: `La octava era ${name} grave y ${name} agudo.`,
-    options: pairs.map((pair, order) => ({
-      id: pair.id,
-      label: order === 0 ? 'Pareja A' : 'Pareja B',
-      clip: melodyClip(pair.midis),
-      reveal: pair.reveal,
+    mechanic: 'pick',
+    prompt: 'Marca las dos notas que comparten el mismo nombre',
+    explanation: `Las dos ${name} comparten nombre en octavas diferentes; la otra era ${noteNameAt(other)}.`,
+    options: sounds.map((sound, order) => ({
+      id: sound.id,
+      label: `Sonido ${order + 1}`,
+      clip: melodyClip([sound.midi]),
+      reveal: sound.reveal,
     })),
-    answer: 'octave',
+    answer: ['low', 'high'],
   };
 }
 

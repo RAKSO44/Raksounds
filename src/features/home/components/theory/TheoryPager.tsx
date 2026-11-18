@@ -29,7 +29,7 @@ export function TheoryPager({ page, total, onPrevious, onNext, onFinish }: Theor
     <View
       style={[
         styles.bar,
-        { paddingBottom: insets.bottom + spacing.md, borderTopColor: colors.border },
+        { paddingBottom: insets.bottom + spacing.sm, borderTopColor: colors.border },
       ]}
     >
       {isFirst ? (
@@ -50,8 +50,9 @@ export function TheoryPager({ page, total, onPrevious, onNext, onFinish }: Theor
       >
         {page + 1}
       </Text>
+      {/* Las flechas son neutras; solo el check final va a color entero. */}
       <PushButton
-        variant="solid"
+        variant={isLast ? 'solid' : 'selectable'}
         size="compact"
         icon={isLast ? 'check-bold' : 'arrow-right'}
         accessibilityLabel={isLast ? 'Terminar teoría' : 'Página siguiente'}
@@ -69,7 +70,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderTopWidth: 2,
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
   },
   button: {
     width: controls.moduleCardButtonWidth,

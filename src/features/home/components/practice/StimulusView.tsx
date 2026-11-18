@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { clipsOfStimulus, Stimulus } from '@/domain/lessons';
-import { spacing } from '@/shared/theme';
+import { Clip, Stimulus } from '@/domain/lessons';
+import { spacing, typography, useTheme } from '@/shared/theme';
 
 import { ClipPlayer } from '../../hooks/useClipPlayer';
 import { ListenButton } from '../ListenButton';
@@ -19,58 +19,98 @@ interface StimulusViewProps {
   onHeard: () => void;
 }
 
+/** La altura de un clip de una sola nota (se toca como una tecla), o `null`. */
+export function singleNote(clip: Clip): number | null {
+  return clip.kind === 'notes' && clip.notes.length === 1 ? clip.notes[0].midi : null;
+}
+
 /**
- * Lo que va encima de la pregunta: la escalera, la fila con hueco o los
- * sonidos que hay que oír. Lleva la cuenta de qué sonidos se escucharon para
- * no habilitar la respuesta antes de tiempo.
+ * Lo que va encima de la pregunta: la escala, la fila con hueco o los sonidos
+ * que hay que oír. Lleva la cuenta de qué sonidos se escucharon para no
+ * habilitar la respuesta antes de tiempo.
+ *
+ * Una nota suelta cuenta como escuchada al TOCARLA (es una tecla: suena al
+ * instante y se puede tocar junto a otras). Un clip más largo (los pulsos del
+ * Módulo 2) cuenta al terminar: si el audio no arrancó, no se escuchó.
  */
 export function StimulusView({ stimulus, player, solution, revealed, onHeard }: StimulusViewProps) {
+  const { colors } = useTheme();
   const [heard, setHeard] = useState<readonly number[]>([]);
-  const clips = clipsOfStimulus(stimulus);
+  const listenClips =
+    stimulus.kind === 'clips'
+      ? stimulus.clips.map((item) => item.clip)
+      : stimulus.kind === 'steps' && stimulus.listen !== null
+        ? [stimulus.listen]
+        : [];
 
   useEffect(() => {
-    if (clips.length > 0 && heard.length === clips.length) onHeard();
-  }, [heard.length, clips.length, onHeard]);
+    if (listenClips.length > 0 && heard.length === listenClips.length) onHeard();
+  }, [heard.length, listenClips.length, onHeard]);
 
-  // Un sonido cuenta como escuchado al TERMINAR: si el audio no arrancó, el
-  // `onEnd` nunca llega y la respuesta sigue cerrada.
+  const markHeard = (index: number) =>
+    setHeard((previous) => (previous.includes(index) ? previous : [...previous, index]));
+
   const listen = (index: number) => {
-    player.play(clips[index], {
-      onEnd: () =>
-        setHeard((previous) => (previous.includes(index) ? previous : [...previous, index])),
-    });
+    const clip = listenClips[index];
+    const midi = singleNote(clip);
+    if (midi !== null) {
+      if (!player.ready) return;
+      player.playNote(midi);
+      markHeard(index);
+      return;
+    }
+    player.play(clip, { onEnd: () => markHeard(index) });
   };
 
   switch (stimulus.kind) {
     case 'steps': {
-      // Con sonido, la ficha solo se enciende tras escucharla.
-      const showHighlight = stimulus.clip === null || heard.length > 0;
+      const playStep = (index: number) => player.playNote(stimulus.midis[index]);
+      if (stimulus.listen === null) {
+        // Nota marcada: solo DO lleva nombre; al corregir, la escala entera se
+        // llena y muestra todos los nombres.
+        return (
+          <NoteSteps
+            labels={revealed ? 'all' : 'anchor'}
+            lit={revealed ? stimulus.midis.map((_, index) => index) : [stimulus.highlight]}
+            onPressStep={playStep}
+          />
+        );
+      }
+      // De oído: nada marcado ni con nombre hasta corregir.
       return (
         <View style={styles.block}>
-          <NoteSteps labels="anchor" highlight={showHighlight ? stimulus.highlight : null} />
-          {stimulus.clip !== null && (
-            <View style={styles.center}>
-              <ListenButton
-                label="Escuchar"
-                heard={heard.length > 0}
-                disabled={!player.ready}
-                onPress={() => listen(0)}
-              />
-            </View>
-          )}
+          <View style={styles.listenRow}>
+            <Text style={[styles.listenLabel, { color: colors.textPrimary }]}>Escucha:</Text>
+            <ListenButton
+              accessibilityLabel="La nota"
+              disabled={!player.ready}
+              onPress={() => listen(0)}
+            />
+          </View>
+          <NoteSteps
+            labels={revealed ? 'all' : 'none'}
+            lit={revealed ? [stimulus.highlight] : []}
+            onPressStep={playStep}
+          />
         </View>
       );
     }
     case 'row':
-      return <NoteRow cells={stimulus.cells} filled={revealed ? solution : null} />;
+      return (
+        <NoteRow
+          cells={stimulus.cells}
+          filled={revealed ? solution : null}
+          onPlay={player.playNote}
+        />
+      );
     case 'clips':
       return (
         <View style={styles.listenRow}>
           {stimulus.clips.map((item, index) => (
             <ListenButton
-              key={item.label}
+              key={item.name ?? item.label ?? index}
               label={item.label}
-              heard={heard.includes(index)}
+              accessibilityLabel={item.name}
               disabled={!player.ready}
               onPress={() => listen(index)}
             />
@@ -84,13 +124,15 @@ const styles = StyleSheet.create({
   block: {
     gap: spacing.lg,
   },
-  center: {
-    alignItems: 'center',
-  },
   listenRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,
+  },
+  listenLabel: {
+    ...typography.question,
+    flexShrink: 0,
   },
 });

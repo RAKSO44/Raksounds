@@ -15,6 +15,10 @@ const MODULE_ICONS: Record<number, IconName> = {
   8: 'stairs-up',
   9: 'music-accidental-sharp',
   10: 'arrow-expand-horizontal',
+  11: 'stairs',
+  12: 'format-list-numbered',
+  13: 'music-accidental-flat',
+  14: 'key-variant',
 };
 
 export function moduleIcon(number: number): IconName {

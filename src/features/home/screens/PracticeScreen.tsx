@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -20,30 +20,58 @@ import { usePracticeSession } from '../hooks/usePracticeSession';
 import { feedbackTitle } from '../labels';
 import { useLessonProgressStore } from '../progressStore';
 
+/** "3,7,9" → [3, 7, 9]; vacío o ausente → `null` (el intento entero). */
+function parsePositions(raw: string | undefined): number[] | null {
+  const positions = (raw ?? '')
+    .split(',')
+    .map(Number)
+    .filter((n) => Number.isInteger(n) && n > 0);
+  return positions.length > 0 ? positions : null;
+}
+
 /**
  * La práctica de un módulo: 15 ejercicios seguidos, con corrección inmediata.
  * Al responder el último se registra el intento y se REEMPLAZA esta pantalla
  * por el resultado, para no volver a ejercicios ya respondidos.
+ *
+ * Con `retry` ("Reintentar fallos") son solo esas posiciones, regeneradas; lo
+ * que se acierte se suma a los `base` aciertos que ya tenía el intento.
  */
 export function PracticeScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ module?: string }>();
+  const params = useLocalSearchParams<{ module?: string; retry?: string; base?: string }>();
   const module = moduleById(params.module);
+  const retry = useMemo(() => parsePositions(params.retry), [params.retry]);
 
   if (module === undefined) {
     return <Header title="Práctica" onBack={() => router.back()} />;
   }
-  return <PracticeRound moduleId={module.id} moduleNumber={module.number} />;
+  return (
+    <PracticeRound
+      moduleId={module.id}
+      moduleNumber={module.number}
+      retry={retry}
+      base={retry === null ? 0 : Math.max(0, Number(params.base) || 0)}
+    />
+  );
 }
 
-function PracticeRound({ moduleId, moduleNumber }: { moduleId: ModuleId; moduleNumber: number }) {
+interface PracticeRoundProps {
+  moduleId: ModuleId;
+  moduleNumber: number;
+  retry: readonly number[] | null;
+  base: number;
+}
+
+function PracticeRound({ moduleId, moduleNumber, retry, base }: PracticeRoundProps) {
   const { colors } = useTheme();
   const router = useRouter();
   // La semilla se fija al abrir la práctica: el intento no cambia al repintar.
   const [seed] = useState(() => Date.now() >>> 0);
-  const session = usePracticeSession(moduleId, seed);
+  const session = usePracticeSession(moduleId, seed, retry);
   const player = useClipPlayer();
   const recordPractice = useLessonProgressStore((state) => state.recordPractice);
+  const recordRetry = useLessonProgressStore((state) => state.recordRetry);
 
   const [leaving, setLeaving] = useState(false);
   const [actionBarHeight, setActionBarHeight] = useState(0);
@@ -55,14 +83,22 @@ function PracticeRound({ moduleId, moduleNumber }: { moduleId: ModuleId; moduleN
   const { stop } = player;
   useEffect(() => stop, [session.index, stop]);
 
+  const { finalScore, failed } = session;
   useEffect(() => {
-    if (session.finalScore === null) return;
-    recordPractice(moduleId, session.finalScore);
+    if (finalScore === null) return;
+    const total = base + finalScore;
+    if (retry === null) recordPractice(moduleId, total);
+    else recordRetry(moduleId, total);
     router.replace({
       pathname: '/lesson/result',
-      params: { module: moduleId, score: String(session.finalScore) },
+      params: {
+        module: moduleId,
+        score: String(total),
+        failed: failed.join(','),
+        ...(retry === null ? {} : { gained: String(finalScore) }),
+      },
     });
-  }, [session.finalScore, recordPractice, moduleId, router]);
+  }, [finalScore, failed, base, retry, recordPractice, recordRetry, moduleId, router]);
 
   const askToLeave = useCallback(() => setLeaving(true), []);
   useHardwareBack(

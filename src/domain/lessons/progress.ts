@@ -50,6 +50,22 @@ export function completeTheory(progress: ModuleProgress, at: string): ModuleProg
 }
 
 /**
+ * Registra un "Reintentar fallos": NO es un intento nuevo, es terminar el
+ * mismo. `score` ya es el total del intento (aciertos de antes + los
+ * recuperados), así que puede completar la práctica.
+ */
+export function recordRetry(progress: ModuleProgress, score: number, at: string): ModuleProgress {
+  const passed = isPracticePassed(score);
+  return {
+    ...progress,
+    lastScore: score,
+    bestScore: Math.max(progress.bestScore ?? 0, score),
+    practiceCompleted: progress.practiceCompleted || passed,
+    practiceCompletedAt: progress.practiceCompletedAt ?? (passed ? at : null),
+  };
+}
+
+/**
  * Registra un intento terminado. Un intento peor que uno anterior NUNCA quita
  * el completado: repetir es para practicar, no un riesgo.
  */

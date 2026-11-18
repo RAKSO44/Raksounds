@@ -1,34 +1,113 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { firstSequenceError, SequenceExercise } from '@/domain/lessons';
-import { PushButton, PushButtonTone } from '@/shared/design-system';
-import { controls, radii, spacing, typography, useTheme } from '@/shared/theme';
+import {
+  dropOnSlot,
+  emptySlots,
+  filledSequence,
+  firstSequenceError,
+  placeInFirstEmpty,
+  removeFromSlots,
+  SequenceExercise,
+  SequenceSlots,
+} from '@/domain/lessons';
+import { PushButtonTone } from '@/shared/design-system';
+import { radii, spacing, typography, useTheme } from '@/shared/theme';
 
+import { NoteTile, TileDrag, TileSlot } from '../NoteTile';
 import { ExerciseViewProps } from './types';
 
+interface Rect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Margen alrededor de un hueco que aún cuenta como "soltada encima". */
+const DROP_SLOP = spacing.sm;
+
+function contains(rect: Rect | null | undefined, x: number, y: number, slop = 0): boolean {
+  return (
+    rect != null &&
+    x >= rect.x - slop &&
+    x <= rect.x + rect.width + slop &&
+    y >= rect.y - slop &&
+    y <= rect.y + rect.height + slop
+  );
+}
+
 /**
- * Ordenar fichas SIN arrastrar (accesible y a prueba de dedos): tocar una
- * ficha de abajo la coloca en el primer hueco libre, y tocar una colocada la
- * devuelve. Al corregir, las fichas bien puestas se ven en verde y la primera
- * que rompe el orden en rojo.
+ * Ordenar fichas. Dos formas, las dos valen siempre:
+ * - Tocar: una ficha de abajo va al primer hueco libre; una colocada vuelve
+ *   abajo (accesible y a prueba de dedos).
+ * - Arrastrar: la ficha viaja bajo el dedo y se suelta en un hueco (si estaba
+ *   ocupado, se intercambian) o abajo, para devolverla.
+ *
+ * Cada ficha suena al tocarla. Al corregir, las bien puestas se ven en verde y
+ * la primera que rompe el orden en rojo.
  */
 export function SequenceExerciseView({
   exercise,
   revealed,
+  player,
   onAnswer,
 }: ExerciseViewProps<SequenceExercise>) {
   const { colors } = useTheme();
-  const [placed, setPlaced] = useState<readonly string[]>([]);
+  const [slots, setSlots] = useState<SequenceSlots>(() => emptySlots(exercise.answer.length));
+  const [dragging, setDragging] = useState<{ id: string; from: 'slots' | 'pool' } | null>(null);
 
-  const update = (next: readonly string[]) => {
-    setPlaced(next);
-    onAnswer(next.length === exercise.answer.length ? { kind: 'sequence', ids: next } : null);
+  const slotViews = useRef<(View | null)[]>([]);
+  const poolView = useRef<View>(null);
+  const slotRects = useRef<(Rect | null)[]>([]);
+  const poolRect = useRef<Rect | null>(null);
+
+  const update = (next: SequenceSlots) => {
+    setSlots(next);
+    const ids = filledSequence(next);
+    onAnswer(ids === null ? null : { kind: 'sequence', ids });
   };
 
-  const labelOf = (id: string) => exercise.tiles.find((tile) => tile.id === id)?.label ?? '';
-  const errorAt = revealed ? firstSequenceError(exercise.answer, placed) : null;
+  const tileOf = (id: string) => exercise.tiles.find((tile) => tile.id === id);
+  const play = (id: string) => {
+    const midi = tileOf(id)?.midi;
+    if (midi !== undefined) player.playNote(midi);
+  };
 
+  // Los huecos se miden al empezar a arrastrar (no al colocarse): así valen
+  // aunque la pantalla se haya desplazado desde entonces.
+  const measure = () => {
+    slotViews.current.forEach((view, index) =>
+      view?.measureInWindow((x, y, width, height) => {
+        slotRects.current[index] = { x, y, width, height };
+      }),
+    );
+    poolView.current?.measureInWindow((x, y, width, height) => {
+      poolRect.current = { x, y, width, height };
+    });
+  };
+
+  const dragFor = (id: string, from: 'slots' | 'pool'): TileDrag => ({
+    onStart: () => {
+      measure();
+      setDragging({ id, from });
+    },
+    onEnd: (x, y) => {
+      setDragging(null);
+      const target = slotRects.current.findIndex((rect) => contains(rect, x, y, DROP_SLOP));
+      if (target >= 0) update(dropOnSlot(slots, id, target));
+      else if (from === 'slots' && contains(poolRect.current, x, y)) {
+        update(removeFromSlots(slots, id));
+      }
+    },
+  });
+
+  const errorAt = revealed
+    ? firstSequenceError(
+        exercise.answer,
+        slots.map((s) => s ?? ''),
+      )
+    : null;
   const slotTone = (index: number): PushButtonTone => {
     if (!revealed) return 'secondary';
     if (errorAt === null || index < errorAt) return 'success';
@@ -39,54 +118,55 @@ export function SequenceExerciseView({
     <View style={styles.container}>
       <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
 
-      <View style={styles.slots}>
-        {exercise.answer.map((_, index) => {
-          const id = placed[index];
-          if (id === undefined) {
-            return (
-              <View
-                key={`slot-${index}`}
-                accessibilityLabel={`Hueco ${index + 1}`}
-                style={[styles.slot, styles.emptySlot, { borderColor: colors.border }]}
+      <View style={[styles.slots, dragging?.from === 'slots' && styles.onTop]}>
+        {slots.map((id, index) => (
+          <View
+            key={`slot-${index}`}
+            ref={(view) => {
+              slotViews.current[index] = view;
+            }}
+            collapsable={false}
+            style={id !== null && dragging?.id === id && styles.onTop}
+          >
+            {id === null ? (
+              <TileSlot accessibilityLabel={`Hueco ${index + 1}`} />
+            ) : (
+              <NoteTile
+                label={tileOf(id)?.label ?? ''}
+                tone={slotTone(index)}
+                selected={!revealed || slotTone(index) !== 'secondary'}
+                accessibilityLabel={`Posición ${index + 1}: ${tileOf(id)?.label ?? ''}${
+                  revealed ? '' : '. Toca para quitarla'
+                }`}
+                onPressIn={() => play(id)}
+                onPress={revealed ? undefined : () => update(removeFromSlots(slots, id))}
+                drag={revealed ? undefined : dragFor(id, 'slots')}
               />
-            );
-          }
-          return (
-            <PushButton
-              key={`slot-${index}`}
-              variant="selectable"
-              tone={slotTone(index)}
-              selected
-              label={labelOf(id)}
-              labelStyle={typography.note}
-              minWidth={controls.noteCellSize}
-              disabled={revealed && slotTone(index) === 'secondary'}
-              accessibilityLabel={`Posición ${index + 1}: ${labelOf(id)}. Toca para quitarla`}
-              onPress={() => {
-                if (!revealed) update(placed.filter((placedId) => placedId !== id));
-              }}
-            />
-          );
-        })}
+            )}
+          </View>
+        ))}
       </View>
 
       <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-      <View style={styles.pool}>
+      <View
+        ref={poolView}
+        collapsable={false}
+        style={[styles.pool, dragging?.from === 'pool' && styles.onTop]}
+      >
         {exercise.tiles.map((tile) => {
-          const used = placed.includes(tile.id);
+          const used = slots.includes(tile.id);
           return (
-            <PushButton
+            <NoteTile
               key={tile.id}
-              variant="selectable"
               label={tile.label}
-              labelStyle={typography.note}
-              minWidth={controls.noteCellSize}
               // Una ficha ya colocada deja su sitio vacío (gris) en vez de
               // desaparecer: así el resto no se mueve bajo el dedo.
               disabled={used || revealed}
               accessibilityLabel={tile.label}
-              onPress={() => update([...placed, tile.id])}
+              onPressIn={() => play(tile.id)}
+              onPress={() => update(placeInFirstEmpty(slots, tile.id))}
+              drag={used || revealed ? undefined : dragFor(tile.id, 'pool')}
             />
           );
         })}
@@ -109,14 +189,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  slot: {
-    minWidth: controls.noteCellSize,
-    height: controls.noteCellSize,
-    borderRadius: radii.md,
-  },
-  emptySlot: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
+  // Lo que se arrastra pasa por encima de todo lo demás.
+  onTop: {
+    zIndex: 10,
   },
   divider: {
     height: 2,
