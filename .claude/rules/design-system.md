@@ -52,6 +52,17 @@ suelto en un feature).
   `BottomActionBar`, `ExerciseProgressBar`) — las de una ronda de Ejercicios,
   compartidas con las lecciones del Home. `answerOptionState` es genérico
   sobre el tipo de opción.
+- **`BottomActionBar`** acepta una acción `secondary` encima de la principal,
+  con su misma forma y otro tono ("Reintentar fallos" en amarillo).
+- **`Overlay` / `OverlayHost`** — capa por encima de toda la app (pestañas y
+  cabeceras incluidas) en el MISMO árbol de vistas. Úsala en vez de `Modal`
+  cuando algo debe crecer desde una pieza de la pantalla: un `Modal` abre otra
+  ventana nativa y parpadea al aparecer. `OverlayHost` va una vez en
+  `app/_layout.tsx`.
+- **`PianoKeyBody`** — cuerpo de una tecla de piano (cara + labio). Al pulsar
+  la cara se ESTIRA hacia abajo tapando el labio, nunca se desplaza (si bajara
+  entera asomaría una franja blanca arriba). Lo usan el teclado de la
+  entonación y las teclas blancas de la teoría: toda tecla nueva va con él.
 
 `PushButton` con `diameter` es circular (los nodos de la ruta del Home): mismo
 labio, snap y háptica, solo cambia la forma. No crees un botón redondo aparte.

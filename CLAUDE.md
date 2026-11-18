@@ -18,7 +18,7 @@ NO implementes todavía:
 - Autenticación ni base de datos (llegará después, probablemente con Supabase)
 - Contenido de los módulos del Home más allá del 2: se trabajan de uno en uno y
   solo cuando el usuario lo pida (`.claude/rules/roadmap.md`). En la ruta ya
-  aparecen los Módulos 3–10 (Etapas 1 y 2) como "Próximamente", solo con su
+  aparecen los Módulos 3–14 (Etapas 1 a 3) como "Próximamente", solo con su
   título y temario
 - La sección "Perfil" (logros, diamantes, desbloqueables)
 - Persistencia del progreso de los Ejercicios (rachas, historial de rondas):
@@ -36,9 +36,18 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
 (Pulso y tempo)**. Documento de partida y decisiones en `docs/roadmap/etapa-1/`
 (las decisiones de `modulos-1-2.md` prevalecen sobre la especificación).
 
-- Las etapas y módulos de la ruta viven en `domain/lessons/stages.ts`. Cada
-  etapa tiene una tarjeta FIJA arriba que la siguiente empuja al llegar
-  (`stickyHeaderIndices`, como las secciones de Duolingo).
+- Las etapas y módulos de la ruta viven en `domain/lessons/stages.ts`. Arriba
+  hay UNA sola tarjeta fija (`StageBanner`) con la etapa en curso; entre etapas,
+  una línea con su título (`StageDivider`), y al llegar arriba la tarjeta cambia
+  de texto y color (`useStageScroll`). Tocarla abre OTRA pantalla (ruta
+  `/stages`, `StagesScreen`, con la transición normal) con la lista de etapas;
+  la actual va seleccionada "transparente" (cara tenue + borde de su color,
+  como un `selectable`). Elegir una vuelve atrás y el Home salta a esa etapa
+  (`stageSelection.ts` hace de puente). Sin animación de expansión. La última
+  etapa con la que se interactuó (elegirla en la lista o tocar uno de sus
+  módulos; desplazarse no cuenta) se guarda en MMKV y la app abre en ella. Cada
+  etapa tiene su color (`stageTone`: verde, azul, rosa; nunca el morado de la
+  cabecera ni el dorado del progreso) en su tarjeta, nodos y botones.
 - Cada módulo es un círculo con su título al lado (`ModuleRow`); al tocarlo, el
   mismo círculo se estira (ancho y alto, nunca escala) hasta una tarjeta con su
   temario y DOS botones: **Teoría** (libro) y **Ejercicios** (play). Abrir uno
@@ -53,12 +62,19 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`).
 - Práctica: 15 ejercicios generados de una semilla, plantilla fija por módulo.
   Reglas en `domain/lessons/progress.ts`; guardado en
-  `features/home/progressStore.ts`.
+  `features/home/progressStore.ts`. En el resultado, si hubo fallos,
+  "Reintentar fallos" (amarillo) repite SOLO esas posiciones, regeneradas; lo
+  recuperado se suma al intento ("+3", 12 → 15) y cuenta para completarlo
+  (`recordRetry`: no suma un intento nuevo).
 - Los ejercicios son DATOS (`domain/lessons/exercise.ts`): mecánicas `choice`,
   `clip-choice` (cada opción es un sonido o una luz), `sequence` (ordenar
-  tocando, sin arrastrar) y `tap` (seguir el pulso, calificado en
+  tocando o arrastrando, `domain/lessons/sequenceBoard.ts`), `pick` (marcar
+  los sonidos que van juntos) y `tap` (seguir el pulso, calificado en
   `domain/lessons/tapSync.ts`). Los estímulos son `Clip`s; los hace sonar
   `useClipPlayer` (piano para notas, metrónomo para golpes).
+- **Toda tecla que suena en pantalla se puede pulsar junto a otras y suenan a
+  la vez** (`playNote`: una nota suelta no corta nada). Toda nota visible
+  suena al tocarla, salvo la que hay que adivinar hasta corregir.
 - El metrónomo (`IMetronome`) programa cada golpe en el reloj de audio, nunca
   con `setTimeout`: así se puede calificar un toque contra el golpe real.
 
@@ -220,6 +236,7 @@ src/
       exercises.tsx        # → ExercisesScreen (menú de ejercicios)
       profile.tsx          # → ProfileScreen placeholder ("Próximamente")
     settings.tsx           # → SettingsScreen (desde el engranaje del Home)
+    stages.tsx             # → StagesScreen (desde la tarjeta de etapa del Home)
     lesson/                # fuera de las tabs, como las rondas
       theory.tsx           # → TheoryScreen (?module=)
       practice.tsx         # → PracticeScreen (?module=)

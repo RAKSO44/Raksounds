@@ -52,10 +52,36 @@ Solo teclas blancas: en este módulo no se habla de alteraciones.
 
 ## Módulo 1 — práctica, cambios respecto al documento
 
-- **01** "nombre de la nota mostrada": se muestra la escalera DO…SI con solo DO
-  rotulado y una ficha marcada; se cuenta desde DO.
-- **02**: la misma escalera, guiada por el oído: suena una nota y su ficha se
-  ilumina al terminar.
+(Revisado con el usuario el 2026-11-17.) Regla general: toda nota que se ve
+se puede tocar y suena, y varias a la vez suenan juntas; la nota que hay que
+adivinar no suena hasta corregir.
+
+- **01** "¿Cómo se llama la nota marcada?": la escala DO…SI en barras con solo
+  DO rotulado y una barra marcada; se cuenta desde DO. Las barras y las
+  alternativas suenan. Al comprobar (acierte o falle) la escala se llena y
+  muestra todos los nombres.
+- **02** "¿Qué nota sonó?": "Escucha:" + botón celeste (siempre el parlante,
+  nunca "repetir"); debajo, la escala SIN nombres (ni DO) y sin marcar, luego
+  la pregunta y "Tip: presiona las barras para escuchar las notas". La barra
+  que sonó se pinta y aparecen los nombres solo al comprobar.
+- **03 / 09 / 14**: "Ordena las notas de forma ascendente / descendente"; el 14
+  añade "empezando en X" (al cruzar SI→DO, si no, habría varias respuestas).
+  Las fichas suenan, se tocan para poner/quitar o se ARRASTRAN (la ficha viaja
+  bajo el dedo): a un hueco vacío, sobre otra colocada (se intercambian; si
+  venía de abajo, la de antes vuelve abajo) o de vuelta abajo.
+- **04–08, 10** (filas con hueco): las notas de la fila suenan (subiendo de
+  verdad: tras SI, el DO de la octava siguiente); el hueco no, hasta
+  comprobar. Las alternativas NO suenan.
+- **11 / 12** "¿Cuál X es más agudo / grave?": sin luz ni texto de ayuda;
+  "Comprobar" se habilita con solo haber tocado las dos. Corrección: "Los dos
+  son X; pero en octavas diferentes".
+- **13** "¿Las dos notas tienen el mismo nombre?": dos botones celestes con el
+  parlante, una nota cada uno, que se pueden tocar a la vez. Corrección: "el
+  mismo nombre en diferente octava".
+- **15** "Marca las dos notas que comparten el mismo nombre": tres botones con
+  parlante (dos son la misma nota a una octava; el tercero, otra nota en
+  cualquiera de las dos octavas). Se marcan y desmarcan; "Comprobar" solo con
+  exactamente dos. Al comprobar, cada parlante se cambia por su nota.
 - **06**: el hueco se completa eligiendo entre 3 nombres (no ordenando).
 - **11**: DO4/DO5 o DO5/DO6 (el banco de muestras es C4–C6; no hay DO3).
 - **13** y **15**: la nota distinta se aleja al menos dos nombres, para que el
@@ -87,8 +113,13 @@ Solo teclas blancas: en este módulo no se habla de alteraciones.
   volver a escuchar también después de corregir.
 - En las secuencias, las fichas bien puestas quedan en verde y la primera que
   rompe el orden en rojo.
-- Ningún ejercicio auditivo se puede responder sin haber escuchado sus sonidos
-  hasta el final (si el audio no arranca, la respuesta sigue cerrada).
+- Ningún ejercicio auditivo se puede responder sin haber escuchado sus
+  sonidos. Una nota suelta cuenta al tocarla; un clip largo (pulsos del Módulo
+  2), al terminar (si el audio no arranca, la respuesta sigue cerrada).
+- Resultado: sin "Volver a practicar". Si hubo fallos, "Reintentar fallos"
+  (amarillo, sobre "Continuar") repite solo esas posiciones con ejercicios
+  NUEVOS del mismo tipo. Al volver, el resultado muestra "+N" y sube a la nueva
+  cuenta; ese total cuenta para completar la práctica y no suma un intento.
 
 ## Pendiente de probar en dispositivo
 
