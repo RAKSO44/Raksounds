@@ -1,8 +1,12 @@
-import { StyleSheet, View } from 'react-native';
+import { useMemo } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
 import { NOTE_NAMES } from '@/domain/lessons';
-import { PushButton } from '@/shared/design-system';
-import { controls, spacing, typography } from '@/shared/theme';
+import { PRESS_SLOP, resolveTone } from '@/shared/design-system';
+import { hapticPressIn } from '@/shared/haptics';
+import { controls, elevation, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 interface NoteStepsProps {
   /**
@@ -33,15 +37,11 @@ export function NoteSteps({ labels, lit, onPressStep }: NoteStepsProps) {
         const shown = labels === 'all' || (labels === 'anchor' && index === 0);
         const on = lit.includes(index);
         return (
-          <PushButton
+          <StepBar
             key={name}
-            variant="selectable"
-            tone="brand"
-            selected={on}
-            label={shown ? name : ''}
-            labelStyle={styles.label}
-            fillHeight
-            style={[styles.step, { height: stepHeight(index) }]}
+            label={shown ? name : null}
+            height={stepHeight(index)}
+            lit={on}
             accessibilityLabel={
               shown ? `Nota ${name}` : on ? `Barra ${index + 1}, marcada` : `Barra ${index + 1}`
             }
@@ -53,17 +53,105 @@ export function NoteSteps({ labels, lit, onPressStep }: NoteStepsProps) {
   );
 }
 
+interface StepBarProps {
+  label: string | null;
+  height: number;
+  lit: boolean;
+  accessibilityLabel: string;
+  onPressIn: () => void;
+}
+
+/**
+ * Una barra: el relieve, snap y háptica de un `PushButton` seleccionable,
+ * pero sin su relleno lateral (siete barras en un móvil dejan ~40 px cada
+ * una: con el relleno del botón no cabía ni "SOL"). El nombre va arriba, a la
+ * misma altura en todas, para que se lean en una línea.
+ */
+function StepBar({ label, height, lit, accessibilityLabel, onPressIn }: StepBarProps) {
+  const { colors } = useTheme();
+  const tone = resolveTone('brand', colors);
+  const pressed = useSharedValue(0);
+
+  const gesture = useMemo(
+    () =>
+      Gesture.Tap()
+        .maxDistance(PRESS_SLOP)
+        .runOnJS(true)
+        .onBegin(() => {
+          // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
+          pressed.value = 1;
+          hapticPressIn();
+          onPressIn();
+        })
+        .onFinalize(() => {
+          // eslint-disable-next-line react-hooks/immutability -- mutar .value es la API de shared values de reanimated
+          pressed.value = 0;
+        }),
+    [pressed, onPressIn],
+  );
+
+  const faceStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: pressed.value * elevation.buttonLip }],
+  }));
+
+  return (
+    <GestureDetector gesture={gesture}>
+      <View
+        accessible
+        accessibilityRole="button"
+        accessibilityState={{ selected: lit }}
+        accessibilityLabel={accessibilityLabel}
+        onAccessibilityTap={onPressIn}
+        style={styles.step}
+      >
+        <View style={[styles.lip, { backgroundColor: lit ? tone.lip : colors.surfaceShadow }]} />
+        <Animated.View
+          style={[
+            styles.face,
+            { height: height - elevation.buttonLip },
+            lit
+              ? { backgroundColor: tone.tint, borderColor: tone.face }
+              : { backgroundColor: colors.surface, borderColor: colors.border },
+            faceStyle,
+          ]}
+        >
+          {label !== null && (
+            <Text style={[styles.label, { color: lit ? tone.text : colors.textPrimary }]}>
+              {label}
+            </Text>
+          )}
+        </Animated.View>
+      </View>
+    </GestureDetector>
+  );
+}
+
 const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'flex-start',
     gap: spacing.xs,
   },
   step: {
     flex: 1,
   },
+  lip: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: elevation.buttonLip,
+    bottom: 0,
+    borderRadius: radii.md,
+  },
+  face: {
+    marginBottom: elevation.buttonLip,
+    paddingTop: spacing.sm,
+    borderRadius: radii.md,
+    borderWidth: 2,
+    alignItems: 'center',
+  },
   label: {
-    ...typography.caption,
+    ...typography.chip,
     flexShrink: 0,
   },
 });
