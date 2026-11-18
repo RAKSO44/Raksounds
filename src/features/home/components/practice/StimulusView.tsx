@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Clip, Stimulus } from '@/domain/lessons';
@@ -15,8 +14,6 @@ interface StimulusViewProps {
   /** Respuesta correcta, para rellenar el hueco al corregir. */
   solution: string | null;
   revealed: boolean;
-  /** Se llama cuando ya se escuchó todo lo que había que escuchar. */
-  onHeard: () => void;
 }
 
 /** La altura de un clip de una sola nota (se toca como una tecla), o `null`. */
@@ -26,16 +23,13 @@ export function singleNote(clip: Clip): number | null {
 
 /**
  * Lo que va encima de la pregunta: la escala, la fila con hueco o los sonidos
- * que hay que oír. Lleva la cuenta de qué sonidos se escucharon para no
- * habilitar la respuesta antes de tiempo.
+ * que hay que oír. Escuchar no es requisito para responder.
  *
- * Una nota suelta cuenta como escuchada al TOCARLA (es una tecla: suena al
- * instante y se puede tocar junto a otras). Un clip más largo (los pulsos del
- * Módulo 2) cuenta al terminar: si el audio no arrancó, no se escuchó.
+ * Una nota suelta se toca como una tecla: suena al instante y se puede tocar
+ * junto a otras.
  */
-export function StimulusView({ stimulus, player, solution, revealed, onHeard }: StimulusViewProps) {
+export function StimulusView({ stimulus, player, solution, revealed }: StimulusViewProps) {
   const { colors } = useTheme();
-  const [heard, setHeard] = useState<readonly number[]>([]);
   const listenClips =
     stimulus.kind === 'clips'
       ? stimulus.clips.map((item) => item.clip)
@@ -43,23 +37,15 @@ export function StimulusView({ stimulus, player, solution, revealed, onHeard }: 
         ? [stimulus.listen]
         : [];
 
-  useEffect(() => {
-    if (listenClips.length > 0 && heard.length === listenClips.length) onHeard();
-  }, [heard.length, listenClips.length, onHeard]);
-
-  const markHeard = (index: number) =>
-    setHeard((previous) => (previous.includes(index) ? previous : [...previous, index]));
-
   const listen = (index: number) => {
     const clip = listenClips[index];
     const midi = singleNote(clip);
     if (midi !== null) {
       if (!player.ready) return;
       player.playNote(midi);
-      markHeard(index);
       return;
     }
-    player.play(clip, { onEnd: () => markHeard(index) });
+    player.play(clip);
   };
 
   switch (stimulus.kind) {

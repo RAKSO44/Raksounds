@@ -92,18 +92,26 @@ describe('ejercicios del Módulo 1', () => {
     }
   });
 
-  it('¿cuál es más agudo?: sin luz ni pista; basta con tocar las dos', async () => {
+  it('¿cuál es más agudo?: basta con elegir una, y pulsarla de nuevo la deselecciona', async () => {
     const user = userEvent.setup();
     const exercise = at(11);
     if (exercise.mechanic !== 'clip-choice') throw new Error();
     const { onAnswer } = await show(exercise);
-    expect(screen.queryByText(/Puedes volver a escucharlas/)).toBeNull();
+    expect(screen.queryByText(/Escucha antes de responder/)).toBeNull();
 
     await user.press(screen.getByLabelText('Opción A'));
-    expect(onAnswer).not.toHaveBeenCalled();
+    expect(onAnswer).toHaveBeenLastCalledWith({ kind: 'option', id: exercise.options[0].id });
+    await user.press(screen.getByLabelText('Opción A'));
+    expect(onAnswer).toHaveBeenLastCalledWith(null);
     await user.press(screen.getByLabelText('Opción B'));
     expect(onAnswer).toHaveBeenLastCalledWith({ kind: 'option', id: exercise.options[1].id });
-    expect(player.playNote).toHaveBeenCalledTimes(2);
+    expect(player.playNote).toHaveBeenCalledTimes(3);
+  });
+
+  it('¿mismo nombre?: se puede responder sin haber escuchado', async () => {
+    await show(at(13));
+    expect(screen.queryByText(/Escucha antes de responder/)).toBeNull();
+    expect(screen.getByLabelText('Sí, el mismo')).toBeEnabled();
   });
 
   it('¿mismo nombre?: dos botones de escuchar, una nota cada uno', async () => {

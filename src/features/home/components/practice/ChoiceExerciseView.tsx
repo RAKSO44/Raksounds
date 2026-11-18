@@ -1,7 +1,7 @@
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ChoiceExercise, stimulusClips } from '@/domain/lessons';
+import { ChoiceExercise } from '@/domain/lessons';
 import { AnswerOption, answerOptionState } from '@/shared/design-system';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
@@ -12,8 +12,8 @@ import { ExerciseViewProps } from './types';
 const SHORT_LABEL = 4;
 
 /**
- * Elegir una respuesta escrita. Si el ejercicio trae sonidos, las opciones se
- * habilitan al escucharlos: no se responde a algo que no sonó. Una opción con
+ * Elegir una respuesta escrita. Las opciones se pueden elegir desde el
+ * principio, aunque aún no se hayan escuchado los sonidos. Una opción con
  * nota (`midi`) suena al tocarla.
  *
  * Cuando hay que reconocer de oído una nota en la escala, la pregunta va
@@ -28,8 +28,6 @@ export function ChoiceExerciseView({
 }: ExerciseViewProps<ChoiceExercise>) {
   const { colors } = useTheme();
   const [selected, setSelected] = useState<string | null>(null);
-  const [heard, setHeard] = useState(stimulusClips(exercise).length === 0);
-  const markHeard = useCallback(() => setHeard(true), []);
 
   const select = (id: string) => {
     setSelected(id);
@@ -53,7 +51,7 @@ export function ChoiceExerciseView({
           answer: exercise.answer,
           revealed,
         })}
-        disabled={!heard || revealed}
+        disabled={revealed}
         accessibilityLabel={option.label}
         onPressIn={midi === undefined ? undefined : () => player.playNote(midi)}
         onPress={() => select(option.id)}
@@ -75,7 +73,6 @@ export function ChoiceExerciseView({
           player={player}
           solution={exercise.options.find((o) => o.id === exercise.answer)?.label ?? null}
           revealed={revealed}
-          onHeard={markHeard}
         />
       )}
 
@@ -86,12 +83,6 @@ export function ChoiceExerciseView({
             Tip: presiona las barras para escuchar las notas
           </Text>
         </View>
-      )}
-
-      {!heard && (
-        <Text style={[styles.hint, { color: colors.textSecondary }]}>
-          Escucha antes de responder
-        </Text>
       )}
 
       {inRow ? (
