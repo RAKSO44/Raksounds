@@ -104,6 +104,32 @@ export const controls = {
   beatMarkSize: 14,
   /** Alto del botón TAP. */
   tapPadHeight: 112,
+  /** Ícono de una lista de comprobación de la teoría ("Nota que: ✓ …"). */
+  theoryCheckIconSize: 22,
+  /** Corazón del pulso (teoría del Módulo 2). */
+  pulseHeartSize: 88,
+  /** Cuánto "late" el corazón: crece y vuelve (golpe débil / fuerte). */
+  heartBeatScale: 1.1,
+  heartAccentScale: 1.2,
+  /** Distancia que recorre un "BUM" al salir del corazón. */
+  bumTravel: 56,
+  /** Línea del pulso (el "oxímetro"): alto, grosor de las marcas y su alto débil/fuerte. */
+  pulseTraceHeight: 48,
+  pulseTickWidth: 4,
+  pulseTickHeight: 20,
+  pulseAccentTickHeight: 44,
+  pulseTraceStroke: 2,
+  /**
+   * Slider de BPM (estilo Material 3): canal grueso partido por un tirador de
+   * barra vertical, con un hueco a cada lado y un punto al final del canal.
+   */
+  sliderTrackHeight: 16,
+  sliderHandleWidth: 4,
+  sliderHandleHeight: 44,
+  sliderHandleGap: 6,
+  /** Radio de los extremos del canal que dan al tirador (los de fuera son píldora). */
+  sliderInnerRadius: 4,
+  sliderStopSize: 6,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -130,6 +156,13 @@ export const motion = {
   micLevel: 80,
   /** Apagado de la luz del pulso tras cada golpe (se enciende de golpe). */
   flash: 180,
+  /** Latido del corazón: subida rápida y vuelta con curva de salida. */
+  heartRise: 70,
+  heartFall: 200,
+  /** Vuelo de un "BUM" desde el corazón hasta desvanecerse. */
+  bum: 650,
+  /** Lo que tarda una marca en cruzar la línea del pulso, a velocidad constante. */
+  traceCross: 2400,
   /** Un nodo de la ruta se abre en tarjeta (o vuelve a círculo). */
   morph: 300,
   /** Cambio de color de un nodo al completar su teoría o su práctica. */

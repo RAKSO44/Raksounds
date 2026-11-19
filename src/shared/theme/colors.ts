@@ -52,6 +52,9 @@ export interface ThemeColors {
   dangerTint: string;
   dangerText: string;
 
+  /** Corazón del pulso (teoría del Módulo 2): sus "BUM" y su línea. */
+  heart: string;
+
   /** Acento (rosa). Un color más para distinguir las etapas de la ruta. */
   accent: string;
   accentShadow: string;
@@ -141,6 +144,7 @@ export const lightColors: ThemeColors = {
   successTint: palette.greenTintLight,
   successText: palette.greenTextLight,
 
+  heart: palette.red,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintLight,
@@ -214,6 +218,7 @@ export const darkColors: ThemeColors = {
   successTint: palette.greenTintDark,
   successText: palette.greenTextDark,
 
+  heart: palette.red,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,

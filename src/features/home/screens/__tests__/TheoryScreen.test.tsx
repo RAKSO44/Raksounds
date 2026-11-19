@@ -106,11 +106,84 @@ describe('TheoryScreen (Módulo 1)', () => {
   });
 
   it('nunca tiene más de 3 páginas', async () => {
-    for (const module of ['notes', 'pulse']) {
+    for (const [module, total] of [
+      ['notes', 3],
+      ['pulse', 2],
+    ] as const) {
       mockParams = { module };
       const { unmount } = await renderScreen();
-      expect(screen.getByLabelText('Página 1 de 3')).toBeTruthy();
+      expect(screen.getByLabelText(`Página 1 de ${total}`)).toBeTruthy();
       await unmount();
     }
+  });
+});
+
+describe('TheoryScreen (Módulo 2)', () => {
+  const { metronome } = jest.requireMock<{
+    metronome: { loop: jest.Mock; stop: jest.Mock };
+  }>('@/infrastructure/audio/metronome');
+
+  beforeEach(() => {
+    mockParams = { module: 'pulse' };
+    metronome.loop.mockClear();
+  });
+
+  it('el corazón arranca y detiene un pulso continuo con acentos', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+
+    expect(screen.getByText('¿Qué es el pulso?')).toBeTruthy();
+    await user.press(screen.getByLabelText('Escuchar el pulso'));
+    expect(metronome.loop).toHaveBeenCalledTimes(1);
+    const { bpm, isAccent } = metronome.loop.mock.calls[0][0];
+    expect(bpm).toBe(80);
+    expect([0, 1, 4].map(isAccent)).toEqual([true, false, true]);
+
+    const handle = metronome.loop.mock.results[0].value;
+    await user.press(screen.getByLabelText('Detener el pulso'));
+    expect(handle.stop).toHaveBeenCalled();
+    expect(screen.getByLabelText('Escuchar el pulso')).toBeTruthy();
+  });
+
+  it('"constante" se define al tocarla', async () => {
+    const user = setupUser();
+    await renderScreen();
+
+    await user.press(screen.getByText('constante'));
+    expect(screen.getByText('Siempre la misma velocidad')).toBeTruthy();
+  });
+
+  it('la hoja 2 cambia el tempo con la barra, en vivo, y nombra su indicación', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await user.press(screen.getByLabelText('Página siguiente'));
+
+    expect(screen.getByText('¿Qué es el tempo?')).toBeTruthy();
+    expect(screen.getByText('BPM: 100')).toBeTruthy();
+    expect(screen.getByText('Andante')).toBeTruthy();
+
+    await user.press(screen.getByLabelText('Escuchar el pulso'));
+    const handle = metronome.loop.mock.results[0].value;
+
+    const slider = screen.getByLabelText('Tempo');
+    for (let i = 0; i < 8; i += 1) {
+      await act(() =>
+        slider.props.onAccessibilityAction({ nativeEvent: { actionName: 'increment' } }),
+      );
+    }
+    expect(screen.getByText('BPM: 108')).toBeTruthy();
+    expect(screen.getByText('Moderato')).toBeTruthy();
+    expect(handle.setBpm).toHaveBeenLastCalledWith(108);
+
+    await user.press(screen.getByText('Moderato'));
+    expect(screen.getByText('Indicaciones de tempo. Se usan en partituras')).toBeTruthy();
+    await user.press(screen.getByRole('button', { name: 'tempo' }));
+    expect(screen.getByText('Velocidad que tiene el pulso')).toBeTruthy();
+
+    // El check de la última hoja da la teoría por leída.
+    await user.press(screen.getByLabelText('Terminar teoría'));
+    expect(useLessonProgressStore.getState().modules.pulse?.theoryCompleted).toBe(true);
   });
 });

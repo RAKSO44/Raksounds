@@ -5,36 +5,69 @@ import { Clip } from './clip';
  * Pulso y tempo (Módulo 2). El tempo se expresa en BPM: pulsos por minuto.
  */
 
-/** Rango seguro del selector de BPM de la teoría. */
+/** Rango del slider de BPM de la teoría. */
 export const BPM_RANGE = { min: 40, max: 200 } as const;
 
-/** Paso del selector +/- de BPM. */
-export const BPM_STEP = 5;
+/** Tempo del corazón de la página "¿Qué es el pulso?". */
+export const PULSE_DEMO_BPM = 80;
+
+/** Tempo con el que arranca el slider de "¿Qué es el tempo?". */
+export const TEMPO_START_BPM = 100;
 
 /**
- * Los tres tempos de referencia que enseña la teoría. Lento, moderado y rápido
- * son zonas aproximadas, no valores exactos: se usan estos tres como ejemplo.
+ * Golpes por compás de la demostración: el primero de cada grupo es el fuerte
+ * ("algunos pulsos son más fuertes que otros").
  */
-export const TEMPO_PRESETS = [
-  { id: 'slow', bpm: 60 },
-  { id: 'moderate', bpm: 90 },
-  { id: 'fast', bpm: 120 },
-] as const;
+export const BEATS_PER_BAR = 4;
 
-export type TempoPresetId = (typeof TEMPO_PRESETS)[number]['id'];
-
-/** Milisegundos entre dos pulsos. */
-export function beatIntervalMs(bpm: number): number {
-  return 60000 / bpm;
+/** ¿Es fuerte (acentuado) el golpe `index` (desde 0)? */
+export function isAccent(index: number, beatsPerBar: number = BEATS_PER_BAR): boolean {
+  return index % beatsPerBar === 0;
 }
 
-/** Pulsos que caben en un segundo ("60 BPM = 1 pulso por segundo"). */
-export function pulsesPerSecond(bpm: number): number {
-  return bpm / 60;
+/**
+ * Indicaciones de tempo de las partituras, por el BPM desde el que empiezan.
+ * Son zonas aproximadas (cada tradición las corta algo distinto): estas son
+ * las que enseña la app.
+ */
+export const TEMPO_MARKINGS = [
+  { name: 'Largo', fromBpm: BPM_RANGE.min },
+  { name: 'Adagio', fromBpm: 60 },
+  { name: 'Andante', fromBpm: 76 },
+  { name: 'Moderato', fromBpm: 108 },
+  { name: 'Allegro', fromBpm: 120 },
+  { name: 'Presto', fromBpm: 168 },
+] as const;
+
+export type TempoMarking = (typeof TEMPO_MARKINGS)[number]['name'];
+
+/** La indicación de tempo que corresponde a `bpm`. */
+export function tempoMarking(bpm: number): TempoMarking {
+  let marking: TempoMarking = TEMPO_MARKINGS[0].name;
+  for (const zone of TEMPO_MARKINGS) {
+    if (bpm >= zone.fromBpm) marking = zone.name;
+  }
+  return marking;
 }
 
 export function clampBpm(bpm: number): number {
   return Math.min(BPM_RANGE.max, Math.max(BPM_RANGE.min, bpm));
+}
+
+/** BPM entero en la posición `fraction` (0 = mínimo, 1 = máximo) del slider. */
+export function bpmAtFraction(fraction: number): number {
+  const clamped = Math.min(1, Math.max(0, fraction));
+  return Math.round(BPM_RANGE.min + clamped * (BPM_RANGE.max - BPM_RANGE.min));
+}
+
+/** Posición (0–1) de `bpm` en el slider. */
+export function bpmFraction(bpm: number): number {
+  return (clampBpm(bpm) - BPM_RANGE.min) / (BPM_RANGE.max - BPM_RANGE.min);
+}
+
+/** Milisegundos entre dos pulsos. */
+export function beatIntervalMs(bpm: number): number {
+  return 60000 / bpm;
 }
 
 /** Instantes de `count` pulsos regulares, empezando en 0. */

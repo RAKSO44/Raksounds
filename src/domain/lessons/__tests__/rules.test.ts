@@ -15,7 +15,16 @@ import { completeTheory, EMPTY_PROGRESS, recordPractice, recordRetry } from '../
 import { seededRandom, shuffleUnordered } from '../random';
 import { LESSON_MODULES, moduleById, STAGES } from '../stages';
 import { judgeTaps, TAP_RULES } from '../tapSync';
-import { irregularOnsets, isRegular, pulsesPerSecond, regularOnsets } from '../tempo';
+import {
+  bpmAtFraction,
+  bpmFraction,
+  BPM_RANGE,
+  irregularOnsets,
+  isAccent,
+  isRegular,
+  regularOnsets,
+  tempoMarking,
+} from '../tempo';
 
 describe('nombres de nota', () => {
   it('el ciclo da la vuelta en los dos sentidos', () => {
@@ -36,8 +45,41 @@ describe('nombres de nota', () => {
 
 describe('tempo', () => {
   it('60 BPM es un pulso por segundo', () => {
-    expect(pulsesPerSecond(60)).toBe(1);
     expect(regularOnsets(60, 3)).toEqual([0, 1000, 2000]);
+  });
+
+  it('el primer golpe de cada grupo de 4 es el fuerte', () => {
+    expect([0, 1, 2, 3, 4, 5, 8].map((index) => isAccent(index))).toEqual([
+      true,
+      false,
+      false,
+      false,
+      true,
+      false,
+      true,
+    ]);
+  });
+
+  it('nombra el tempo por zonas, con los bordes incluidos en la zona que empiezan', () => {
+    expect(tempoMarking(40)).toBe('Largo');
+    expect(tempoMarking(59)).toBe('Largo');
+    expect(tempoMarking(60)).toBe('Adagio');
+    expect(tempoMarking(100)).toBe('Andante');
+    expect(tempoMarking(108)).toBe('Moderato');
+    expect(tempoMarking(125)).toBe('Allegro');
+    expect(tempoMarking(167)).toBe('Allegro');
+    expect(tempoMarking(168)).toBe('Presto');
+    expect(tempoMarking(200)).toBe('Presto');
+  });
+
+  it('el slider recorre el rango en BPM enteros y no se sale de él', () => {
+    expect(bpmAtFraction(0)).toBe(BPM_RANGE.min);
+    expect(bpmAtFraction(1)).toBe(BPM_RANGE.max);
+    expect(bpmAtFraction(0.5)).toBe(120);
+    expect(bpmAtFraction(-0.3)).toBe(BPM_RANGE.min);
+    expect(bpmAtFraction(1.4)).toBe(BPM_RANGE.max);
+    expect(bpmAtFraction(bpmFraction(125))).toBe(125);
+    expect(bpmFraction(10)).toBe(0);
   });
 
   it('un pulso irregular nunca suena regular ni cruza dos golpes', () => {
