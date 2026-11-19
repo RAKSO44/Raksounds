@@ -7,7 +7,6 @@ import * as SystemUI from 'expo-system-ui';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { OverlayHost } from '@/shared/design-system';
 import { ThemeProvider, useTheme } from '@/shared/theme';
 
 function ThemedApp() {
@@ -20,7 +19,7 @@ function ThemedApp() {
   }, [colors.background]);
 
   return (
-    <OverlayHost>
+    <>
       <Stack
         screenOptions={{
           headerShown: false,
@@ -51,7 +50,7 @@ function ThemedApp() {
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />
-    </OverlayHost>
+    </>
   );
 }
 

@@ -388,10 +388,3 @@ function sameNamePickQuestion(random: RandomSource): PickExercise {
     answer: ['low', 'high'],
   };
 }
-
-/** Alturas de una vuelta completa DO→DO (ascendente o descendente), para la teoría. */
-export function octaveRunMidis(direction: 'up' | 'down'): number[] {
-  return direction === 'up'
-    ? runMidis(0, NOTE_COUNT + 1, 'up')
-    : runMidis(0, NOTE_COUNT + 1, 'down', 5);
-}

@@ -10,4 +10,3 @@ export * from './AnswerOption';
 export * from './AnswerFeedbackSheet';
 export * from './BottomActionBar';
 export * from './ExerciseProgressBar';
-export * from './Overlay';

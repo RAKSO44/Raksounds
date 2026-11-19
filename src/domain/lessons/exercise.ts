@@ -142,8 +142,6 @@ export type LessonExercise =
   | TapExercise
   | PickExercise;
 
-export type ExerciseMechanic = LessonExercise['mechanic'];
-
 /** Lo que respondió el usuario, según la mecánica. */
 export type LessonAnswer =
   | { readonly kind: 'option'; readonly id: string }
