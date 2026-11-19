@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { PulseLoop } from '@/domain/audio/IMetronome';
+import { PulseLoop } from '@/domain/audio';
 import { isAccent } from '@/domain/lessons';
 // Punto de composición con el motor real del metrónomo.
 import { metronome } from '@/infrastructure/audio/metronome';

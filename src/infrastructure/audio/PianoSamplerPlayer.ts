@@ -1,6 +1,6 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
-import { IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio/IAudioPlayer';
+import { IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio';
 import { PIANO_SAMPLES, sampleFor } from './pianoSampleMap';
 
 /**

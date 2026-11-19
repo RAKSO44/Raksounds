@@ -5,7 +5,7 @@ import {
   MicrophoneFrame,
   MicrophonePermission,
   MicrophoneStartResult,
-} from '@/domain/audio/IMicrophone';
+} from '@/domain/audio';
 
 /**
  * Micrófono nativo (Android/iOS) sobre el `AudioRecorder` de

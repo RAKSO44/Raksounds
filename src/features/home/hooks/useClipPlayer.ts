@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { NO_VOICE, VoiceHandle } from '@/domain/audio/IAudioPlayer';
+import { NO_VOICE, VoiceHandle } from '@/domain/audio';
 import { Clip, CLIP_NOTE_MS, clipDurationMs, clipEventTimes } from '@/domain/lessons';
 // Punto de composición con los motores reales: el piano (notas) y el
 // metrónomo (golpes con precisión de muestra).

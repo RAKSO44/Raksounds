@@ -1,6 +1,6 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
-import { IMetronome, PulseLoop, PulseLoopOptions } from '@/domain/audio/IMetronome';
+import { IMetronome, PulseLoop, PulseLoopOptions } from '@/domain/audio';
 
 import { MASTER_GAIN } from './PianoSamplerPlayer';
 

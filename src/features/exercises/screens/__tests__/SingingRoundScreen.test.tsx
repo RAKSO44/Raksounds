@@ -3,7 +3,7 @@ import { act, render, screen, userEvent } from '@testing-library/react-native';
 import { Linking } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { MicrophoneFrame, MicrophoneStartResult } from '@/domain/audio/IMicrophone';
+import { MicrophoneFrame, MicrophoneStartResult } from '@/domain/audio';
 import { midiToFrequency } from '@/domain/pitch';
 import { useSettingsStore } from '@/shared/settings';
 import { ThemeProvider } from '@/shared/theme';

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { VoiceHandle } from '@/domain/audio/IAudioPlayer';
+import { VoiceHandle } from '@/domain/audio';
 // Punto de composición con la implementación real de audio: el motor es el
 // mismo singleton que usa la Librería, así que las muestras ya suelen estar
 // cargadas al entrar a un ejercicio.

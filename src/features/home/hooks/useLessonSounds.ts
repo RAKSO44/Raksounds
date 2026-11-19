@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react';
 
-import { SoundEffect } from '@/domain/audio/ISoundEffects';
+import { SoundEffect } from '@/domain/audio';
 // Punto de composición con la implementación real de los efectos.
 import { soundEffects } from '@/infrastructure/audio/soundEffects';
 import { useSettingsStore } from '@/shared/settings';

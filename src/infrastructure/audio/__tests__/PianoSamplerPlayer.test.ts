@@ -1,4 +1,4 @@
-import { NO_VOICE } from '@/domain/audio/IAudioPlayer';
+import { NO_VOICE } from '@/domain/audio';
 import { PIANO_SAMPLES } from '../pianoSampleMap';
 import { createPianoSamplerPlayer } from '../PianoSamplerPlayer';
 

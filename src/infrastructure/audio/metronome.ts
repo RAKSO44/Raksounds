@@ -1,4 +1,4 @@
-import { IMetronome } from '@/domain/audio/IMetronome';
+import { IMetronome } from '@/domain/audio';
 
 import { createMetronomePlayer } from './MetronomePlayer';
 
