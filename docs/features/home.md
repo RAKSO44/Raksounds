@@ -14,8 +14,9 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   (`stageSelection.ts` hace de puente). Sin animación de expansión. La última
   etapa con la que se interactuó (elegirla en la lista o tocar uno de sus
   módulos; desplazarse no cuenta) se guarda en MMKV y la app abre en ella. Cada
-  etapa tiene su color (`stageTone`: verde, azul, rosa; nunca el morado de la
-  cabecera ni el dorado del progreso) en su tarjeta, nodos y botones.
+  etapa tiene su color (`stageTone`: verde, azul, rosa, y se repiten desde la
+  cuarta; nunca el morado de la cabecera ni el dorado del progreso) en su
+  tarjeta, nodos y botones.
 - Cada módulo es un círculo con su título al lado (`ModuleRow`); al tocarlo, el
   mismo círculo se estira (ancho y alto, nunca escala) hasta una tarjeta con su
   temario y DOS botones: **Teoría** (libro) y **Ejercicios** (play). Abrir uno

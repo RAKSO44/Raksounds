@@ -259,11 +259,12 @@ describe('progreso', () => {
 });
 
 describe('etapas de la ruta', () => {
-  it('las etapas 1–3 tienen los módulos 1–15, numerados seguidos', () => {
+  it('las etapas 1–4 tienen los módulos 1–16, numerados seguidos', () => {
     expect(STAGES.map((stage) => stage.modules.map((module) => module.number))).toEqual([
-      [1, 2, 3, 4, 5, 6],
+      [1, 2],
+      [3, 4, 5, 6],
       [7, 8, 9],
-      [10, 11, 12, 13, 14, 15],
+      [10, 11, 12, 13, 14, 15, 16],
     ]);
   });
 

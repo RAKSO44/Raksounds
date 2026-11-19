@@ -20,7 +20,7 @@ NO implementes todavía:
 - Autenticación ni base de datos (llegará después, probablemente con Supabase)
 - Contenido de los módulos del Home más allá del 2: se trabajan de uno en uno y
   solo cuando el usuario lo pida (`.claude/rules/roadmap.md`). En la ruta ya
-  aparecen los Módulos 3–15 (Etapas 1 a 3) como "Próximamente", solo con su
+  aparecen los Módulos 3–16 (Etapas 2 a 4) como "Próximamente", solo con su
   título y temario
 - La sección "Perfil" (logros, diamantes, desbloqueables)
 - Persistencia del progreso de los Ejercicios (rachas, historial de rondas):

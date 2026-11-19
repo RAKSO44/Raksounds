@@ -40,7 +40,7 @@ export const LESSON_MODULES: readonly LessonModule[] = [
 export const STAGES: readonly Stage[] = [
   {
     number: 1,
-    title: 'Reconocimiento musical y ritmo',
+    title: 'Primeros pasos',
     modules: [
       {
         number: 1,
@@ -59,6 +59,12 @@ export const STAGES: readonly Stage[] = [
         topics: ['Qué es el pulso musical', 'Qué es el tempo', 'BPM', 'Lento, moderado y rápido'],
         lessonId: 'pulse',
       },
+    ],
+  },
+  {
+    number: 2,
+    title: 'Ritmo',
+    modules: [
       {
         number: 3,
         title: 'Figuras musicales',
@@ -105,8 +111,8 @@ export const STAGES: readonly Stage[] = [
     ],
   },
   {
-    number: 2,
-    title: 'Comprensión de notas y distancias',
+    number: 3,
+    title: 'Notas y distancias',
     modules: [
       {
         number: 7,
@@ -140,7 +146,7 @@ export const STAGES: readonly Stage[] = [
     ],
   },
   {
-    number: 3,
+    number: 4,
     title: 'Escalas, intervalos y tonalidades',
     modules: [
       {
@@ -159,10 +165,10 @@ export const STAGES: readonly Stage[] = [
         title: 'Grados de la escala',
         topics: [
           'Qué son los grados',
-          'Grados I al VII',
+          'Grados 1 al 7',
           'La tónica',
-          'Función básica de cada grado',
-          'Introducción al solfeo relativo',
+          'Grados estables y con tendencia',
+          'Cantar por grados',
         ],
         lessonId: null,
       },
@@ -171,9 +177,10 @@ export const STAGES: readonly Stage[] = [
         title: 'Intervalos',
         topics: [
           'Qué es un intervalo',
-          'De la segunda a la octava',
+          'Del unísono a la octava',
           'Mayores, menores y justos',
           'Reconocerlos de oído',
+          'Aumentados y disminuidos',
         ],
         lessonId: null,
       },
@@ -190,6 +197,17 @@ export const STAGES: readonly Stage[] = [
       },
       {
         number: 14,
+        title: 'Escalas pentatónicas',
+        topics: [
+          'Qué es una escala pentatónica',
+          'Pentatónica mayor',
+          'Pentatónica menor',
+          'Por qué no tienen semitonos',
+        ],
+        lessonId: null,
+      },
+      {
+        number: 15,
         title: 'Tonalidades y armaduras',
         topics: [
           'Qué es una tonalidad',
@@ -200,7 +218,7 @@ export const STAGES: readonly Stage[] = [
         lessonId: null,
       },
       {
-        number: 15,
+        number: 16,
         title: 'Círculo de quintas',
         topics: [
           'Qué es el círculo de quintas',

@@ -137,7 +137,7 @@ cada módulo. Mientras tanto, la intención es:
   intervalos fáciles → arpegios.
 - No llevan canto los módulos de ritmo (2–6), que ya se practican con toques,
   ni los de notación, teoría pura o demasiado exigentes para cantar al
-  empezar (7, 9, 14, 15, 16, 18, 20, 21, 23, 24, 25).
+  empezar (7, 9, 15, 16, 17, 19, 21, 22, 24, 25).
 
 | Módulo | Ejercicio de canto candidato |
 |---|---|
@@ -147,9 +147,10 @@ cada módulo. Mientras tanto, la intención es:
 | 11. Grados de la escala | Volver a la tónica; cantar los grados 1, 3 y 5 |
 | 12. Intervalos | Octava, 5.ª justa y 3.ª mayor desde una nota |
 | 13. Escala menor natural | Tres primeras notas en mayor y en menor |
-| 17. Acordes mayores y menores | Cantar la fundamental y luego la 3.ª de un acorde |
-| 19. Arpegios | Arpegio 1‑3‑5 mayor, luego menor |
-| 22. Funciones armónicas | Cantar la tónica a la que resuelve la dominante |
+| 14. Escalas pentatónicas | Pentatónica mayor con guía |
+| 18. Acordes mayores y menores | Cantar la fundamental y luego la 3.ª de un acorde |
+| 20. Arpegios | Arpegio 1‑3‑5 mayor, luego menor |
+| 23. Funciones armónicas | Cantar la tónica a la que resuelve la dominante |
 
 ## 4. Organización general del contenido
 
@@ -160,10 +161,23 @@ Los módulos representan temas principales. No significa que cada uno deba desar
 **Cambios de orden (2026-11-19):**
 - La escala mayor (ahora Módulo 10) y los grados (11) pasan antes que los
   intervalos (12): así la calidad de un intervalo se mide desde la tónica.
-- Las menores armónica y melódica salen de la Etapa 3 y van a la Etapa 5
-  (Módulo 23), detrás de las funciones armónicas.
-- El círculo de quintas se separa de tonalidades y armaduras (Módulo 15).
-- El resultado son 25 módulos en lugar de 23.
+- Las menores armónica y melódica salen de la etapa de escalas y van a la de
+  armonía (Módulo 24), detrás de las funciones armónicas.
+- El círculo de quintas se separa de tonalidades y armaduras (Módulo 16).
+- Nuevo Módulo 14, escalas pentatónicas, después de la menor natural.
+- Progresiones y círculos armónicos se fusionan en un solo módulo (25).
+- Los grados se nombran con números (1–7), no con solfeo móvil; los
+  intervalos incluyen el unísono y, al final, aumentados y disminuidos.
+- El resultado son 25 módulos (antes 23).
+- La antigua Etapa 1 (notas + ritmo) se divide en **Primeros pasos**
+  (Módulos 1–2) y **Ritmo** (3–6). Son 6 etapas; los módulos no cambian de
+  número.
+
+**Etapas por tema, no intercaladas (decisión del 2026-11-19).** El alumno va
+a donde prefiera (nada se bloquea), así que la ruta funciona como un mapa:
+cada etapa agrupa un solo tema y el alumno elige cuál recorrer. Por eso no
+se alternan módulos de ritmo y de altura. La única etapa con las dos
+materias es Primeros pasos, que es la introducción.
 
 **Ritmo y altura son ramas independientes.** Los módulos de ritmo (2–6) no
 son prerrequisito de ningún módulo de altura, y viceversa.
@@ -181,17 +195,20 @@ arpegios puede seguir este camino sin confundirse:
 
 1. **Imprescindible:** 1 Notas → 8 Tonos y semitonos → 9 Alteraciones →
    10 Escalas mayores.
-2. **Muy recomendado:** 11 Grados → 12 Intervalos → 13 Escala menor natural.
-3. **Para arpegios:** 16 Construcción de acordes → 17 Acordes mayores y
-   menores → 19 Arpegios.
+2. **Muy recomendado:** 11 Grados → 12 Intervalos → 13 Escala menor natural
+   → 14 Escalas pentatónicas. La última microlección del 12 (aumentados y
+   disminuidos) se puede dejar para después.
+3. **Para arpegios:** 17 Construcción de acordes → 18 Acordes mayores y
+   menores → 20 Arpegios.
 
-Se pueden saltar sin problema 2–6 (ritmo), 7 (pentagrama) y 14–15
-(armaduras y círculo de quintas). Las Etapas 4 y 5 completas quedan para
-quien quiera entender armonía.
+Se pueden saltar sin problema 2–6 (ritmo), 7 (pentagrama) y 15–16
+(armaduras y círculo de quintas). El resto de la Etapa 5 y la Etapa 6
+completa quedan para quien quiera entender armonía. Dicho por etapas: la
+Etapa 1, la 3 sin el pentagrama, la 4 y, para arpegios, parte de la 5.
 
-# Etapa 1 — Reconocimiento musical y ritmo
+# Etapa 1 — Primeros pasos
 
-El objetivo es familiarizar al usuario con los elementos musicales más básicos y comenzar a desarrollar su comprensión rítmica.
+El objetivo es un primer contacto con las dos materias de la app: qué es una nota (altura) y qué es el pulso (ritmo). Es la puerta de entrada a cualquiera de las etapas siguientes.
 
 ### Módulo 1. Las notas musicales
 - Las siete notas musicales.
@@ -220,6 +237,10 @@ primer contacto con el micrófono.
 - Reconocer si un pulso es más rápido o lento que otro.
 - Seguir un pulso constante.
 - Identificar tempos aproximados.
+
+# Etapa 2 — Ritmo
+
+El objetivo es comprender la duración de los sonidos y los silencios, cómo se agrupan en compases y cómo se leen en un chart rítmico.
 
 ### Módulo 3. Figuras musicales
 - Redonda.
@@ -272,7 +293,7 @@ primer contacto con el micrófono.
 - Completar patrones incompletos.
 - Asociar notación con audio.
 
-# Etapa 2 — Comprensión de notas y distancias
+# Etapa 3 — Notas y distancias
 
 El objetivo es comprender cómo se representan las notas y cómo se relacionan entre sí.
 
@@ -328,7 +349,7 @@ Aquí se cierra lo que dejó abierto el Módulo 8: las teclas negras que se
 llamaron "sostenido" también tienen nombre de bemol. Las enarmonías son
 prerrequisito del Módulo 10, donde el nombre correcto depende de la escala.
 
-# Etapa 3 — Escalas, intervalos y tonalidades
+# Etapa 4 — Escalas, intervalos y tonalidades
 
 El objetivo es comprender cómo se organizan las notas dentro de una escala, medir las distancias entre ellas y cómo se relacionan las tonalidades.
 
@@ -347,18 +368,18 @@ El objetivo es comprender cómo se organizan las notas dentro de una escala, med
 - Elegir el nombre correcto de una nota alterada dentro de una escala.
 
 Enlace con lo anterior: las siete notas del Módulo 1 **son** la escala de Do
-mayor, y sus semitonos (Mi‑Fa y Si‑Do) son los que el Módulo 8 enseñó con
-teclas blancas. La fórmula explica por qué suenan así.
+mayor, y sus semitonos (Mi‑Fa y Si‑Do) son los dos que el Módulo 8 mostró
+entre teclas blancas, sin tecla negra en medio. La fórmula explica por qué suenan así.
 
 **Canto (candidato):** cantar Do‑Re‑Mi con guía, luego cinco notas, luego la
 escala completa.
 
 ### Módulo 11. Grados de la escala
 - Qué son los grados.
-- Grados I al VII.
+- Grados 1 al 7.
 - Tónica.
-- Función básica de cada grado.
-- Introducción al solfeo relativo.
+- Grados estables y grados que tienden a moverse.
+- Cantar por grados (con números).
 
 **Ejercicios propuestos:**
 - Identificar grados.
@@ -366,15 +387,28 @@ escala completa.
 - Completar secuencias.
 - Identificar grados mediante referencias auditivas.
 
+**Grados con números, no con sílabas.** En español Do, Re, Mi son los nombres
+fijos de las notas (Módulo 1). El solfeo relativo ("do móvil") usa esas
+mismas sílabas para los grados, así que en Re mayor la nota Re se cantaría
+"Do": para un hispanohablante es confuso. Por eso los grados se nombran y se
+cantan con números (1–7). Los números romanos (I–VII) se reservan para los
+acordes, en la Etapa 6.
+
+**Estables y con tendencia, no "función".** Aquí solo se escucha qué grados
+suenan a reposo (1, 3, 5) y cuáles piden moverse (el 7 empuja hacia el 1, el
+4 hacia el 3). Es una tendencia melódica. Las funciones armónicas (tónica,
+subdominante, dominante) necesitan acordes y se ven en el Módulo 23.
+
 **Canto (candidato):** volver a la tónica tras escuchar un fragmento; cantar
 los grados 1, 3 y 5.
 
 ### Módulo 12. Intervalos
 - Qué es un intervalo.
 - Distancia entre dos notas.
-- Intervalos desde segunda hasta octava.
+- Del unísono a la octava.
 - Intervalos mayores, menores y justos.
 - Introducción a su reconocimiento auditivo.
+- Intervalos aumentados y disminuidos; el tritono.
 
 **Ejercicios propuestos:**
 - Identificar intervalos visualmente.
@@ -386,7 +420,16 @@ Va después de la escala mayor y los grados porque la calidad se entiende
 midiendo desde la tónica: de la tónica a cada grado de la escala mayor hay
 una 2.ª mayor, 3.ª mayor, 4.ª justa, 5.ª justa, 6.ª mayor, 7.ª mayor y la
 octava (ya vista en el Módulo 1). Un intervalo menor es un semitono más
-pequeño que el mayor. Así no hay que memorizar tablas de semitonos.
+pequeño que el mayor. Así no hay que memorizar tablas de semitonos. El
+unísono (la misma nota dos veces) es el punto de partida: es el primer
+ejercicio de canto de la ruta.
+
+**Última microlección: aumentados y disminuidos.** Un justo o mayor que crece
+un semitono es aumentado; un justo o menor que se achica un semitono es
+disminuido. Basta con la 4.ª aumentada, la 5.ª disminuida (las dos son el
+tritono, Fa‑Si dentro de Do mayor) y la 5.ª aumentada. Son prerrequisito de
+los acordes disminuidos y aumentados (Módulo 19) y del acorde del grado 7
+(Módulo 22). En la ruta de canto se puede dejar para más adelante.
 
 **Canto (candidato):** cantar intervalos fáciles desde una nota dada: octava,
 5.ª justa y 3.ª mayor primero.
@@ -395,7 +438,7 @@ pequeño que el mayor. Así no hay que memorizar tablas de semitonos.
 - Escala menor natural.
 - Su fórmula de tonos y semitonos.
 - Diferencia de sonoridad con la mayor (3.ª, 6.ª y 7.ª más bajas).
-- Relación entre escalas mayores y menores: las mismas notas empezando en el VI grado.
+- Relación entre escalas mayores y menores: las mismas notas empezando en el grado 6.
 
 **Ejercicios propuestos:**
 - Diferenciar escalas mayores y menores.
@@ -403,13 +446,31 @@ pequeño que el mayor. Así no hay que memorizar tablas de semitonos.
 - Completar escalas.
 - Reconocer diferencias mediante audio.
 
-Las menores armónica y melódica se ven en la Etapa 5 (Módulo 23), cuando ya
+Las menores armónica y melódica se ven en la Etapa 6 (Módulo 24), cuando ya
 se conoce la función de dominante que las justifica.
 
 **Canto (candidato):** cantar las tres primeras notas en mayor y en menor
 para contrastar la 3.ª.
 
-### Módulo 14. Tonalidades y armaduras
+### Módulo 14. Escalas pentatónicas
+- Qué es una escala pentatónica (cinco notas).
+- Pentatónica mayor: grados 1‑2‑3‑5‑6 de la escala mayor.
+- Pentatónica menor: grados 1‑3‑4‑5‑7 de la menor natural.
+- Por qué suenan tan "cantables": no tienen semitonos.
+
+**Ejercicios propuestos:**
+- Completar una pentatónica a partir de su escala.
+- Identificar qué grados se quitan.
+- Diferenciar pentatónica mayor y menor mediante audio.
+
+Va después de la menor natural porque se arma quitando grados a la mayor y a
+la menor, que ya se conocen. Es muy usada en el canto popular (melismas,
+improvisación).
+
+**Canto (candidato):** cantar la pentatónica mayor con guía; al no tener
+semitonos es más fácil de afinar que la escala completa.
+
+### Módulo 15. Tonalidades y armaduras
 - Qué es una tonalidad.
 - Armaduras.
 - Tonalidades mayores y menores.
@@ -420,7 +481,11 @@ para contrastar la 3.ª.
 - Relacionar tonalidades mayores y menores.
 - Identificar tonalidades.
 
-### Módulo 15. Círculo de quintas
+En las tonalidades menores el grado 7 suele aparecer alterado aunque no esté
+en la armadura. Aquí basta con mencionarlo; el porqué se explica en el
+Módulo 24.
+
+### Módulo 16. Círculo de quintas
 - Qué es el círculo de quintas.
 - Orden de sostenidos y bemoles.
 - Tonalidades vecinas.
@@ -431,11 +496,11 @@ para contrastar la 3.ª.
 - Deducir la armadura de una tonalidad por su posición.
 - Identificar tonalidades vecinas.
 
-# Etapa 4 — Acordes y arpegios
+# Etapa 5 — Acordes y arpegios
 
 El objetivo es comprender cómo se construyen los acordes y cómo se relacionan sus notas.
 
-### Módulo 16. Construcción de acordes
+### Módulo 17. Construcción de acordes
 - Qué es un acorde.
 - Fundamental.
 - Construcción por terceras.
@@ -447,7 +512,7 @@ El objetivo es comprender cómo se construyen los acordes y cómo se relacionan 
 - Ordenar notas.
 - Reconocer acordes visualmente.
 
-### Módulo 17. Acordes mayores y menores
+### Módulo 18. Acordes mayores y menores
 - Estructura de acordes mayores.
 - Estructura de acordes menores.
 - Diferencias entre ambos.
@@ -462,9 +527,9 @@ El objetivo es comprender cómo se construyen los acordes y cómo se relacionan 
 **Canto (candidato):** escuchar un acorde y cantar su fundamental; después,
 su 3.ª.
 
-### Módulo 18. Acordes disminuidos y aumentados
-- Estructura de acordes disminuidos.
-- Estructura de acordes aumentados.
+### Módulo 19. Acordes disminuidos y aumentados
+- Estructura de acordes disminuidos (5.ª disminuida).
+- Estructura de acordes aumentados (5.ª aumentada).
 - Diferencias respecto a las tríadas mayores y menores.
 
 **Ejercicios propuestos:**
@@ -473,7 +538,7 @@ su 3.ª.
 - Construir acordes.
 - Diferenciarlos auditivamente.
 
-### Módulo 19. Arpegios
+### Módulo 20. Arpegios
 - Qué es un arpegio.
 - Relación entre acordes y arpegios.
 - Arpegios mayores y menores.
@@ -487,7 +552,7 @@ su 3.ª.
 **Canto (candidato, muy recomendado):** cantar el arpegio mayor 1‑3‑5 con
 guía; después sin guía y en menor.
 
-### Módulo 20. Inversiones
+### Módulo 21. Inversiones
 - Posición fundamental.
 - Primera inversión.
 - Segunda inversión.
@@ -499,21 +564,22 @@ guía; después sin guía y en menor.
 - Diferenciar posición fundamental e inversiones.
 - Reconocer inversiones visualmente y mediante audio.
 
-# Etapa 5 — Armonía
+# Etapa 6 — Armonía
 
 El objetivo es comprender cómo se relacionan los acordes dentro de una tonalidad y cómo se construyen progresiones armónicas.
 
-### Módulo 21. Acordes diatónicos
+### Módulo 22. Acordes diatónicos
 - Qué son los acordes diatónicos.
 - Construcción de acordes dentro de una escala.
 - Relación entre escalas y acordes.
+- Números romanos para nombrar acordes (I, ii, iii, IV, V, vi, vii°).
 
 **Ejercicios propuestos:**
 - Identificar acordes de una tonalidad.
 - Construir acordes diatónicos.
 - Reconocer relaciones entre grados y acordes.
 
-### Módulo 22. Funciones armónicas
+### Módulo 23. Funciones armónicas
 - Tónica.
 - Subdominante.
 - Dominante.
@@ -527,9 +593,9 @@ El objetivo es comprender cómo se relacionan los acordes dentro de una tonalida
 **Canto (candidato):** tras escuchar el acorde de dominante, cantar la tónica
 a la que resuelve.
 
-### Módulo 23. Escalas menores armónica y melódica
+### Módulo 24. Escalas menores armónica y melódica
 - La sensible: por qué la menor natural no "empuja" hacia la tónica.
-- Escala menor armónica (7.º grado elevado) y el acorde de dominante en menor.
+- Escala menor armónica (grado 7 elevado) y el acorde de dominante en menor.
 - Escala menor melódica: suaviza el salto de tono y medio de la armónica.
 - Comparación de las tres menores.
 
@@ -538,15 +604,16 @@ a la que resuelve.
 - Completar escalas.
 - Identificar el grado alterado.
 
-Va aquí y no en la Etapa 3 porque su razón de ser es armónica: la sensible
-existe para que el acorde de dominante (Módulo 22) sea mayor también en
+Va aquí y no en la Etapa 4 porque su razón de ser es armónica: la sensible
+existe para que el acorde de dominante (Módulo 23) sea mayor también en
 menor.
 
-### Módulo 24. Progresiones armónicas
+### Módulo 25. Progresiones y círculos armónicos
 - Qué es una progresión.
 - Progresiones I–IV–V.
 - Progresiones I–V–vi–IV.
-- Relación entre acordes y tonalidad.
+- Círculos armónicos: progresiones que se repiten en bucle (I–vi–IV–V).
+- Diferencia entre círculo armónico y círculo de quintas.
 
 **Ejercicios propuestos:**
 - Ordenar acordes de una progresión.
@@ -554,17 +621,9 @@ menor.
 - Reconocer patrones mediante audio.
 - Completar progresiones incompletas.
 
-### Módulo 25. Círculos armónicos
-- Qué es un círculo armónico.
-- Progresiones recurrentes.
-- Relación entre acordes y círculo de quintas.
-- Diferencia entre círculo armónico y círculo de quintas.
-
-**Ejercicios propuestos:**
-- Identificar patrones recurrentes.
-- Completar círculos armónicos.
-- Reconocer progresiones.
-- Relacionar acordes con tonalidades.
+Antes eran dos módulos (Progresiones y Círculos armónicos), pero se
+solapaban: un círculo armónico es una progresión que se repite. Se dividirá
+en las microlecciones que hagan falta.
 
 ---
 
