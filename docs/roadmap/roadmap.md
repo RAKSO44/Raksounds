@@ -203,8 +203,9 @@ arpegios puede seguir este camino sin confundirse:
 
 Se pueden saltar sin problema 2–6 (ritmo), 7 (pentagrama) y 15–16
 (armaduras y círculo de quintas). El resto de la Etapa 5 y la Etapa 6
-completa quedan para quien quiera entender armonía. Dicho por etapas: la
-Etapa 1, la 3 sin el pentagrama, la 4 y, para arpegios, parte de la 5.
+completa quedan para quien quiera entender armonía. Dicho por etapas: de la
+Etapa 1 solo el Módulo 1, la 3 sin el pentagrama, la 4 hasta el Módulo 14
+y, para arpegios, parte de la 5.
 
 # Etapa 1 — Primeros pasos
 
