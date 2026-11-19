@@ -1,7 +1,7 @@
 import { clipEventTimes, Clip } from '../clip';
 import { LessonExercise, stimulusClips } from '../exercise';
-import { generatePractice } from '../practice';
-import { PRACTICE_LENGTH } from '../progress';
+import { TAPS_PER_EXERCISE } from '../module2Practice';
+import { generatePractice, practiceLength } from '../practice';
 import { isRegular } from '../tempo';
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
@@ -37,7 +37,8 @@ function midisOf(exercise: LessonExercise): number[] {
 function expectValid(exercise: LessonExercise) {
   switch (exercise.mechanic) {
     case 'choice':
-    case 'clip-choice': {
+    case 'clip-choice':
+    case 'tempo-choice': {
       const ids = exercise.options.map((o) => o.id);
       expect(new Set(ids).size).toBe(ids.length);
       const labels = exercise.options.map((o) => o.label);
@@ -54,8 +55,7 @@ function expectValid(exercise: LessonExercise) {
       break;
     }
     case 'tap':
-      expect(exercise.beats).toBeGreaterThanOrEqual(4);
-      expect(exercise.guideBeats).toBeGreaterThanOrEqual(exercise.countIn);
+      expect(exercise.taps).toBe(TAPS_PER_EXERCISE);
       break;
     case 'pick': {
       const ids = exercise.options.map((o) => o.id);
@@ -81,13 +81,14 @@ function expectValid(exercise: LessonExercise) {
   }
 }
 
-describe.each(['notes', 'pulse'] as const)('práctica del módulo %s', (id) => {
-  it('genera exactamente 15 ejercicios en las posiciones 1–15', () => {
+describe.each([
+  ['notes', 15],
+  ['pulse', 11],
+] as const)('práctica del módulo %s', (id, length) => {
+  it(`genera ${length} ejercicios en las posiciones 1–${length}`, () => {
     const exercises = generatePractice(id, 42);
-    expect(exercises).toHaveLength(PRACTICE_LENGTH);
-    expect(exercises?.map((e) => e.position)).toEqual(
-      Array.from({ length: PRACTICE_LENGTH }, (_, i) => i + 1),
-    );
+    expect(practiceLength(id)).toBe(length);
+    expect(exercises.map((e) => e.position)).toEqual(Array.from({ length }, (_, i) => i + 1));
   });
 
   it('la misma semilla da el mismo intento y otra semilla lo varía', () => {
@@ -216,50 +217,78 @@ describe('práctica del Módulo 2 (pulso)', () => {
     }
   });
 
-  it('el ejercicio visual no suena: sus clips son destellos', () => {
-    const exercise = at(3, 5);
-    if (exercise.mechanic !== 'clip-choice') throw new Error();
-    expect(exercise.options.every((o) => o.clip.kind === 'flash')).toBe(true);
-  });
-
-  it('comparar tempos: la respuesta es el BPM extremo pedido', () => {
+  it('BPM más alto / más bajo: la respuesta es el extremo pedido y están bien separados', () => {
     for (const seed of SEEDS) {
-      for (const position of [3, 7, 11, 15]) {
-        const exercise = at(seed, position);
-        if (exercise.mechanic !== 'clip-choice') throw new Error();
-        const bpms = exercise.options.map((o) => Number(o.id));
-        expect(Number(exercise.answer)).toBe(Math.max(...bpms));
+      const higher = at(seed, 3);
+      const lower = at(seed, 4);
+      if (higher.mechanic !== 'tempo-choice' || lower.mechanic !== 'tempo-choice') {
+        throw new Error();
       }
-      const slower = at(seed, 4);
-      if (slower.mechanic !== 'clip-choice') throw new Error();
-      expect(Number(slower.answer)).toBe(Math.min(...slower.options.map((o) => Number(o.id))));
+      const high = higher.options.map((o) => o.bpm);
+      const low = lower.options.map((o) => o.bpm);
+      expect(Number(higher.answer)).toBe(Math.max(...high));
+      expect(Number(lower.answer)).toBe(Math.min(...low));
+      expect(Math.max(...high) - Math.min(...high)).toBeGreaterThanOrEqual(45);
+      expect(Math.max(...low) - Math.min(...low)).toBeGreaterThanOrEqual(45);
+      expect(higher.prompt).toBe('¿Cuál tiene el BPM más alto?');
+      expect(lower.prompt).toBe('¿Cuál tiene el BPM más bajo?');
     }
   });
 
-  it('los tres tempos del 15 están separados al menos 25 BPM', () => {
+  it('cada tipo de comparación sale una sola vez (no se repite)', () => {
+    const prompts = generatePractice('pulse', 5).map((e) => e.prompt);
+    expect(prompts.filter((p) => p.includes('más alto'))).toHaveLength(1);
+    expect(prompts.filter((p) => p.includes('más bajo'))).toHaveLength(1);
+  });
+
+  it('"¿Cuál va a 120 BPM?" tiene la respuesta entre sus opciones', () => {
+    const exercise = at(3, 9);
+    if (exercise.mechanic !== 'tempo-choice') throw new Error();
+    expect(exercise.answer).toBe('120');
+    expect(exercise.options.map((o) => o.bpm).sort((a, b) => a - b)).toEqual([60, 90, 120]);
+  });
+
+  it('el cambio de tempo varía sus números y su sentido, y la respuesta lo sigue', () => {
+    const seen = new Set<string>();
+    const answers = new Set<string>();
     for (const seed of SEEDS) {
-      const exercise = at(seed, 15);
-      if (exercise.mechanic !== 'clip-choice') throw new Error();
-      const bpms = exercise.options.map((o) => Number(o.id)).sort((a, b) => a - b);
-      expect(bpms[1] - bpms[0]).toBeGreaterThanOrEqual(25);
-      expect(bpms[2] - bpms[1]).toBeGreaterThanOrEqual(25);
+      const exercise = at(seed, 6);
+      if (exercise.mechanic !== 'choice') throw new Error();
+      const [before, after] = (exercise.prompt.match(/\d+/g) ?? []).map(Number);
+      expect(before).not.toBe(after);
+      expect(exercise.answer).toBe(after > before ? 'faster' : 'slower');
+      seen.add(`${before}-${after}`);
+      answers.add(exercise.answer);
+    }
+    expect(seen.size).toBeGreaterThan(10);
+    expect(answers).toEqual(new Set(['faster', 'slower']));
+  });
+
+  it('¿mismo BPM?: dos metrónomos, iguales o separados al menos 20 BPM', () => {
+    for (const seed of SEEDS) {
+      const exercise = at(seed, 10);
+      if (exercise.mechanic !== 'choice' || exercise.stimulus?.kind !== 'metronomes') {
+        throw new Error();
+      }
+      const [a, b] = exercise.stimulus.bpms;
+      if (exercise.answer === 'same') expect(a).toBe(b);
+      else expect(Math.abs(a - b)).toBeGreaterThanOrEqual(20);
     }
   });
 
   it('ordenar tempos: la respuesta va de menor a mayor BPM', () => {
     for (const seed of SEEDS) {
-      const exercise = at(seed, 14);
+      const exercise = at(seed, 11);
       if (exercise.mechanic !== 'sequence') throw new Error();
       const bpms = exercise.answer.map(Number);
       expect(bpms).toEqual([...bpms].sort((a, b) => a - b));
     }
   });
 
-  it('el último tap ya no tiene guía visual tras la entrada', () => {
-    const guided = at(1, 6);
-    const unguided = at(1, 13);
-    if (guided.mechanic !== 'tap' || unguided.mechanic !== 'tap') throw new Error();
-    expect(guided.guideBeats).toBe(guided.countIn + guided.beats);
-    expect(unguided.guideBeats).toBe(unguided.countIn);
+  it('tocar con el pulso: dos veces, la segunda más rápida', () => {
+    const slow = at(1, 2);
+    const fast = at(1, 5);
+    if (slow.mechanic !== 'tap' || fast.mechanic !== 'tap') throw new Error();
+    expect(fast.bpm).toBeGreaterThan(slow.bpm);
   });
 });

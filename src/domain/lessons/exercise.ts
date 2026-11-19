@@ -52,10 +52,15 @@ export type Stimulus =
    */
   | { readonly kind: 'row'; readonly cells: readonly RowCell[] }
   /** Uno o varios sonidos que hay que escuchar antes de responder. */
-  | { readonly kind: 'clips'; readonly clips: readonly LabeledClip[] };
+  | { readonly kind: 'clips'; readonly clips: readonly LabeledClip[] }
+  /**
+   * Metrónomos que se encienden y apagan a voluntad (suena uno a la vez). Su
+   * BPM no se ve hasta corregir.
+   */
+  | { readonly kind: 'metronomes'; readonly bpms: readonly number[] };
 
 interface ExerciseBase {
-  /** Posición dentro de la plantilla del módulo (1–15). */
+  /** Posición dentro de la plantilla del módulo (desde 1). */
   readonly position: number;
   readonly prompt: string;
   /** Corrección breve de una frase, que se muestra al fallar. */
@@ -70,7 +75,7 @@ export interface ChoiceExercise extends ExerciseBase {
   readonly answer: string;
 }
 
-/** Cada opción ES un sonido (o un destello): se escucha y se elige. */
+/** Cada opción ES un sonido: se escucha y se elige. */
 export interface ClipOption extends LessonOption {
   readonly clip: Clip;
   /** Lo que la opción era de verdad, visible solo al corregir ("120 BPM"). */
@@ -95,20 +100,29 @@ export interface SequenceExercise extends ExerciseBase {
   readonly answer: readonly string[];
 }
 
-/** Tocar siguiendo un pulso. */
+/**
+ * Tocar siguiendo un pulso que suena sin parar: se empieza cuando se quiere y
+ * se califican los `taps` toques, que deben caer en golpes seguidos.
+ */
 export interface TapExercise extends ExerciseBase {
   readonly mechanic: 'tap';
   readonly bpm: number;
-  /** Golpes de entrada que solo se escuchan (no se califican). */
-  readonly countIn: number;
-  /** Golpes que se califican, tras la entrada. */
-  readonly beats: number;
-  /**
-   * Cuántos golpes (contando la entrada) se ven iluminados. Igual al total =
-   * guía constante; igual a `countIn` = solo se ve la entrada y luego se toca
-   * de oído.
-   */
-  readonly guideBeats: number;
+  readonly taps: number;
+}
+
+/** Una opción que es un pulso sin fin a su BPM (oculto hasta corregir). */
+export interface TempoOption extends LessonOption {
+  readonly bpm: number;
+}
+
+/**
+ * Elegir entre pulsos. Elegir una opción la hace sonar sin parar; elegirla de
+ * nuevo la deselecciona y la apaga.
+ */
+export interface TempoChoiceExercise extends ExerciseBase {
+  readonly mechanic: 'tempo-choice';
+  readonly options: readonly TempoOption[];
+  readonly answer: string;
 }
 
 /** Marcar, entre varios sonidos, los `answer.length` que van juntos. */
@@ -121,7 +135,12 @@ export interface PickExercise extends ExerciseBase {
 }
 
 export type LessonExercise =
-  ChoiceExercise | ClipChoiceExercise | SequenceExercise | TapExercise | PickExercise;
+  | ChoiceExercise
+  | ClipChoiceExercise
+  | TempoChoiceExercise
+  | SequenceExercise
+  | TapExercise
+  | PickExercise;
 
 export type ExerciseMechanic = LessonExercise['mechanic'];
 
@@ -131,13 +150,14 @@ export type LessonAnswer =
   | { readonly kind: 'sequence'; readonly ids: readonly string[] }
   /** Las opciones marcadas, sin orden. */
   | { readonly kind: 'set'; readonly ids: readonly string[] }
-  /** El tap ya se calificó al terminar (`judgeTaps`); aquí llega su veredicto. */
+  /** El tap ya se calificó al terminar (`judgeTapsOnPulse`); aquí llega su veredicto. */
   | { readonly kind: 'tap'; readonly passed: boolean };
 
 export function isAnswerCorrect(exercise: LessonExercise, answer: LessonAnswer): boolean {
   switch (exercise.mechanic) {
     case 'choice':
     case 'clip-choice':
+    case 'tempo-choice':
       return answer.kind === 'option' && answer.id === exercise.answer;
     case 'sequence':
       return (

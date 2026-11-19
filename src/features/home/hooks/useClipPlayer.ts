@@ -7,9 +7,6 @@ import { Clip, CLIP_NOTE_MS, clipDurationMs, clipEventTimes } from '@/domain/les
 import { metronome } from '@/infrastructure/audio/metronome';
 import { pianoPlayer } from '@/infrastructure/audio/pianoPlayer';
 
-/** Margen antes de un clip solo visual, para que no arranque bajo el dedo. */
-const FLASH_LEAD_MS = 120;
-
 export interface ClipHandlers {
   /** Se llama en cada evento del clip (nota o golpe), con su índice. */
   onEvent?: (index: number) => void;
@@ -37,8 +34,8 @@ export interface ClipPlayer {
 /**
  * Reproductor de los estímulos de una lección. Un clip es dato del dominio
  * (`domain/lessons/clip.ts`); aquí se decide qué motor lo hace sonar y se
- * avisa a la UI de cada evento para que la luz o la ficha se enciendan a la
- * vez que el sonido.
+ * avisa a la UI de cada evento para que la ficha se encienda a la vez que el
+ * sonido.
  *
  * Solo hay un clip sonando a la vez: reproducir otro corta el anterior, y
  * salir de la pantalla corta todo (no quedan metrónomos sonando de fondo).
@@ -76,12 +73,12 @@ export function useClipPlayer(): ClipPlayer {
   const play = useCallback(
     (clip: Clip, handlers: ClipHandlers = {}) => {
       stop();
-      if (!ready && clip.kind !== 'flash') return null;
+      if (!ready) return null;
 
       let start: number | null;
       if (clip.kind === 'pulse') {
         start = metronome.play(clip.onsetsMs);
-      } else if (clip.kind === 'notes') {
+      } else {
         start = performance.now();
         for (const note of clip.notes) {
           at(note.atMs, () => {
@@ -91,8 +88,6 @@ export function useClipPlayer(): ClipPlayer {
             at(note.durationMs, () => pianoPlayer.noteOff(voice));
           });
         }
-      } else {
-        start = performance.now() + FLASH_LEAD_MS;
       }
       if (start === null) return null;
 

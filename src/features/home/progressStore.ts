@@ -4,6 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   completeTheory,
   ModuleId,
+  practiceLength,
   progressOf,
   ProgressMap,
   recordPractice,
@@ -43,14 +44,24 @@ export const useLessonProgressStore = create<LessonProgressState>()(
         set((state) => ({
           modules: {
             ...state.modules,
-            [id]: recordPractice(progressOf(state.modules, id), score, new Date().toISOString()),
+            [id]: recordPractice(
+              progressOf(state.modules, id),
+              score,
+              practiceLength(id),
+              new Date().toISOString(),
+            ),
           },
         })),
       recordRetry: (id, score) =>
         set((state) => ({
           modules: {
             ...state.modules,
-            [id]: recordRetry(progressOf(state.modules, id), score, new Date().toISOString()),
+            [id]: recordRetry(
+              progressOf(state.modules, id),
+              score,
+              practiceLength(id),
+              new Date().toISOString(),
+            ),
           },
         })),
     }),

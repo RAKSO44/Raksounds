@@ -5,6 +5,7 @@ import { ClipChoiceExerciseView } from './ClipChoiceExerciseView';
 import { PickExerciseView } from './PickExerciseView';
 import { SequenceExerciseView } from './SequenceExerciseView';
 import { TapExerciseView } from './TapExerciseView';
+import { TempoChoiceExerciseView } from './TempoChoiceExerciseView';
 import { ExerciseViewProps } from './types';
 
 /**
@@ -17,6 +18,8 @@ export function LessonExerciseView({ exercise, ...rest }: ExerciseViewProps<Less
       return <ChoiceExerciseView exercise={exercise} {...rest} />;
     case 'clip-choice':
       return <ClipChoiceExerciseView exercise={exercise} {...rest} />;
+    case 'tempo-choice':
+      return <TempoChoiceExerciseView exercise={exercise} {...rest} />;
     case 'sequence':
       return <SequenceExerciseView exercise={exercise} {...rest} />;
     case 'tap':

@@ -11,10 +11,16 @@ import {
   previousNoteIndex,
   runMidis,
 } from '../noteNames';
-import { completeTheory, EMPTY_PROGRESS, recordPractice, recordRetry } from '../progress';
+import {
+  completeTheory,
+  EMPTY_PROGRESS,
+  practicePassScore,
+  recordPractice,
+  recordRetry,
+} from '../progress';
 import { seededRandom, shuffleUnordered } from '../random';
 import { LESSON_MODULES, moduleById, STAGES } from '../stages';
-import { judgeTaps, TAP_RULES } from '../tapSync';
+import { judgeTapsOnPulse, TAP_RULES } from '../tapSync';
 import {
   bpmAtFraction,
   bpmFraction,
@@ -22,6 +28,7 @@ import {
   irregularOnsets,
   isAccent,
   isRegular,
+  metronomeWeightPosition,
   regularOnsets,
   tempoMarking,
 } from '../tempo';
@@ -93,48 +100,62 @@ describe('tempo', () => {
   });
 });
 
-describe('judgeTaps', () => {
-  const beats = regularOnsets(80, 6);
+describe('judgeTapsOnPulse', () => {
+  // Pulso a 100 BPM: un golpe cada 600 ms, el primero en t = 1000.
+  const BPM = 100;
+  const FIRST = 1000;
+  const beat = (n: number) => FIRST + n * 600;
 
-  it('toques en su sitio aprueban', () => {
-    const result = judgeTaps(
-      beats,
-      beats.map((b) => b + 10),
+  it('cuatro toques en golpes seguidos, empezando cuando sea, aprueban', () => {
+    const result = judgeTapsOnPulse(
+      FIRST,
+      BPM,
+      [7, 8, 9, 10].map((n) => beat(n) + 10),
     );
     expect(result.passed).toBe(true);
     expect(result.beats.every((b) => b.grade === 'good')).toBe(true);
   });
 
   it('descuenta una latencia constante (auriculares) sin castigarla', () => {
-    const result = judgeTaps(
-      beats,
-      beats.map((b) => b + 200),
+    const result = judgeTapsOnPulse(
+      FIRST,
+      BPM,
+      [3, 4, 5, 6].map((n) => beat(n) + 200),
     );
     expect(result.latencyMs).toBe(200);
     expect(result.passed).toBe(true);
   });
 
   it('no perdona adelantarse de forma constante más allá del margen', () => {
-    const result = judgeTaps(
-      beats,
-      beats.map((b) => b - 260),
+    const result = judgeTapsOnPulse(
+      FIRST,
+      BPM,
+      [3, 4, 5, 6].map((n) => beat(n) - 260),
     );
     expect(result.latencyMs).toBe(TAP_RULES.latency.minMs);
     expect(result.passed).toBe(false);
   });
 
+  it('saltarse golpes no vale: deben ser seguidos', () => {
+    const result = judgeTapsOnPulse(FIRST, BPM, [2, 4, 6, 8].map(beat));
+    expect(result.passed).toBe(false);
+  });
+
+  it('si solo el primer toque se desvió, manda el resto de la secuencia', () => {
+    const taps = [beat(5) - 290, beat(6), beat(7) + 20, beat(8) - 10];
+    const result = judgeTapsOnPulse(FIRST, BPM, taps);
+    expect(result.hits).toBe(3);
+    expect(result.beats[0].grade).toBe('miss');
+    expect(result.passed).toBe(true);
+  });
+
+  it('tocar al doble de velocidad no acierta', () => {
+    const taps = [0, 1, 2, 3].map((i) => beat(4) + i * 300);
+    expect(judgeTapsOnPulse(FIRST, BPM, taps).passed).toBe(false);
+  });
+
   it('sin toques no aprueba', () => {
-    expect(judgeTaps(beats, []).passed).toBe(false);
-  });
-
-  it('tocar sin parar no acierta: los toques de más suspenden', () => {
-    const spam = Array.from({ length: 40 }, (_, i) => i * 110);
-    expect(judgeTaps(beats, spam).passed).toBe(false);
-  });
-
-  it('se puede fallar algún pulso y aprobar igual', () => {
-    const taps = beats.slice(1).map((b) => b + 30);
-    expect(judgeTaps(beats, taps).passed).toBe(true);
+    expect(judgeTapsOnPulse(FIRST, BPM, []).passed).toBe(false);
   });
 });
 
@@ -191,8 +212,8 @@ describe('progreso', () => {
   });
 
   it('un intento peor no quita el completado y guarda mejor y último', () => {
-    const passed = recordPractice(EMPTY_PROGRESS, 13, at);
-    const worse = recordPractice(passed, 5, later);
+    const passed = recordPractice(EMPTY_PROGRESS, 13, 15, at);
+    const worse = recordPractice(passed, 5, 15, later);
     expect(worse).toMatchObject({
       practiceCompleted: true,
       practiceCompletedAt: at,
@@ -203,8 +224,8 @@ describe('progreso', () => {
   });
 
   it('reintentar fallos termina el mismo intento: no suma intentos y puede completar', () => {
-    const first = recordPractice(EMPTY_PROGRESS, 10, at);
-    const retried = recordRetry(first, 15, later);
+    const first = recordPractice(EMPTY_PROGRESS, 10, 15, at);
+    const retried = recordRetry(first, 15, 15, later);
     expect(retried).toMatchObject({
       attempts: 1,
       lastScore: 15,
@@ -221,8 +242,14 @@ describe('progreso', () => {
   });
 
   it('11/15 no completa la práctica; 12/15 sí', () => {
-    expect(recordPractice(EMPTY_PROGRESS, 11, at).practiceCompleted).toBe(false);
-    expect(recordPractice(EMPTY_PROGRESS, 12, at).practiceCompleted).toBe(true);
+    expect(recordPractice(EMPTY_PROGRESS, 11, 15, at).practiceCompleted).toBe(false);
+    expect(recordPractice(EMPTY_PROGRESS, 12, 15, at).practiceCompleted).toBe(true);
+  });
+
+  it('el corte es un 80 % del largo de cada práctica: 9/11 completa, 8/11 no', () => {
+    expect(practicePassScore(11)).toBe(9);
+    expect(recordPractice(EMPTY_PROGRESS, 8, 11, at).practiceCompleted).toBe(false);
+    expect(recordPractice(EMPTY_PROGRESS, 9, 11, at).practiceCompleted).toBe(true);
   });
 
   it('repetir la teoría conserva la fecha de la primera vez', () => {
@@ -262,5 +289,15 @@ describe('cifrado', () => {
     expect(NOTE_LETTERS).toEqual(['C', 'D', 'E', 'F', 'G', 'A', 'B']);
     expect(noteLetterAt(7)).toBe('C');
     expect(noteLetterAt(-1)).toBe('B');
+  });
+});
+
+describe('pesa del metrónomo', () => {
+  it('arriba a 40 BPM, junto al eje a 208 y más baja cuanto más rápido', () => {
+    expect(metronomeWeightPosition(40)).toBe(0);
+    expect(metronomeWeightPosition(208)).toBe(1);
+    expect(metronomeWeightPosition(120)).toBeGreaterThan(metronomeWeightPosition(60));
+    expect(metronomeWeightPosition(20)).toBe(0);
+    expect(metronomeWeightPosition(300)).toBe(1);
   });
 });

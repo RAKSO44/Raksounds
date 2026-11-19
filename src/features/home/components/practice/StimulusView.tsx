@@ -7,6 +7,7 @@ import { ClipPlayer } from '../../hooks/useClipPlayer';
 import { ListenButton } from '../ListenButton';
 import { NoteRow } from '../NoteRow';
 import { NoteSteps } from '../NoteSteps';
+import { MetronomePair } from './MetronomePair';
 
 interface StimulusViewProps {
   stimulus: Stimulus;
@@ -22,8 +23,8 @@ export function singleNote(clip: Clip): number | null {
 }
 
 /**
- * Lo que va encima de la pregunta: la escala, la fila con hueco o los sonidos
- * que hay que oír. Escuchar no es requisito para responder.
+ * Lo que va encima de la pregunta: la escala, la fila con hueco, los sonidos
+ * que hay que oír o los metrónomos que se encienden y apagan. Escuchar no es requisito para responder.
  *
  * Una nota suelta se toca como una tecla: suena al instante y se puede tocar
  * junto a otras.
@@ -103,6 +104,8 @@ export function StimulusView({ stimulus, player, solution, revealed }: StimulusV
           ))}
         </View>
       );
+    case 'metronomes':
+      return <MetronomePair bpms={stimulus.bpms} revealed={revealed} />;
   }
 }
 

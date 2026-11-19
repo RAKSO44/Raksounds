@@ -1,87 +1,100 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { TapExercise } from '@/domain/lessons';
+import { judgeTapsOnPulse, TapExercise, TapJudgement } from '@/domain/lessons';
 import { PushButton } from '@/shared/design-system';
-import { spacing, typography, useTheme } from '@/shared/theme';
+import { controls, spacing, typography, useTheme } from '@/shared/theme';
 
-import { useTapRun } from '../../hooks/useTapRun';
+import { useMetronomes } from '../../hooks/useMetronomes';
 import { BeatMarks } from '../BeatMarks';
-import { PulseLight } from '../PulseLight';
-import { TapPad } from '../TapPad';
+import { Metronome } from '../Metronome';
 import { ExerciseViewProps } from './types';
 
+/** El único metrónomo del ejercicio. */
+const PULSE = 'pulse';
+
 /**
- * Tocar siguiendo el pulso. Primero suena una entrada (marcas pequeñas) para
- * agarrar el tempo; después se califica cada golpe. Antes de confirmar se
- * puede repetir la pasada: un tropiezo con el audio no debe costar el
- * ejercicio.
+ * Tocar con el pulso. El metrónomo arranca solo y NO se apaga mientras dure
+ * el ejercicio: se empieza a tocar cuando se quiere y cuenta desde el primer
+ * toque. Cada toque pinta su punto; con el último, TAP se bloquea, se
+ * califica (golpes seguidos, `judgeTapsOnPulse`) y "Comprobar" se habilita.
+ * Al corregir, cada punto toma el color de cómo cayó su toque.
  */
-export function TapExerciseView({
-  exercise,
-  revealed,
-  player,
-  onAnswer,
-}: ExerciseViewProps<TapExercise>) {
+export function TapExerciseView({ exercise, revealed, onAnswer }: ExerciseViewProps<TapExercise>) {
   const { colors } = useTheme();
-  const run = useTapRun(player, exercise);
+  const metronomes = useMetronomes();
+  const [count, setCount] = useState(0);
+  const [judgement, setJudgement] = useState<TapJudgement | null>(null);
+  // Los instantes van en una ref: dos toques en el mismo fotograma no deben
+  // leer una lista vieja.
+  const taps = useRef<number[]>([]);
 
+  const { ready, start } = metronomes;
   useEffect(() => {
-    if (run.judgement !== null) onAnswer({ kind: 'tap', passed: run.judgement.passed });
-  }, [run.judgement, onAnswer]);
+    if (ready) start(PULSE, exercise.bpm);
+  }, [ready, start, exercise.bpm]);
 
-  // Sin guía, la luz y las marcas solo acompañan la entrada.
-  const guided = run.beat >= 0 && run.beat < exercise.guideBeats;
+  const startMs = metronomes.startMs;
+  const done = count >= exercise.taps;
+
+  const tap = () => {
+    const now = performance.now();
+    if (startMs === null || taps.current.length >= exercise.taps) return;
+    taps.current = [...taps.current, now];
+    setCount(taps.current.length);
+    if (taps.current.length < exercise.taps) return;
+    const result = judgeTapsOnPulse(startMs, exercise.bpm, taps.current);
+    setJudgement(result);
+    onAnswer({ kind: 'tap', passed: result.passed });
+  };
+
+  const status =
+    revealed && judgement !== null
+      ? `Acertaste ${judgement.hits} de ${exercise.taps} toques.`
+      : count === 0
+        ? `Empieza cuando quieras: toca ${exercise.taps} veces, una con cada golpe.`
+        : ' ';
 
   return (
     <View style={styles.container}>
       <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
 
-      <View style={styles.light}>
-        <PulseLight pulseCount={run.pulseCount} enabled={guided} />
+      <View style={styles.center}>
+        <Metronome
+          running={metronomes.active !== null}
+          bpm={exercise.bpm}
+          beat={metronomes.beat}
+          plate={String(exercise.bpm)}
+          weightBpm={exercise.bpm}
+          accessibilityLabel={`Metrónomo a ${exercise.bpm} BPM`}
+        />
       </View>
 
       <BeatMarks
-        countIn={exercise.countIn}
-        beats={exercise.beats}
-        active={guided ? run.beat : -1}
-        grades={run.judgement?.beats.map((beat) => beat.grade)}
+        count={exercise.taps}
+        filled={count}
+        grades={revealed ? judgement?.beats.map((beat) => beat.grade) : null}
       />
 
-      <Text style={[styles.status, { color: colors.textSecondary }]}>
-        {statusText(run.phase, run.beat, exercise.countIn, run.judgement?.hits, exercise.beats)}
-      </Text>
+      <Text style={[styles.status, { color: colors.textSecondary }]}>{status}</Text>
 
-      <TapPad disabled={run.phase !== 'running'} onTap={run.tap} />
-
-      {run.phase !== 'running' && !revealed && (
-        <View style={styles.center}>
-          <PushButton
-            variant="selectable"
-            tone="secondary"
-            icon={run.phase === 'idle' ? 'play' : 'replay'}
-            iconPlacement="start"
-            label={run.phase === 'idle' ? 'Empezar' : 'Repetir'}
-            disabled={!player.ready}
-            onPress={run.start}
-          />
-        </View>
-      )}
+      <PushButton
+        variant="solid"
+        tone="secondary"
+        label="TAP"
+        icon="gesture-tap"
+        iconPlacement="start"
+        labelStyle={styles.tapLabel}
+        minWidth={controls.tapButtonMinWidth}
+        // El botón se ajusta a su contenido (alignSelf propio): se centra él.
+        style={styles.tap}
+        disabled={done || startMs === null}
+        accessibilityLabel="Tocar con el pulso"
+        // Al TOCAR, no al soltar: soltar llega decenas de ms tarde.
+        onPressIn={tap}
+      />
     </View>
   );
-}
-
-function statusText(
-  phase: string,
-  beat: number,
-  countIn: number,
-  hits: number | undefined,
-  beats: number,
-): string {
-  if (phase === 'failed') return 'No se pudo reproducir el pulso. Inténtalo otra vez.';
-  if (phase === 'idle') return `Escucharás ${countIn} golpes de entrada y luego tocas tú.`;
-  if (phase === 'running') return beat < countIn ? 'Escucha la entrada…' : '¡Toca!';
-  return `Acertaste ${hits ?? 0} de ${beats} pulsos.`;
 }
 
 const styles = StyleSheet.create({
@@ -92,14 +105,18 @@ const styles = StyleSheet.create({
     ...typography.question,
     textAlign: 'center',
   },
-  light: {
+  center: {
     alignItems: 'center',
+  },
+  tap: {
+    alignSelf: 'center',
+  },
+  tapLabel: {
+    ...typography.title,
+    transform: [{ translateY: controls.capsLabelDrop }],
   },
   status: {
     ...typography.subtitle,
     textAlign: 'center',
-  },
-  center: {
-    alignItems: 'center',
   },
 });

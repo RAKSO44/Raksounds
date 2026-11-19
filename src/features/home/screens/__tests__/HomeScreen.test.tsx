@@ -31,7 +31,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const AT = '2026-11-16T10:00:00.000Z';
-const DONE = recordPractice(completeTheory(EMPTY_PROGRESS, AT), 14, AT);
+const DONE = recordPractice(completeTheory(EMPTY_PROGRESS, AT), 14, 15, AT);
 
 beforeEach(() => {
   mockPush.mockClear();

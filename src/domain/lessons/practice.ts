@@ -6,7 +6,7 @@ import { ModuleId } from './stages';
 
 /**
  * Genera el intento de práctica de un módulo a partir de una semilla: la misma
- * semilla da los mismos 15 ejercicios.
+ * semilla da los mismos ejercicios.
  */
 export function generatePractice(id: ModuleId, seed: number): LessonExercise[] {
   const random = seededRandom(seed);
@@ -29,4 +29,12 @@ export function generateRetry(
   positions: readonly number[],
 ): LessonExercise[] {
   return generatePractice(id, seed).filter((exercise) => positions.includes(exercise.position));
+}
+
+/**
+ * Ejercicios de un intento completo del módulo. La plantilla es fija, así que
+ * no depende de la semilla.
+ */
+export function practiceLength(id: ModuleId): number {
+  return generatePractice(id, 0).length;
 }

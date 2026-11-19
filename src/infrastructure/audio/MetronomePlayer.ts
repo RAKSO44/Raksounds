@@ -158,6 +158,7 @@ export function createMetronomePlayer(): IMetronome {
 
       let interval = 60 / bpm;
       let next = ctx.currentTime + LEAD_S;
+      const startMs = nowMs() + LEAD_S * 1000;
       let index = 0;
       const uiTimers = new Set<ReturnType<typeof setTimeout>>();
 
@@ -189,6 +190,7 @@ export function createMetronomePlayer(): IMetronome {
       stopLoop = stopThis;
 
       return {
+        startMs,
         setBpm(newBpm: number) {
           // El próximo golpe se recoloca desde el último que sonó, nunca en el pasado.
           const newInterval = 60 / newBpm;

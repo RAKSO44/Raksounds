@@ -108,6 +108,20 @@ export interface ThemeColors {
   pianoKeyText: string;
   pianoKeyTextMuted: string;
 
+  /**
+   * Metrónomo de la práctica: madera con un degradado suave (luz por la
+   * izquierda), escala crema con su tinta, pesa y eje de latón y brazo de acero.
+   * Iguales en los dos temas: como el piano, debe leerse como el objeto real.
+   */
+  metronomeWoodLight: string;
+  metronomeWood: string;
+  metronomeWoodDark: string;
+  metronomeLip: string;
+  metronomeScale: string;
+  metronomeScaleShade: string;
+  metronomeBrass: string;
+  metronomeSteelDark: string;
+
   /** Velo oscuro tras un diálogo modal. */
   scrim: string;
 
@@ -180,6 +194,14 @@ export const lightColors: ThemeColors = {
   pianoBlackKeyEdge: palette.ebonyEdge,
   pianoKeyText: palette.eel,
   pianoKeyTextMuted: palette.wolf,
+  metronomeWoodLight: palette.walnutLight,
+  metronomeWood: palette.walnut,
+  metronomeWoodDark: palette.walnutDark,
+  metronomeLip: palette.walnutLip,
+  metronomeScale: palette.cream,
+  metronomeScaleShade: palette.creamShade,
+  metronomeBrass: palette.brass,
+  metronomeSteelDark: palette.steelDark,
 
   scrim: palette.scrim,
 
@@ -254,6 +276,14 @@ export const darkColors: ThemeColors = {
   pianoBlackKeyEdge: palette.ebonyEdge,
   pianoKeyText: palette.eel,
   pianoKeyTextMuted: palette.wolf,
+  metronomeWoodLight: palette.walnutLight,
+  metronomeWood: palette.walnut,
+  metronomeWoodDark: palette.walnutDark,
+  metronomeLip: palette.walnutLip,
+  metronomeScale: palette.cream,
+  metronomeScaleShade: palette.creamShade,
+  metronomeBrass: palette.brass,
+  metronomeSteelDark: palette.steelDark,
 
   scrim: palette.scrim,
 

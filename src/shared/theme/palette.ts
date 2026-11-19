@@ -90,6 +90,16 @@ export const palette = {
   ebony: '#2B2B2B',
   ebonyEdge: '#111111',
 
+  // Metrónomo dibujado en la app: nogal, escala crema, latón y acero.
+  walnutLight: '#BC7A50',
+  walnut: '#9C5C38',
+  walnutDark: '#7A4426',
+  walnutLip: '#58301A',
+  cream: '#F8EBD0',
+  creamShade: '#EAD5AB',
+  brass: '#E8BE60',
+  steelDark: '#9CA8B0',
+
   // Neutros del modo oscuro de Duolingo
   midnight: '#131F24',
   slate: '#202F36',

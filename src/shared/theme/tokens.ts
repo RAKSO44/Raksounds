@@ -98,12 +98,24 @@ export const controls = {
   noteCellSize: 60,
   /** Ancho mínimo de un botón de escuchar que es solo el parlante. */
   listenButtonMinWidth: 96,
-  /** Luz del pulso: el círculo que destella con cada golpe. */
-  pulseLightSize: 96,
-  /** Marcas de pulso bajo la luz (una por golpe). */
+  /** Marcas de los toques bajo el metrónomo (una por toque). */
   beatMarkSize: 14,
-  /** Alto del botón TAP. */
-  tapPadHeight: 112,
+  /** Ancho mínimo del botón TAP: un botón cómodo, no una franja de lado a lado. */
+  tapButtonMinWidth: 200,
+  /**
+   * Una palabra solo en mayúsculas ("TAP") se ve más alta que el ícono de al
+   * lado: su caja reserva abajo el sitio de las letras que bajan de la línea
+   * (g, p, q) y nada lo ocupa. Se baja la mitad de ese hueco.
+   */
+  capsLabelDrop: 3,
+  /**
+   * Metrónomo de la práctica: ancho del dibujo (el alto sale de su forma,
+   * ~1,24 × el ancho) y el factor de los que se comparan lado a lado.
+   */
+  metronomeWidth: 100,
+  metronomeSmall: 0.8,
+  /** Vaivén máximo del brazo a cada lado, en grados. */
+  metronomeSwing: 18,
   /** Ícono de una lista de comprobación de la teoría ("Nota que: ✓ …"). */
   theoryCheckIconSize: 22,
   /** Corazón del pulso (teoría del Módulo 2). */
@@ -154,8 +166,10 @@ export const motion = {
   gauge: 420,
   /** Suavizado de las barras de volumen entre un bloque de audio y el siguiente. */
   micLevel: 80,
-  /** Apagado de la luz del pulso tras cada golpe (se enciende de golpe). */
-  flash: 180,
+  /** Encendido/apagado del metrónomo: la madera se aviva o se atenúa, el brazo vuelve. */
+  metronomeFade: 240,
+  /** La pesa sube o baja a su sitio al cambiar de tempo. */
+  metronomeWeight: 360,
   /** Latido del corazón: subida rápida y vuelta con curva de salida. */
   heartRise: 70,
   heartFall: 200,

@@ -38,7 +38,9 @@ export function TempoWhatPage() {
       <TheoryHeading>BPM</TheoryHeading>
       <RichText
         segments={[
-          'Significa «beats per minute», y es la ',
+          'Significa ',
+          { text: 'Pulsos Por Minuto', mark: 'highlight' },
+          ' (Beats Per Minute), y es la ',
           { text: 'unidad de medida', mark: 'highlight' },
           ' que indica el ',
           { text: 'tempo', mark: 'highlight', tip: TEMPO_TIP },

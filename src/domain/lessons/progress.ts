@@ -6,11 +6,17 @@ import { ModuleId } from './stages';
  * ha hecho. Todo puro: el almacenamiento lo pone la feature.
  */
 
-/** Ejercicios de un intento de práctica. */
-export const PRACTICE_LENGTH = 15;
+/**
+ * Proporción de aciertos que completa una práctica. Cada módulo tiene los
+ * ejercicios que su lección pide (no siempre 15), así que el corte es un
+ * porcentaje: 12/15, 9/11…
+ */
+export const PRACTICE_PASS_RATIO = 0.8;
 
-/** Aciertos mínimos para dar la práctica por completada (12/15 = 80 %). */
-export const PRACTICE_PASS_SCORE = 12;
+/** Aciertos mínimos para completar una práctica de `total` ejercicios. */
+export function practicePassScore(total: number): number {
+  return Math.ceil(total * PRACTICE_PASS_RATIO);
+}
 
 export interface ModuleProgress {
   readonly theoryCompleted: boolean;
@@ -39,8 +45,8 @@ export function progressOf(map: ProgressMap, id: ModuleId): ModuleProgress {
   return map[id] ?? EMPTY_PROGRESS;
 }
 
-export function isPracticePassed(score: number): boolean {
-  return score >= PRACTICE_PASS_SCORE;
+export function isPracticePassed(score: number, total: number): boolean {
+  return score >= practicePassScore(total);
 }
 
 /** Marca la teoría como completada. Repasarla conserva la fecha original. */
@@ -54,8 +60,13 @@ export function completeTheory(progress: ModuleProgress, at: string): ModuleProg
  * mismo. `score` ya es el total del intento (aciertos de antes + los
  * recuperados), así que puede completar la práctica.
  */
-export function recordRetry(progress: ModuleProgress, score: number, at: string): ModuleProgress {
-  const passed = isPracticePassed(score);
+export function recordRetry(
+  progress: ModuleProgress,
+  score: number,
+  total: number,
+  at: string,
+): ModuleProgress {
+  const passed = isPracticePassed(score, total);
   return {
     ...progress,
     lastScore: score,
@@ -72,9 +83,10 @@ export function recordRetry(progress: ModuleProgress, score: number, at: string)
 export function recordPractice(
   progress: ModuleProgress,
   score: number,
+  total: number,
   at: string,
 ): ModuleProgress {
-  const passed = isPracticePassed(score);
+  const passed = isPracticePassed(score, total);
   return {
     ...progress,
     attempts: progress.attempts + 1,

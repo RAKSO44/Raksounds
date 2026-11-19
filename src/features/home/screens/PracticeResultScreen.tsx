@@ -7,8 +7,8 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import {
   isPracticePassed,
   moduleById,
-  PRACTICE_LENGTH,
-  PRACTICE_PASS_SCORE,
+  practiceLength,
+  practicePassScore,
   progressOf,
 } from '@/domain/lessons';
 import { BottomActionBar, Header } from '@/shared/design-system';
@@ -45,8 +45,8 @@ function useCountUp(from: number, to: number): number {
 }
 
 /**
- * Resultado de un intento: aciertos de 15 y si con eso se completa la práctica
- * (12 o más). No aprobar no penaliza, y un completado anterior nunca se pierde.
+ * Resultado de un intento: aciertos sobre el total del módulo y si con eso se
+ * completa la práctica (80 %: 12/15, 9/11…). No aprobar no penaliza, y un completado anterior nunca se pierde.
  *
  * Si hubo fallos, "Reintentar fallos" (neutro, sobre "Continuar") repite
  * SOLO esas posiciones con ejercicios nuevos; al volver, el resultado suma lo
@@ -62,10 +62,11 @@ export function PracticeResultScreen() {
     failed?: string;
   }>();
   const module = moduleById(params.module);
-  const score = Math.max(0, Math.min(PRACTICE_LENGTH, Number(params.score) || 0));
+  const total = module === undefined ? 0 : practiceLength(module.id);
+  const score = Math.max(0, Math.min(total, Number(params.score) || 0));
   const gained = Math.max(0, Math.min(score, Number(params.gained) || 0));
   const failed = params.failed ?? '';
-  const passed = isPracticePassed(score);
+  const passed = isPracticePassed(score, total);
   const shown = useCountUp(score - gained, score);
   const progress = useLessonProgressStore((state) =>
     module === undefined ? null : progressOf(state.modules, module.id),
@@ -100,7 +101,7 @@ export function PracticeResultScreen() {
     ? progress?.theoryCompleted
       ? '¡Módulo completado!'
       : '¡Práctica completada! Te falta la teoría para completar el módulo.'
-    : `Necesitas ${PRACTICE_PASS_SCORE} aciertos para completar la práctica. ¡Inténtalo otra vez!`;
+    : `Necesitas ${practicePassScore(total)} aciertos para completar la práctica. ¡Inténtalo otra vez!`;
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
@@ -114,7 +115,7 @@ export function PracticeResultScreen() {
             color={color}
           />
           <Text style={[styles.score, { color }]}>
-            {shown}/{PRACTICE_LENGTH}
+            {shown}/{total}
           </Text>
           {gained > 0 && (
             <Animated.Text
@@ -127,7 +128,8 @@ export function PracticeResultScreen() {
           <Text style={[styles.message, { color: colors.textPrimary }]}>{message}</Text>
           {progress !== null && progress.bestScore !== null && (
             <Text style={[styles.caption, { color: colors.textSecondary }]}>
-              Tu mejor resultado: {progress.bestScore}/{PRACTICE_LENGTH}
+              {/* Un récord de cuando la práctica tenía más ejercicios no pasa del total. */}
+              Tu mejor resultado: {Math.min(progress.bestScore, total)}/{total}
             </Text>
           )}
         </Animated.View>
@@ -137,7 +139,7 @@ export function PracticeResultScreen() {
         label="Continuar"
         onPress={finish}
         secondary={
-          failed !== '' && score < PRACTICE_LENGTH
+          failed !== '' && score < total
             ? { label: 'Reintentar fallos', onPress: retryFailed }
             : undefined
         }

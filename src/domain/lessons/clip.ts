@@ -1,5 +1,5 @@
 /**
- * Un "clip" es un estímulo con tiempo: lo que suena (o destella) al pulsar un
+ * Un "clip" es un estímulo con tiempo: lo que suena al pulsar un
  * botón de escuchar. Es DATO, no audio: la capa de infraestructura decide cómo
  * hacerlo sonar. Así el estímulo y su temporización salen de la misma instancia
  * del ejercicio y no de estados visuales independientes.
@@ -16,9 +16,7 @@ export type Clip =
   /** Notas de piano. */
   | { readonly kind: 'notes'; readonly notes: readonly ClipNote[] }
   /** Golpes de metrónomo, programados con precisión de muestra. */
-  | { readonly kind: 'pulse'; readonly onsetsMs: readonly number[] }
-  /** Los mismos golpes, pero solo como destello visual, sin sonido. */
-  | { readonly kind: 'flash'; readonly onsetsMs: readonly number[] };
+  | { readonly kind: 'pulse'; readonly onsetsMs: readonly number[] };
 
 /** Duración de una nota de un clip melódico. */
 export const CLIP_NOTE_MS = 650;

@@ -1,5 +1,4 @@
 import { RandomSource } from '../ear-training';
-import { Clip } from './clip';
 
 /**
  * Pulso y tempo (Módulo 2). El tempo se expresa en BPM: pulsos por minuto.
@@ -99,10 +98,6 @@ export function irregularOnsets(bpm: number, count: number, random: RandomSource
   });
 }
 
-export function pulseClip(bpm: number, count: number): Clip {
-  return { kind: 'pulse', onsetsMs: regularOnsets(bpm, count) };
-}
-
 /** ¿Los golpes están separados por la misma distancia (con 1 ms de redondeo)? */
 export function isRegular(onsetsMs: readonly number[]): boolean {
   if (onsetsMs.length < 3) return true;
@@ -111,4 +106,20 @@ export function isRegular(onsetsMs: readonly number[]): boolean {
     if (index === 0) return true;
     return Math.abs(onset - onsetsMs[index - 1] - first) <= 1;
   });
+}
+
+/**
+ * Escala de un metrónomo mecánico (Maelzel): de 40 BPM, con la pesa arriba
+ * del todo, a 208 BPM, con la pesa junto al eje.
+ */
+export const METRONOME_SCALE = { min: 40, max: 208 } as const;
+
+/**
+ * Dónde va la pesa en el brazo para `bpm`: 0 = arriba (lento), 1 = abajo
+ * (rápido). En un metrónomo real, subir la pesa alarga el péndulo y lo
+ * hace ir más lento; el número de la escala se lee a su altura.
+ */
+export function metronomeWeightPosition(bpm: number): number {
+  const { min, max } = METRONOME_SCALE;
+  return Math.min(1, Math.max(0, (bpm - min) / (max - min)));
 }

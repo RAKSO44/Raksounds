@@ -4,22 +4,19 @@ import { BeatGrade } from '@/domain/lessons';
 import { controls, radii, spacing, useTheme } from '@/shared/theme';
 
 interface BeatMarksProps {
-  /** Golpes de entrada (marcas pequeñas, sin calificar). */
-  countIn: number;
-  /** Golpes que se califican. */
-  beats: number;
-  /** Golpe sonando ahora (índice sobre entrada + calificados), o -1. */
-  active: number;
-  /** Calificación de cada golpe tras la pasada. */
+  /** Toques que pide el ejercicio. */
+  count: number;
+  /** Toques hechos: sus marcas ya van pintadas. */
+  filled: number;
+  /** Al corregir, cómo cayó cada toque (justo, cerca, fallado). */
   grades?: readonly BeatGrade[] | null;
 }
 
 /**
- * Una marca por golpe. Mientras suena, se ilumina la del golpe en curso; al
- * terminar, cada marca calificada toma el color de cómo se tocó (justo, cerca,
- * fallado), que es la corrección "por cercanía temporal".
+ * Una marca por toque. Cada toque pinta la suya, de una en una; al corregir,
+ * toman el color de cómo cayó cada toque respecto a su golpe.
  */
-export function BeatMarks({ countIn, beats, active, grades }: BeatMarksProps) {
+export function BeatMarks({ count, filled, grades }: BeatMarksProps) {
   const { colors } = useTheme();
   const gradeColor: Record<BeatGrade, string> = {
     good: colors.success,
@@ -28,31 +25,16 @@ export function BeatMarks({ countIn, beats, active, grades }: BeatMarksProps) {
   };
 
   return (
-    <View
-      style={styles.row}
-      accessibilityElementsHidden
-      importantForAccessibility="no-hide-descendants"
-    >
-      {Array.from({ length: countIn + beats }, (_, index) => {
-        const isCountIn = index < countIn;
-        const grade = isCountIn ? undefined : grades?.[index - countIn];
+    <View style={styles.row} accessibilityLabel={`${filled} de ${count} toques`}>
+      {Array.from({ length: count }, (_, index) => {
+        const grade = grades?.[index];
         const color =
-          index === active
-            ? colors.brand
-            : grade !== undefined
-              ? gradeColor[grade]
+          grade !== undefined
+            ? gradeColor[grade]
+            : index < filled
+              ? colors.secondary
               : colors.progressTrack;
-        return (
-          <View
-            key={index}
-            style={[
-              styles.mark,
-              isCountIn && styles.countIn,
-              { backgroundColor: color },
-              index === countIn && countIn > 0 && styles.firstScored,
-            ]}
-          />
-        );
+        return <View key={index} style={[styles.mark, { backgroundColor: color }]} />;
       })}
     </View>
   );
@@ -63,19 +45,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
+    gap: spacing.md,
   },
   mark: {
     width: controls.beatMarkSize,
     height: controls.beatMarkSize,
     borderRadius: radii.pill,
-  },
-  countIn: {
-    width: controls.beatMarkSize / 2,
-    height: controls.beatMarkSize / 2,
-  },
-  firstScored: {
-    marginLeft: spacing.sm,
   },
 });

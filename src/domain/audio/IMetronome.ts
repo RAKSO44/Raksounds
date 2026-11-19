@@ -21,6 +21,12 @@ export interface PulseLoopOptions {
 
 /** Un pulso que suena sin fin hasta detenerlo. */
 export interface PulseLoop {
+  /**
+   * Cuándo suena el golpe 0, en el reloj de `performance.now()`. Mientras no
+   * cambie el tempo, el golpe `n` suena en `startMs + n × intervalo`: es la
+   * referencia con la que se califican los toques.
+   */
+  readonly startMs: number;
   /** Cambia la velocidad en vivo: el siguiente golpe ya llega al tempo nuevo. */
   setBpm(bpm: number): void;
   stop(): void;
@@ -41,7 +47,8 @@ export interface IMetronome {
   play(onsetsMs: readonly number[]): number | null;
 
   /**
-   * Arranca un pulso continuo (el corazón de la teoría). Como `play`, cancela
+   * Arranca un pulso continuo (el corazón de la teoría, los metrónomos de la
+   * práctica). Como `play`, cancela
    * lo que sonara antes; `play` y `stop` también lo detienen. `null` si el
    * motor no está listo.
    */
