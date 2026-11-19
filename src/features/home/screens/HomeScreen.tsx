@@ -8,7 +8,7 @@ import { ConfirmDialog, Header } from '@/shared/design-system';
 import { useHardwareBack, useSettingsAction } from '@/shared/navigation';
 import { controls, spacing, useTheme } from '@/shared/theme';
 
-import { ModuleRow } from '../components/ModuleRow';
+import { LessonPath, ModuleRow } from '../components/ModuleRow';
 import { StageBanner } from '../components/StageBanner';
 import { StageDivider } from '../components/StageDivider';
 import { useStageScroll } from '../hooks/useStageScroll';
@@ -39,8 +39,10 @@ export function HomeScreen() {
   const [bannerHeight, setBannerHeight] = useState(0);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const viewportHeight = viewport.height;
-  const { scrollRef, onScroll, onSectionLayout, scrollToStage, current, lastHeight } =
-    useStageScroll(STAGES.length, bannerHeight);
+  const { scrollRef, onScroll, onSectionLayout, scrollToStage, current, measured } = useStageScroll(
+    STAGES.length,
+    bannerHeight,
+  );
 
   // Al salir (a una lección, a otra pestaña) se cierra lo abierto; y mientras
   // no se ve, los nodos no animan sus cambios de estado. Al volver de la
@@ -65,13 +67,13 @@ export function HomeScreen() {
   // la última etapa guardada.
   const restored = useRef(false);
   useEffect(() => {
-    if (restored.current || bannerHeight === 0 || viewportHeight === 0 || lastHeight === 0) return;
+    if (restored.current || bannerHeight === 0 || viewportHeight === 0 || !measured) return;
     restored.current = true;
     const { last } = useStageSelectionStore.getState();
     if (last <= 0 || last >= STAGES.length) return;
     // Un fotograma después, cuando el relleno final ya está aplicado.
     requestAnimationFrame(() => scrollToStage(last));
-  }, [bannerHeight, viewportHeight, lastHeight, scrollToStage]);
+  }, [bannerHeight, viewportHeight, measured, scrollToStage]);
 
   useHardwareBack(
     useCallback(() => {
@@ -81,21 +83,27 @@ export function HomeScreen() {
     }, [openNumber]),
   );
 
-  const toggle = (module: PathModule, stageIndex: number) => {
+  // Estables: cada ModuleRow está memoizado y, al abrir o cerrar uno, solo
+  // deben volver a pintarse los dos que cambian, no toda la ruta.
+  const toggle = useCallback((module: PathModule, stageIndex: number) => {
     useStageSelectionStore.getState().touch(stageIndex);
     if (module.lessonId === null) {
       setSoon(module);
       return;
     }
     setOpenNumber((now) => (now === module.number ? null : module.number));
-  };
+  }, []);
 
-  const openLesson = (pathname: '/lesson/theory' | '/lesson/practice', id: ModuleId) =>
-    router.push({ pathname, params: { module: id } });
+  const openLesson = useCallback(
+    (pathname: LessonPath, id: ModuleId) => router.push({ pathname, params: { module: id } }),
+    [router],
+  );
 
-  // Espacio al final para que la última etapa pueda subir hasta la tarjeta:
-  // si no, su divisor nunca llegaría arriba y la tarjeta no cambiaría.
-  const tail = Math.max(spacing.xl, viewportHeight - bannerHeight - lastHeight);
+  // La última etapa mide al menos lo que se ve bajo la tarjeta: así su divisor
+  // puede subir hasta ella (si no, la tarjeta nunca cambiaría). Es un mínimo de
+  // layout, no una medición: no hay que volver a calcularlo mientras un
+  // módulo de esa etapa se abre.
+  const lastMinHeight = Math.max(0, viewportHeight - bannerHeight);
   // Ancho de una fila de módulo: la columna (con su tope en pantallas anchas)
   // menos su margen lateral.
   const rowWidth = Math.min(viewport.width, controls.pathMaxWidth) - spacing.md * 2;
@@ -114,10 +122,14 @@ export function HomeScreen() {
           ref={scrollRef}
           onScroll={onScroll}
           scrollEventThrottle={16}
-          contentContainerStyle={{ paddingTop: bannerHeight, paddingBottom: tail }}
+          contentContainerStyle={{ paddingTop: bannerHeight, paddingBottom: spacing.xl }}
         >
           {STAGES.map((stage, index) => (
-            <View key={stage.number} onLayout={onSectionLayout(index)} style={styles.column}>
+            <View
+              key={stage.number}
+              onLayout={onSectionLayout(index)}
+              style={[styles.column, index === STAGES.length - 1 && { minHeight: lastMinHeight }]}
+            >
               {index > 0 && <StageDivider stage={stage} />}
               <View style={styles.modules}>
                 {stage.modules.map((module) => {
@@ -127,19 +139,15 @@ export function HomeScreen() {
                     <ModuleRow
                       key={module.number}
                       module={module}
+                      stageIndex={index}
                       tone={stageTone(stage.number)}
                       open={openNumber === module.number}
                       theoryDone={lesson?.theoryCompleted ?? false}
                       practiceDone={lesson?.practiceCompleted ?? false}
                       visible={visible}
                       width={rowWidth}
-                      onToggle={() => toggle(module, index)}
-                      onTheory={() =>
-                        module.lessonId && openLesson('/lesson/theory', module.lessonId)
-                      }
-                      onPractice={() =>
-                        module.lessonId && openLesson('/lesson/practice', module.lessonId)
-                      }
+                      onToggle={toggle}
+                      onOpenLesson={openLesson}
                     />
                   );
                 })}

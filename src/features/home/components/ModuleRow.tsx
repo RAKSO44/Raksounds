@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { LayoutChangeEvent, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { PathModule } from '@/domain/lessons';
+import { ModuleId, PathModule } from '@/domain/lessons';
 import { PRESS_SLOP, PushButtonTone, resolveTone } from '@/shared/design-system';
 import { hapticPressIn } from '@/shared/haptics';
 import { controls, elevation, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
@@ -43,8 +43,13 @@ function fadeOut(value: number, end: number): number {
   return interpolate(value, [0, end], [1, 0], Extrapolation.CLAMP);
 }
 
+/** Las dos pantallas de una lección que abre la tarjeta. */
+export type LessonPath = '/lesson/theory' | '/lesson/practice';
+
 interface ModuleRowProps {
   module: PathModule;
+  /** Posición de la etapa del módulo en la ruta (se devuelve en `onToggle`). */
+  stageIndex: number;
   /** Color de la etapa del módulo (círculo, etiqueta y botones). */
   tone: PushButtonTone;
   open: boolean;
@@ -59,10 +64,14 @@ interface ModuleRowProps {
    * salta también al desplazarse) y la animación perdía fluidez.
    */
   width: number;
-  /** Tocar el círculo (o su título) o, abierto, el temario. */
-  onToggle: () => void;
-  onTheory: () => void;
-  onPractice: () => void;
+  /**
+   * Tocar el círculo (o su título) o, abierto, el temario. Los callbacks
+   * reciben el módulo en vez de cerrarse sobre él para que el Home pase
+   * SIEMPRE la misma función: la fila está memoizada y, al abrir una, las
+   * demás no vuelven a pintarse ni a registrar sus estilos animados.
+   */
+  onToggle: (module: PathModule, stageIndex: number) => void;
+  onOpenLesson: (pathname: LessonPath, id: ModuleId) => void;
 }
 
 /**
@@ -78,8 +87,9 @@ interface ModuleRowProps {
  * y el contenido nunca cambia a la vez que la forma: el ícono se va al empezar
  * y el temario entra al final, con un desplazamiento corto hacia arriba.
  */
-export function ModuleRow({
+export const ModuleRow = memo(function ModuleRow({
   module,
+  stageIndex,
   tone,
   open,
   theoryDone,
@@ -87,8 +97,7 @@ export function ModuleRow({
   visible,
   width,
   onToggle,
-  onTheory,
-  onPractice,
+  onOpenLesson,
 }: ModuleRowProps) {
   const { colors } = useTheme();
   const stage = resolveTone(tone, colors);
@@ -134,8 +143,13 @@ export function ModuleRow({
     upcoming ? colors.surfaceShadow : s.theory ? colors.warningShadow : stage.lip;
   const iconColorOf = (s: NodeStatus) =>
     upcoming ? colors.textSecondary : s.practice ? colors.textOnWarning : stage.onFace;
-  const from = { face: faceOf(status.from), lip: lipOf(status.from) };
-  const to = { face: faceOf(status.to), lip: lipOf(status.to) };
+  // Valores sueltos, no objetos: los worklets de abajo se vuelven a registrar
+  // en el hilo de UI cuando cambia algo que capturan, y un objeto nuevo en
+  // cada render "cambia" siempre.
+  const fromFace = faceOf(status.from);
+  const fromLip = lipOf(status.from);
+  const toFace = faceOf(status.to);
+  const toLip = lipOf(status.to);
   const { surface, surfaceShadow, border, progressShine } = colors;
   const { progress, shine } = status;
 
@@ -152,12 +166,12 @@ export function ModuleRow({
     backgroundColor: interpolateColor(
       morph.value,
       [0, 1],
-      [interpolateColor(progress.value, [0, 1], [from.lip, to.lip]), surfaceShadow],
+      [interpolateColor(progress.value, [0, 1], [fromLip, toLip]), surfaceShadow],
     ),
   }));
   const faceStyle = useAnimatedStyle(() => {
     const lip = interpolate(morph.value, [0, 1], [elevation.nodeLip, elevation.buttonLip]);
-    const circleFace = interpolateColor(progress.value, [0, 1], [from.face, to.face]);
+    const circleFace = interpolateColor(progress.value, [0, 1], [fromFace, toFace]);
     return {
       bottom: lip,
       borderRadius: interpolate(morph.value, [0, 1], [D / 2, radii.lg]),
@@ -187,6 +201,17 @@ export function ModuleRow({
   // dedo no se levanta el toque no se ha "ganado", así que si empieza a
   // arrastrar el ScrollView se lleva el gesto y la ruta hace scroll. La cara
   // se hunde igualmente al apoyar (`onBegin`), como un PushButton.
+  const toggle = useCallback(() => onToggle(module, stageIndex), [onToggle, module, stageIndex]);
+  const lessonId = module.lessonId;
+  const openTheory = useCallback(
+    () => lessonId && onOpenLesson('/lesson/theory', lessonId),
+    [onOpenLesson, lessonId],
+  );
+  const openPractice = useCallback(
+    () => lessonId && onOpenLesson('/lesson/practice', lessonId),
+    [onOpenLesson, lessonId],
+  );
+
   const pressGesture = useCallback(
     (): ReturnType<typeof Gesture.Tap> =>
       Gesture.Tap()
@@ -199,12 +224,12 @@ export function ModuleRow({
           hapticPressIn();
         })
         .onEnd((_event, success) => {
-          if (success) onToggle();
+          if (success) toggle();
         })
         .onFinalize(() => {
           pressed.value = 0;
         }),
-    [pressed, onToggle],
+    [pressed, toggle],
   );
   // Un gesto no se puede compartir entre dos detectores: uno por zona.
   const faceGesture = useMemo(() => pressGesture(), [pressGesture]);
@@ -265,8 +290,8 @@ export function ModuleRow({
                 tone={tone}
                 theoryDone={theoryDone}
                 practiceDone={practiceDone}
-                onTheory={onTheory}
-                onPractice={onPractice}
+                onTheory={openTheory}
+                onPractice={openPractice}
               />
             </Animated.View>
           )}
@@ -285,7 +310,7 @@ export function ModuleRow({
       </Animated.View>
     </View>
   );
-}
+});
 
 function statusLabel(theory: boolean, practice: boolean): string {
   if (theory && practice) return 'Teoría leída y ejercicios completados';

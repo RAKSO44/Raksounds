@@ -48,7 +48,11 @@ export function useStageScroll(stageCount: number, topInset: number) {
     insetRef.current = topInset;
   }, [inset, topInset]);
   const [current, setCurrent] = useState(0);
-  const [lastHeight, setLastHeight] = useState(0);
+  // Todas las etapas medidas al menos una vez: hasta entonces no hay adónde
+  // desplazarse. Es un estado que cambia UNA vez, no con cada medición.
+  const [measured, setMeasured] = useState(false);
+  // Publicación de `tops` pendiente para el próximo fotograma (ver abajo).
+  const publishFrame = useRef<number | null>(null);
   // Copia en JS de `tops`: la fuente de verdad al medir. Ver `onSectionLayout`.
   const sectionTops = useRef<number[]>(
     Array.from({ length: stageCount }, (_, index) => (index === 0 ? 0 : Number.MAX_SAFE_INTEGER)),
@@ -69,17 +73,30 @@ export function useStageScroll(stageCount: number, topInset: number) {
 
   const onSectionLayout = useCallback(
     (index: number) => (event: LayoutChangeEvent) => {
-      const { y, height } = event.nativeEvent.layout;
-      sectionTops.current[index] = y;
+      sectionTops.current[index] = event.nativeEvent.layout.y;
+      // Mientras un módulo se abre o se cierra, TODAS las etapas de debajo se
+      // mueven y mandan una medición por fotograma: se agrupan y se publica
+      // una sola vez por fotograma, no una por etapa.
+      //
       // Se publica la copia de JS entera, nunca `[...tops.value]`: escribir un
       // shared value desde JS se aplica en el hilo de UI MÁS TARDE, así que las
       // etapas que se miden en la misma pasada leían el array viejo y cada
-      // escritura pisaba la anterior. Solo sobrevivía la última etapa: la
-      // tarjeta saltaba de la etapa 1 a la 3 sin pasar por la 2.
-      tops.value = [...sectionTops.current];
-      if (index === stageCount - 1) setLastHeight(height);
+      // escritura pisaba la anterior (la tarjeta saltaba de la etapa 1 a la 3).
+      if (publishFrame.current === null) {
+        publishFrame.current = requestAnimationFrame(() => {
+          publishFrame.current = null;
+          tops.value = [...sectionTops.current];
+        });
+      }
+      if (index === stageCount - 1) setMeasured(true);
     },
     [tops, stageCount],
+  );
+  useEffect(
+    () => () => {
+      if (publishFrame.current !== null) cancelAnimationFrame(publishFrame.current);
+    },
+    [],
   );
 
   /**
@@ -94,5 +111,5 @@ export function useStageScroll(stageCount: number, topInset: number) {
     [scrollRef],
   );
 
-  return { scrollRef, onScroll, onSectionLayout, scrollToStage, current, lastHeight };
+  return { scrollRef, onScroll, onSectionLayout, scrollToStage, current, measured };
 }
