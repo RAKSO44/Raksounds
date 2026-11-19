@@ -40,20 +40,35 @@ module.exports = {
   Easing,
   useSharedValue: (initial) => ({ value: initial }),
   useAnimatedStyle: () => ({}),
-  withTiming: (toValue) => toValue,
+  // La animación "termina" al instante: su callback de fin corre ya.
+  withTiming: (toValue, _config, callback) => {
+    callback?.(true);
+    return toValue;
+  },
   withSpring: (toValue) => toValue,
   // Una secuencia acaba en su último paso: es el valor que tendría la
   // animación al terminar, que es lo único observable desde un test.
   withSequence: (...steps) => steps[steps.length - 1],
   withDelay: (_delay, animation) => animation,
   runOnJS: (fn) => fn,
+  interpolate: () => 0,
+  interpolateColor: () => 'transparent',
+  Extrapolation: { CLAMP: 'clamp' },
   FadeIn: animationBuilder,
   FadeInDown: animationBuilder,
   FadeInUp: animationBuilder,
+  FadeInLeft: animationBuilder,
+  FadeInRight: animationBuilder,
   FadeOut: animationBuilder,
   FadeOutUp: animationBuilder,
   FadeOutDown: animationBuilder,
   LinearTransition: animationBuilder,
   // Algunos consumidores esperan también estos helpers de React.
-  useAnimatedRef: () => React.createRef(),
+  // Estable entre renders, como el real (un ref nuevo por render rompería deps).
+  useAnimatedRef: () => React.useRef(null),
+  // Scroll animado (la ruta del Home): en Node no hay hilo de UI ni scroll real.
+  useAnimatedScrollHandler: () => () => {},
+  useAnimatedReaction: () => {},
+  scrollTo: () => {},
+  cancelAnimation: () => {},
 };

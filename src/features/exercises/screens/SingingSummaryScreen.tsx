@@ -3,14 +3,14 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { parseSingingKind } from '@/domain/singing';
-import { Header } from '@/shared/design-system';
+import { BottomActionBar, Header } from '@/shared/design-system';
 import { useHardwareBack } from '@/shared/navigation';
 import { spacing, useTheme } from '@/shared/theme';
 
 import { SINGING_LABELS } from '../labels';
 import { decodeSingingSummary } from '../summaryParams';
 import { useRoundEndSound } from '../hooks/useSoundEffects';
-import { BottomActionBar, SingingSummaryView } from '../components';
+import { SingingSummaryView } from '../components';
 
 /**
  * Resultado de una ronda de entonación. Igual que el de identificación: la ronda

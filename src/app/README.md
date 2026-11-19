@@ -7,4 +7,7 @@ Los archivos de ruta son **wrappers finos**: la UI real vive en `src/features/*/
 Aquí no va lógica de negocio ni de presentación.
 
 - `_layout.tsx` — layout raíz.
-- `(tabs)/_layout.tsx` — bottom tabs: Librería (inicial), Home, Perfil.
+- `(tabs)/_layout.tsx` — bottom tabs: Home (`index`, inicial), Librería
+  (`library`), Ejercicios y Perfil (placeholder).
+- `exercise/*` y `lesson/*` — rondas de Ejercicios y lecciones del Home, fuera
+  de las tabs para que no se abandonen por accidente.

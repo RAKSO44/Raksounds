@@ -1,4 +1,4 @@
-import { IAudioPlayer } from '@/domain/audio/IAudioPlayer';
+import { IAudioPlayer } from '@/domain/audio';
 
 import { createPianoSamplerPlayer } from './PianoSamplerPlayer';
 

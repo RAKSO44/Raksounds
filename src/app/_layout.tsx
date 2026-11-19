@@ -27,9 +27,13 @@ function ThemedApp() {
         }}
       >
         <Stack.Screen name="(tabs)" />
-        {/* Créditos vive fuera de las tabs: se abre desde Configuración y se
-            cierra con la flecha de la cabecera. */}
+        {/* Configuración y Créditos viven fuera de las tabs: se abren desde el
+            engranaje del Home (y Créditos desde Configuración) y se cierran
+            con la flecha de la cabecera. */}
+        <Stack.Screen name="settings" />
         <Stack.Screen name="credits" />
+        {/* La lista de etapas, desde la tarjeta de etapa del Home. */}
+        <Stack.Screen name="stages" />
         {/* La elección de nivel y la ronda también viven fuera de las tabs:
             una ronda empezada no debe poder abandonarse por accidente
             tocando otra pestaña. */}
@@ -38,6 +42,11 @@ function ThemedApp() {
         <Stack.Screen name="exercise/summary" />
         <Stack.Screen name="exercise/sing" />
         <Stack.Screen name="exercise/sing-summary" />
+        {/* Las lecciones del Home (teoría, práctica y resultado), por el mismo
+            motivo: una práctica empezada no se abandona tocando otra pestaña. */}
+        <Stack.Screen name="lesson/theory" />
+        <Stack.Screen name="lesson/practice" />
+        <Stack.Screen name="lesson/result" />
       </Stack>
       {/* Iconos claros: la cabecera morada cubre el área de la status bar. */}
       <StatusBar style="light" />

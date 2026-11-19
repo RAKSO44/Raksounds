@@ -11,7 +11,7 @@ import {
   ScaleFamily,
   ScaleType,
 } from '@/domain/music-theory';
-import { VoiceHandle } from '@/domain/audio/IAudioPlayer';
+import { VoiceHandle } from '@/domain/audio';
 // Punto de composición entre el dominio musical y la implementación real de
 // audio: la Librería consume el motor compartido de `infrastructure/audio`, el
 // mismo que usan los Ejercicios (las muestras precargadas deben sobrevivir a la

@@ -3,7 +3,7 @@ import {
   MicrophoneFrame,
   MicrophonePermission,
   MicrophoneStartResult,
-} from '@/domain/audio/IMicrophone';
+} from '@/domain/audio';
 
 /**
  * Micrófono en web. El `AudioRecorder` de react-native-audio-api no tiene

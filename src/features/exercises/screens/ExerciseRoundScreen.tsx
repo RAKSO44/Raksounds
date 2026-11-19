@@ -4,18 +4,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { EXERCISE_LEVELS, levelByNumber, parseExerciseMode } from '@/domain/ear-training';
-import { ConfirmDialog, Header } from '@/shared/design-system';
+import {
+  AnswerFeedbackSheet,
+  BottomActionBar,
+  ConfirmDialog,
+  ExerciseProgressBar,
+  Header,
+} from '@/shared/design-system';
 import { useHardwareBack } from '@/shared/navigation';
 import { motion, spacing, typography, useTheme } from '@/shared/theme';
 
 import { feedbackDetailLabel, feedbackTitleLabel, MODE_LABELS } from '../labels';
 import { encodeRoundSummary } from '../summaryParams';
-import {
-  AnswerFeedbackSheet,
-  BottomActionBar,
-  ExerciseProgressBar,
-  ExerciseView,
-} from '../components';
+import { ExerciseView } from '../components';
 import { useExerciseRound } from '../hooks/useExerciseRound';
 import { useNotePlayer } from '../hooks/useNotePlayer';
 

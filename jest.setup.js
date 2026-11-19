@@ -18,14 +18,23 @@ jest.mock('react-native-gesture-handler', () => {
   return {
     ...actual,
     GestureHandlerRootView: View,
-    GestureDetector: ({ gesture, children }) => {
-      const { onStart, onEnd, onFinalize } = gesture.handlers ?? {};
+    GestureDetector: ({ gesture: composed, children }) => {
+      // Un gesto compuesto (tocar O arrastrar una ficha) se prueba por su
+      // parte de toque: arrastrar necesita coordenadas que Node no tiene.
+      const gesture = composed.gestures
+        ? (composed.gestures.find((g) => g.handlerName === 'TapGestureHandler') ??
+          composed.gestures[0])
+        : composed;
+      const { onBegin, onStart, onEnd, onFinalize } = gesture.handlers ?? {};
       const event = {};
       return React.createElement(
         Pressable,
         {
           disabled: gesture.config?.enabled === false,
-          onPressIn: () => onStart?.(event),
+          onPressIn: () => {
+            onBegin?.(event);
+            onStart?.(event);
+          },
           onPress: () => {
             onEnd?.(event, true);
             onFinalize?.(event, true);
@@ -56,9 +65,30 @@ jest.mock('react-native-mmkv', () => {
 // Se sustituye la instancia única (no el motor: su test lo prueba contra un
 // doble de react-native-audio-api) para que las pantallas puedan afirmar qué
 // efecto sonó con `jest.requireMock('@/infrastructure/audio/soundEffects')`.
+// El metrónomo de las lecciones, por el mismo motivo (su motor tiene su propio
+// test). `play` devuelve la referencia de reloj como lo haría el real.
+jest.mock('@/infrastructure/audio/metronome', () => ({
+  metronome: {
+    load: jest.fn().mockResolvedValue(undefined),
+    play: jest.fn(() => 0),
+    loop: jest.fn(() => ({ startMs: 0, setBpm: jest.fn(), stop: jest.fn() })),
+    stop: jest.fn(),
+  },
+}));
+
 jest.mock('@/infrastructure/audio/soundEffects', () => ({
   soundEffects: {
     load: jest.fn().mockResolvedValue(undefined),
     play: jest.fn(),
   },
 }));
+
+// En Node no hay layout: `measureLayout` de una vista simulada es un jest.fn
+// que nunca responde. Se responde como una vista ya colocada (en el origen),
+// para que lo que espera esa medida (el globo de una definición) aparezca.
+{
+  const { View } = require('react-native');
+  View.prototype.measureLayout = function measureLayout(_relativeTo, onSuccess) {
+    onSuccess?.(0, 0, 0, 0);
+  };
+}

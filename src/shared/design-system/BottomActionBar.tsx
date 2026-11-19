@@ -1,11 +1,24 @@
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { PushButton } from '@/shared/design-system';
 import { spacing, typography, useTheme } from '@/shared/theme';
+
+import { PushButton } from './PushButton';
+
+/**
+ * Una segunda acción, encima de la principal y con su misma forma, pero
+ * neutra (cara de superficie con borde), como el "Revisar lección" de
+ * Duolingo junto a "Continuar": se ve, pero no compite con la principal.
+ */
+export interface SecondaryAction {
+  label: string;
+  onPress: () => void;
+}
 
 interface BottomActionBarProps {
   label: string;
+  /** Acción adicional sobre la principal (p. ej. "Reintentar fallos"). */
+  secondary?: SecondaryAction;
   disabled?: boolean;
   onPress: () => void;
   /**
@@ -32,6 +45,7 @@ interface BottomActionBarProps {
  */
 export function BottomActionBar({
   label,
+  secondary,
   disabled = false,
   transparent = false,
   onPress,
@@ -55,6 +69,16 @@ export function BottomActionBar({
           : { backgroundColor: colors.background, borderTopColor: colors.border },
       ]}
     >
+      {secondary !== undefined && (
+        <PushButton
+          variant="selectable"
+          size="compact"
+          label={secondary.label}
+          labelStyle={typography.headerTitle}
+          fullWidth
+          onPress={secondary.onPress}
+        />
+      )}
       <PushButton
         variant="solid"
         tone="secondary"
@@ -76,6 +100,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 2,
     borderTopColor: 'transparent',
     padding: spacing.md,
+    gap: spacing.sm,
   },
   barTransparent: {
     backgroundColor: 'transparent',

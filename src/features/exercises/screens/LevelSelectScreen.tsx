@@ -4,11 +4,11 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { parseExerciseMode } from '@/domain/ear-training';
 import { parseSingingKind } from '@/domain/singing';
-import { Header } from '@/shared/design-system';
+import { BottomActionBar, Header } from '@/shared/design-system';
 import { spacing, useTheme } from '@/shared/theme';
 
 import { levelRowsFor, MODE_LABELS, SINGING_LABELS } from '../labels';
-import { BottomActionBar, LevelOption } from '../components';
+import { LevelOption } from '../components';
 
 /**
  * Elección de dificultad, común a los ejercicios auditivos y a los de

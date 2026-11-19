@@ -23,13 +23,14 @@ export default function TabsLayout() {
         // públicamente por expo-router) con la forma mínima que consumimos.
         tabBar={(props) => <DuolingoTabBar {...(props as unknown as TabBarProps)} />}
       >
-        <Tabs.Screen name="index" options={{ title: 'Librería' }} />
+        {/* El Home (la ruta de aprendizaje) es `index`: la app abre en `/`,
+          así que es la pestaña inicial, como en Duolingo. */}
+        <Tabs.Screen name="index" options={{ title: 'Home' }} />
+        <Tabs.Screen name="library" options={{ title: 'Librería' }} />
         <Tabs.Screen name="exercises" options={{ title: 'Ejercicios' }} />
-        <Tabs.Screen name="settings" options={{ title: 'Configuración' }} />
-        {/* Home y Perfil siguen como rutas (placeholders) pero ocultas del
-          tab bar con href: null hasta que se implementen. */}
-        <Tabs.Screen name="home" options={{ href: null }} />
-        <Tabs.Screen name="profile" options={{ href: null }} />
+        {/* Perfil es un placeholder ("Próximamente"). Configuración ya no es
+          pestaña: se abre desde el engranaje de la cabecera del Home. */}
+        <Tabs.Screen name="profile" options={{ title: 'Perfil' }} />
       </Tabs>
     </>
   );

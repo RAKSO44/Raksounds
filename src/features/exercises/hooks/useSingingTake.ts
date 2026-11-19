@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { MicrophoneFrame } from '@/domain/audio/IMicrophone';
+import { MicrophoneFrame } from '@/domain/audio';
 import {
   detectPitch,
   frequencyToMidi,

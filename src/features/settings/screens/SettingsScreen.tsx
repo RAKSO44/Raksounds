@@ -5,7 +5,7 @@ import { Header, PushButton, SectionCard } from '@/shared/design-system';
 import { useSettingsStore } from '@/shared/settings';
 import { spacing, useTheme } from '@/shared/theme';
 
-import { SettingToggle, ThemeModeSelector } from './components';
+import { SettingToggle, ThemeModeSelector } from '../components';
 
 export function SettingsScreen() {
   const { colors } = useTheme();
@@ -21,7 +21,7 @@ export function SettingsScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Header title="Configuración" />
+      <Header title="Configuración" onBack={() => router.back()} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <SectionCard

@@ -22,10 +22,10 @@ export type PushButtonVariant = 'solid' | 'selectable';
  * los roles semánticos que necesitan los ejercicios (acierto, error, aviso) y
  * el celeste secundario. El tono NO cambia la forma del botón, solo su color.
  */
-export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning';
+export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning' | 'accent';
 
 /** Colores que aporta cada tono, resueltos desde el tema activo. */
-interface ToneColors {
+export interface ToneColors {
   /** Cara del botón sólido. */
   face: string;
   /** Labio 3D. */
@@ -46,7 +46,7 @@ interface ToneColors {
  * la pantalla toma el control, de modo que arrastrar sigue haciendo scroll en
  * vez de quedarse pulsando el botón.
  */
-const PRESS_SLOP = 20;
+export const PRESS_SLOP = 20;
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -109,6 +109,11 @@ interface PushButtonProps {
    * cara mide lo que su texto y el labio asomaría por todo el hueco sobrante.
    */
   fillHeight?: boolean;
+  /**
+   * Botón circular de este diámetro (los nodos de la ruta del Home). Mismo
+   * labio, snap y háptica: solo cambia la forma.
+   */
+  diameter?: number;
   accessibilityLabel?: string;
   minWidth?: number;
   fullWidth?: boolean;
@@ -148,6 +153,7 @@ export function PushButton({
   size = 'regular',
   iconPlacement = 'above',
   fillHeight = false,
+  diameter,
   accessibilityLabel,
   minWidth,
   fullWidth,
@@ -201,9 +207,10 @@ export function PushButton({
   );
 
   const iconStart = iconPlacement === 'start';
+  const hasText = (label != null && label !== '') || sublabel != null;
   const isSolid = variant === 'solid';
   const isSelected = variant === 'selectable' && selected;
-  const toneColors = TONES[tone](colors);
+  const toneColors = resolveTone(tone, colors);
 
   // Un botón deshabilitado no es un botón atenuado: pierde el color, el relieve
   // y el gesto, como el "Continuar" de Duolingo antes de elegir respuesta.
@@ -261,47 +268,65 @@ export function PushButton({
         style={[
           styles.container,
           fullWidth && styles.fullWidth,
+          diameter != null && { width: diameter },
           minWidth != null && { minWidth },
           style,
         ]}
       >
         {/* Labio inferior: caja desplazada hacia abajo que asoma bajo la cara. */}
-        <View style={[styles.lip, { backgroundColor: lipColor }]} />
+        <View
+          style={[
+            styles.lip,
+            diameter != null && { borderRadius: diameter / 2 },
+            { backgroundColor: lipColor },
+          ]}
+        />
         <Animated.View
           style={[
             styles.face,
             fillHeight && styles.faceFill,
             size === 'compact' && styles.faceCompact,
+            diameter != null && {
+              width: diameter,
+              height: diameter,
+              borderRadius: diameter / 2,
+              padding: 0,
+            },
             iconStart && styles.faceRow,
             { backgroundColor: faceColor, borderColor, borderWidth: isSolid ? 0 : 2 },
             faceAnimatedStyle,
           ]}
         >
           {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
-          <View
-            style={[
-              styles.texts,
-              iconStart && styles.textsStart,
-              align === 'spread' && styles.textsSpread,
-            ]}
-          >
-            {label != null && label !== '' && (
-              <Text style={[typography.chip, styles.label, labelStyle, { color: labelColor }]}>
-                {label}
-              </Text>
-            )}
-            {sublabel != null && (
-              <Text
-                style={[
-                  styles.sublabel,
-                  align === 'spread' && styles.sublabelSpread,
-                  { color: sublabelColor },
-                ]}
-              >
-                {sublabel}
-              </Text>
-            )}
-          </View>
+          {/* Sin texto no hay caja de texto: con el ícono al inicio, esa caja
+              vacía (flex: 1) empujaba el ícono a la izquierda en vez de centrarlo. */}
+          {hasText && (
+            <View
+              style={[
+                styles.texts,
+                iconStart && styles.textsStart,
+                iconStart && fullWidth && styles.textsGrow,
+                align === 'spread' && styles.textsSpread,
+              ]}
+            >
+              {label != null && label !== '' && (
+                <Text style={[typography.chip, styles.label, labelStyle, { color: labelColor }]}>
+                  {label}
+                </Text>
+              )}
+              {sublabel != null && (
+                <Text
+                  style={[
+                    styles.sublabel,
+                    align === 'spread' && styles.sublabelSpread,
+                    { color: sublabelColor },
+                  ]}
+                >
+                  {sublabel}
+                </Text>
+              )}
+            </View>
+          )}
         </Animated.View>
       </View>
     </GestureDetector>
@@ -341,6 +366,13 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
     text: colors.dangerText,
     onFace: colors.textOnBrand,
   }),
+  accent: (colors) => ({
+    face: colors.accent,
+    lip: colors.accentShadow,
+    tint: colors.accentTint,
+    text: colors.accentText,
+    onFace: colors.textOnBrand,
+  }),
   warning: (colors) => ({
     face: colors.warning,
     lip: colors.warningShadow,
@@ -350,6 +382,14 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
     onFace: colors.textOnWarning,
   }),
 };
+
+/**
+ * Los colores de un tono en el tema activo, para piezas que no son un
+ * `PushButton` pero deben ir a juego con uno (los nodos de la ruta del Home).
+ */
+export function resolveTone(tone: PushButtonTone, colors: ThemeColors): ToneColors {
+  return TONES[tone](colors);
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -389,9 +429,18 @@ const styles = StyleSheet.create({
     // nunca se recorta ni sale con puntos suspensivos).
     flexShrink: 0,
   },
+  // Junto al ícono, el texto mide lo que mide (base automática): con
+  // `flex: 1` su base era 0 y, en un botón que no ocupa todo el ancho, el
+  // texto se quedaba sin sitio y se partía letra por letra hacia abajo
+  // (botones altísimos). Puede encogerse para envolver, nunca desaparecer.
   textsStart: {
-    flex: 1,
+    flexShrink: 1,
     alignItems: 'flex-start',
+  },
+  // A todo el ancho (filas de un menú), el texto ocupa lo que queda a la
+  // derecha del ícono y el conjunto se alinea a la izquierda.
+  textsGrow: {
+    flexGrow: 1,
   },
   textsSpread: {
     flex: 1,

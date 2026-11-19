@@ -5,3 +5,8 @@ export * from './Header';
 export * from './SectionCard';
 export * from './DuolingoTabBar';
 export * from './MicButton';
+export * from './PianoKeyBody';
+export * from './AnswerOption';
+export * from './AnswerFeedbackSheet';
+export * from './BottomActionBar';
+export * from './ExerciseProgressBar';

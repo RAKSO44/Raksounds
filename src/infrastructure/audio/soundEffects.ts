@@ -1,4 +1,4 @@
-import { ISoundEffects } from '@/domain/audio/ISoundEffects';
+import { ISoundEffects } from '@/domain/audio';
 
 import { createSoundEffectsPlayer } from './SoundEffectsPlayer';
 

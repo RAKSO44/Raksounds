@@ -14,7 +14,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { buildKeyboard, KeyboardKey, keyboardRangeFor } from '@/domain/music-theory';
 import { ChordSingingExercise, chordSymbol } from '@/domain/singing';
-import { PushButton } from '@/shared/design-system';
+import { PianoKeyBody, PushButton } from '@/shared/design-system';
 import { hapticPressIn } from '@/shared/haptics';
 import { controls, motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
@@ -232,12 +232,6 @@ function PianoKey({
     [interactive, disabled, handlePressIn, handlePressOut],
   );
 
-  // La cara NO se desplaza: se estira hacia abajo y tapa el labio. Una tecla
-  // de piano está anclada por arriba; si bajara entera, por encima asomaría el
-  // fondo del teclado como una franja blanca.
-  const faceStyle = useAnimatedStyle(() => ({
-    bottom: controls.pianoKeyLip - pressOffset.value,
-  }));
   const tintStyle = useAnimatedStyle(() => ({ opacity: tint.value }));
 
   const black = pianoKey.black;
@@ -264,20 +258,24 @@ function PianoKey({
         { left: pianoKey.left * unit, width: pianoKey.width * unit, height },
       ]}
     >
-      <View style={[styles.lip, { backgroundColor: baseLip }]}>
-        {interactive && (
-          <Animated.View
-            style={[StyleSheet.absoluteFill, { backgroundColor: highlightLip }, tintStyle]}
-          />
-        )}
-      </View>
-      <Animated.View style={[styles.face, { backgroundColor: baseFace }, faceStyle]}>
+      <PianoKeyBody
+        pressOffset={pressOffset}
+        face={baseFace}
+        lip={baseLip}
+        lipOverlay={
+          interactive && (
+            <Animated.View
+              style={[StyleSheet.absoluteFill, { backgroundColor: highlightLip }, tintStyle]}
+            />
+          )
+        }
+      >
         {interactive && (
           <Animated.View
             style={[StyleSheet.absoluteFill, { backgroundColor: highlightFace }, tintStyle]}
           />
         )}
-      </Animated.View>
+      </PianoKeyBody>
     </View>
   );
 
@@ -311,26 +309,6 @@ const styles = StyleSheet.create({
   },
   blackKey: {
     zIndex: 1,
-  },
-  lip: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: controls.pianoKeyLip,
-    bottom: 0,
-    borderBottomLeftRadius: radii.sm,
-    borderBottomRightRadius: radii.sm,
-    overflow: 'hidden',
-  },
-  face: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: controls.pianoKeyLip,
-    borderBottomLeftRadius: radii.sm,
-    borderBottomRightRadius: radii.sm,
-    overflow: 'hidden',
   },
   pointer: {
     height: controls.pianoArrowSize + spacing.lg,

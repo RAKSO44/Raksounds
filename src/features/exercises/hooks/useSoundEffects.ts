@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 
-import { SoundEffect } from '@/domain/audio/ISoundEffects';
+import { SoundEffect } from '@/domain/audio';
 import { isRoundCleared } from '@/domain/ear-training';
 // Punto de composición con la implementación real de los efectos.
 import { soundEffects } from '@/infrastructure/audio/soundEffects';

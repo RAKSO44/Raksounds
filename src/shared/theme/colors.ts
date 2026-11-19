@@ -52,6 +52,15 @@ export interface ThemeColors {
   dangerTint: string;
   dangerText: string;
 
+  /** Corazón del pulso (teoría del Módulo 2): sus "BUM" y su línea. */
+  heart: string;
+
+  /** Acento (rosa). Un color más para distinguir las etapas de la ruta. */
+  accent: string;
+  accentShadow: string;
+  accentTint: string;
+  accentText: string;
+
   /** Aviso (amarillo). Dificultad intermedia. */
   warning: string;
   warningShadow: string;
@@ -92,6 +101,26 @@ export interface ThemeColors {
   pianoWhiteKeyEdge: string;
   pianoBlackKey: string;
   pianoBlackKeyEdge: string;
+  /**
+   * Texto sobre una tecla blanca. Oscuro en los DOS temas: la tecla sigue
+   * siendo clara en oscuro, y un texto del tema (claro) no se leería encima.
+   */
+  pianoKeyText: string;
+  pianoKeyTextMuted: string;
+
+  /**
+   * Metrónomo de la práctica: madera con un degradado suave (luz por la
+   * izquierda), escala crema con su tinta, pesa y eje de latón y brazo de acero.
+   * Iguales en los dos temas: como el piano, debe leerse como el objeto real.
+   */
+  metronomeWoodLight: string;
+  metronomeWood: string;
+  metronomeWoodDark: string;
+  metronomeLip: string;
+  metronomeScale: string;
+  metronomeScaleShade: string;
+  metronomeBrass: string;
+  metronomeSteelDark: string;
 
   /** Velo oscuro tras un diálogo modal. */
   scrim: string;
@@ -129,10 +158,16 @@ export const lightColors: ThemeColors = {
   successTint: palette.greenTintLight,
   successText: palette.greenTextLight,
 
+  heart: palette.red,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintLight,
   dangerText: palette.redTextLight,
+
+  accent: palette.pink,
+  accentShadow: palette.pinkShadow,
+  accentTint: palette.pinkTintLight,
+  accentText: palette.pinkTextLight,
 
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,
@@ -157,6 +192,16 @@ export const lightColors: ThemeColors = {
   pianoWhiteKeyEdge: palette.swanShadow,
   pianoBlackKey: palette.ebony,
   pianoBlackKeyEdge: palette.ebonyEdge,
+  pianoKeyText: palette.eel,
+  pianoKeyTextMuted: palette.wolf,
+  metronomeWoodLight: palette.walnutLight,
+  metronomeWood: palette.walnut,
+  metronomeWoodDark: palette.walnutDark,
+  metronomeLip: palette.walnutLip,
+  metronomeScale: palette.cream,
+  metronomeScaleShade: palette.creamShade,
+  metronomeBrass: palette.brass,
+  metronomeSteelDark: palette.steelDark,
 
   scrim: palette.scrim,
 
@@ -195,10 +240,16 @@ export const darkColors: ThemeColors = {
   successTint: palette.greenTintDark,
   successText: palette.greenTextDark,
 
+  heart: palette.red,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,
   dangerText: palette.redTextDark,
+
+  accent: palette.pink,
+  accentShadow: palette.pinkShadow,
+  accentTint: palette.pinkTintDark,
+  accentText: palette.pinkTextDark,
 
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,
@@ -223,6 +274,16 @@ export const darkColors: ThemeColors = {
   pianoWhiteKeyEdge: palette.hare,
   pianoBlackKey: palette.ebony,
   pianoBlackKeyEdge: palette.ebonyEdge,
+  pianoKeyText: palette.eel,
+  pianoKeyTextMuted: palette.wolf,
+  metronomeWoodLight: palette.walnutLight,
+  metronomeWood: palette.walnut,
+  metronomeWoodDark: palette.walnutDark,
+  metronomeLip: palette.walnutLip,
+  metronomeScale: palette.cream,
+  metronomeScaleShade: palette.creamShade,
+  metronomeBrass: palette.brass,
+  metronomeSteelDark: palette.steelDark,
 
   scrim: palette.scrim,
 

@@ -73,6 +73,15 @@ export const palette = {
   /** Texto sobre el panel ámbar: el amarillo puro no se lee sobre él. */
   yellowPanelText: '#B07B00',
 
+  // Rosa de acento: color de una etapa de la ruta del Home (las etapas no usan
+  // el morado de marca, que ya es el de la cabecera, ni el dorado del progreso).
+  pink: '#E85BBF',
+  pinkShadow: '#C2459C',
+  pinkTintLight: '#FDF0F9',
+  pinkTextLight: '#C2459C',
+  pinkTintDark: '#3D2537',
+  pinkTextDark: '#F5A3DC',
+
   /** Fondo del panel de "perfecto": velo del morado de marca. */
   purplePanel: '#F0E2FD',
 
@@ -80,6 +89,16 @@ export const palette = {
   ivory: '#FFFFFF',
   ebony: '#2B2B2B',
   ebonyEdge: '#111111',
+
+  // Metrónomo dibujado en la app: nogal, escala crema, latón y acero.
+  walnutLight: '#BC7A50',
+  walnut: '#9C5C38',
+  walnutDark: '#7A4426',
+  walnutLip: '#58301A',
+  cream: '#F8EBD0',
+  creamShade: '#EAD5AB',
+  brass: '#E8BE60',
+  steelDark: '#9CA8B0',
 
   // Neutros del modo oscuro de Duolingo
   midnight: '#131F24',

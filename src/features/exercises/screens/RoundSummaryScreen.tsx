@@ -3,14 +3,14 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import { parseExerciseMode } from '@/domain/ear-training';
-import { Header } from '@/shared/design-system';
+import { BottomActionBar, Header } from '@/shared/design-system';
 import { useHardwareBack } from '@/shared/navigation';
 import { spacing, useTheme } from '@/shared/theme';
 
 import { MODE_LABELS } from '../labels';
 import { decodeRoundSummary } from '../summaryParams';
 import { useRoundEndSound } from '../hooks/useSoundEffects';
-import { BottomActionBar, RoundSummaryView } from '../components';
+import { RoundSummaryView } from '../components';
 
 /**
  * Resultado de una ronda terminada. Es una pantalla propia (y no el último

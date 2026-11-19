@@ -4,20 +4,20 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { parseSingingKind } from '@/domain/singing';
-import { ConfirmDialog, Header, MicButton } from '@/shared/design-system';
+import {
+  AnswerFeedbackSheet,
+  BottomActionBar,
+  ConfirmDialog,
+  ExerciseProgressBar,
+  Header,
+  MicButton,
+} from '@/shared/design-system';
 import { useHardwareBack } from '@/shared/navigation';
 import { motion, spacing, typography, useTheme } from '@/shared/theme';
 
 import { micHintLabel, SINGING_LABELS, singingDetailLabel, singingTitleLabel } from '../labels';
 import { encodeSingingSummary } from '../summaryParams';
-import {
-  AnswerFeedbackSheet,
-  BottomActionBar,
-  ExerciseProgressBar,
-  MicPermissionDialog,
-  SingingExerciseView,
-  TuningGauge,
-} from '../components';
+import { MicPermissionDialog, SingingExerciseView, TuningGauge } from '../components';
 import { useNoteFormatter } from '../hooks/useNoteFormatter';
 import { useNotePlayer } from '../hooks/useNotePlayer';
 import { useSingingRound } from '../hooks/useSingingRound';

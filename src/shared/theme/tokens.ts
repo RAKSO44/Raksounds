@@ -24,6 +24,8 @@ export const radii = {
 export const elevation = {
   /** Alto del labio en reposo; al presionar se colapsa a 0. */
   buttonLip: 4,
+  /** Labio de los nodos de la ruta del Home: más grueso, para que su color se lea. */
+  nodeLip: 6,
 } as const;
 
 /** Medidas de controles que se repiten entre pantallas de ejercicios. */
@@ -71,6 +73,75 @@ export const controls = {
   gaugeMarkerHeight: 32,
   /** Raya fina que marca el centro exacto (0 cents). */
   gaugeTickWidth: 2,
+  /** Alto de la barra de la cabecera (sin contar la status bar). */
+  headerHeight: 64,
+  /** Ruta del Home: diámetro de un nodo de módulo. */
+  moduleNodeSize: 76,
+  /** Ancho de cada botón (Teoría, Práctica) de la tarjeta de un módulo. */
+  moduleCardButtonWidth: 64,
+  /** Grosor de la línea que separa dos etapas en la ruta. */
+  stageDividerStroke: 2,
+  /** Ancho máximo de la columna de la ruta en pantallas anchas. */
+  pathMaxWidth: 560,
+  /** Lado de la punta del globo de una definición (teoría). */
+  tooltipArrowSize: 16,
+  /** Borde del globo de una definición (y de su punta). */
+  tooltipBorder: 2,
+  /** Alto de las teclas blancas dibujadas en la teoría. */
+  theoryKeyHeight: 128,
+  /** Grosor de la llave que une dos teclas en la teoría. */
+  bracketStroke: 3,
+  /** Escalera DO…SI: alto de la primera ficha y cuánto sube cada una. */
+  stepTileMinHeight: 48,
+  stepTileRise: 12,
+  /** Ficha de una fila de nombres de nota (con o sin hueco). */
+  noteCellSize: 60,
+  /** Ancho mínimo de un botón de escuchar que es solo el parlante. */
+  listenButtonMinWidth: 96,
+  /** Marcas de los toques bajo el metrónomo (una por toque). */
+  beatMarkSize: 14,
+  /** Ancho mínimo del botón TAP: un botón cómodo, no una franja de lado a lado. */
+  tapButtonMinWidth: 200,
+  /**
+   * Una palabra solo en mayúsculas ("TAP") se ve más alta que el ícono de al
+   * lado: su caja reserva abajo el sitio de las letras que bajan de la línea
+   * (g, p, q) y nada lo ocupa. Se baja la mitad de ese hueco.
+   */
+  capsLabelDrop: 3,
+  /**
+   * Metrónomo de la práctica: ancho del dibujo (el alto sale de su forma,
+   * ~1,24 × el ancho) y el factor de los que se comparan lado a lado.
+   */
+  metronomeWidth: 100,
+  metronomeSmall: 0.8,
+  /** Vaivén máximo del brazo a cada lado, en grados. */
+  metronomeSwing: 18,
+  /** Ícono de una lista de comprobación de la teoría ("Nota que: ✓ …"). */
+  theoryCheckIconSize: 22,
+  /** Corazón del pulso (teoría del Módulo 2). */
+  pulseHeartSize: 88,
+  /** Cuánto "late" el corazón: crece y vuelve (golpe débil / fuerte). */
+  heartBeatScale: 1.1,
+  heartAccentScale: 1.2,
+  /** Distancia que recorre un "BUM" al salir del corazón. */
+  bumTravel: 56,
+  /** Línea del pulso (el "oxímetro"): alto, grosor de las marcas y su alto débil/fuerte. */
+  pulseTraceHeight: 48,
+  pulseTickWidth: 4,
+  pulseTickHeight: 20,
+  pulseAccentTickHeight: 44,
+  pulseTraceStroke: 2,
+  /**
+   * Slider de BPM (estilo Material 3): canal grueso partido por un tirador de
+   * barra vertical, con un hueco a cada lado y un punto al final del canal.
+   */
+  sliderTrackHeight: 16,
+  sliderHandleWidth: 4,
+  sliderHandleHeight: 44,
+  sliderHandleGap: 6,
+  /** Radio de los extremos del canal que dan al tirador (los de fuera son píldora). */
+  sliderInnerRadius: 4,
+  sliderStopSize: 6,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -95,6 +166,29 @@ export const motion = {
   gauge: 420,
   /** Suavizado de las barras de volumen entre un bloque de audio y el siguiente. */
   micLevel: 80,
+  /** Encendido/apagado del metrónomo: la madera se aviva o se atenúa, el brazo vuelve. */
+  metronomeFade: 240,
+  /** La pesa sube o baja a su sitio al cambiar de tempo. */
+  metronomeWeight: 360,
+  /** Latido del corazón: subida rápida y vuelta con curva de salida. */
+  heartRise: 70,
+  heartFall: 200,
+  /** Vuelo de un "BUM" desde el corazón hasta desvanecerse. */
+  bum: 650,
+  /** Lo que tarda una marca en cruzar la línea del pulso, a velocidad constante. */
+  traceCross: 2400,
+  /** Un nodo de la ruta se abre en tarjeta (o vuelve a círculo). */
+  morph: 300,
+  /** Cambio de color de un nodo al completar su teoría o su práctica. */
+  statusChange: 520,
+  /** Destello que cruza el nodo tras ese cambio. */
+  shine: 700,
+  /** Pausa antes de que el resultado sume lo recuperado en "Reintentar fallos". */
+  scoreGainDelay: 600,
+  /** Cada paso del contador del resultado al sumar lo recuperado (+1). */
+  scoreTick: 140,
+  /** Cambio de color de la tarjeta de etapa al pasar a otra etapa. */
+  stageColor: 220,
 } as const;
 
 /**
@@ -150,6 +244,10 @@ export const typography = {
   stat: { fontSize: 24, fontFamily: fonts.extrabold },
   /** Cifra principal del resumen de una ronda (el porcentaje de aciertos). */
   heroValue: { fontSize: 52, fontFamily: fonts.extrabold },
+  /** Texto corrido de la teoría: legible, con aire entre líneas. */
+  body: { fontSize: 17, lineHeight: 26, fontFamily: fonts.medium },
   caption: { fontSize: 12, fontFamily: fonts.semibold },
+  /** Frase de un globo de definición: corta y un poco más grande que el texto chico. */
+  tooltip: { fontSize: 16, lineHeight: 22, fontFamily: fonts.semibold },
   tabLabel: { fontSize: 11, fontFamily: fonts.bold },
 } as const satisfies Record<string, TextStyle>;

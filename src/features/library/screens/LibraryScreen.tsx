@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Header } from '@/shared/design-system';
+import { useSettingsAction } from '@/shared/navigation';
 import { useSettingsStore } from '@/shared/settings';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
@@ -14,6 +15,7 @@ import { useScalePlayer } from '../hooks/useScalePlayer';
 
 export function LibraryScreen() {
   const { colors } = useTheme();
+  const settings = useSettingsAction();
   const {
     root,
     setRoot,
@@ -30,7 +32,7 @@ export function LibraryScreen() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
-      <Header title="Librería" />
+      <Header title="Librería" action={settings} />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <SectionLabel>Nota base</SectionLabel>

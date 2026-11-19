@@ -1,6 +1,6 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
-import { ISoundEffects, SoundEffect } from '@/domain/audio/ISoundEffects';
+import { ISoundEffects, SoundEffect } from '@/domain/audio';
 
 import { MASTER_GAIN } from './PianoSamplerPlayer';
 

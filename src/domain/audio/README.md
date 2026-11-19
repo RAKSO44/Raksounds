@@ -14,3 +14,7 @@ de la misma nota puedan solaparse y soltarse por separado.
 `ISoundEffects.ts` es el contrato de los efectos de los ejercicios (acierto,
 error, ronda superada / no superada): sonidos de "disparar y olvidar", sin
 note off.
+
+`IMetronome.ts` es el contrato del metrónomo de las lecciones del Home: programa
+golpes por adelantado en el reloj de audio y devuelve cuándo suena el primero,
+que es la referencia para calificar los toques del usuario.

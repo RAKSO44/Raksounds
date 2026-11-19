@@ -9,9 +9,9 @@ import Animated, {
 } from 'react-native-reanimated';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-import { IntervalId } from '@/domain/ear-training';
-import { PushButton, PushButtonTone } from '@/shared/design-system';
 import { controls, motion } from '@/shared/theme';
+
+import { PushButton, PushButtonTone } from './PushButton';
 
 type IconName = ComponentProps<typeof MaterialCommunityIcons>['name'];
 
@@ -33,12 +33,12 @@ const STATE_TONES: Record<AnswerOptionState, PushButtonTone> = {
   answer: 'brand',
 };
 
-interface AnswerOptionStateInput {
-  option: IntervalId;
+interface AnswerOptionStateInput<T> {
+  option: T;
   /** Opción marcada por el usuario. */
-  selected: IntervalId | null;
+  selected: T | null;
   /** Opción correcta del ejercicio. */
-  answer: IntervalId;
+  answer: T;
   /** `true` cuando ya se confirmó y toca mostrar la corrección. */
   revealed: boolean;
 }
@@ -48,12 +48,12 @@ interface AnswerOptionStateInput {
  * corregir solo hay elegida/no elegida; después, la elegida se pinta según
  * acierte o falle y la correcta se destaca aunque no se haya elegido.
  */
-export function answerOptionState({
+export function answerOptionState<T>({
   option,
   selected,
   answer,
   revealed,
-}: AnswerOptionStateInput): AnswerOptionState {
+}: AnswerOptionStateInput<T>): AnswerOptionState {
   if (!revealed) return option === selected ? 'selected' : 'idle';
   if (option === selected) return option === answer ? 'correct' : 'wrong';
   return option === answer ? 'answer' : 'idle';
@@ -115,25 +115,30 @@ export function AnswerOption({
   }));
 
   return (
+    // La entrada y el temblor van en vistas distintas: los dos mueven con
+    // `transform` y, en la misma vista, la animación de entrada pisaría el
+    // temblor (Reanimated lo avisa).
     <Animated.View
       entering={FadeInDown.duration(motion.enter).delay(index * motion.stagger)}
-      style={[styles.option, animatedStyle]}
+      style={styles.option}
     >
-      <PushButton
-        variant="selectable"
-        tone={STATE_TONES[state]}
-        selected={state !== 'idle'}
-        label={label}
-        sublabel={sublabel}
-        icon={icon}
-        labelStyle={labelStyle}
-        fullWidth
-        disabled={disabled}
-        accessibilityLabel={accessibilityLabel}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        onPress={onPress}
-      />
+      <Animated.View style={animatedStyle}>
+        <PushButton
+          variant="selectable"
+          tone={STATE_TONES[state]}
+          selected={state !== 'idle'}
+          label={label}
+          sublabel={sublabel}
+          icon={icon}
+          labelStyle={labelStyle}
+          fullWidth
+          disabled={disabled}
+          accessibilityLabel={accessibilityLabel}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={onPress}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }

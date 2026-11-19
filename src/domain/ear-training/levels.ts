@@ -47,7 +47,6 @@ export const EXERCISE_LEVELS: readonly ExerciseLevel[] = LEVEL_STEPS.reduce<Exer
   [],
 );
 
-export const FIRST_LEVEL_NUMBER = 1;
 export const LAST_LEVEL_NUMBER = EXERCISE_LEVELS.length;
 
 /** Nivel por su número, o `null` si no existe (p. ej. un parámetro de ruta inválido). */

@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { render, screen, userEvent } from '@testing-library/react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { MicrophonePermission } from '@/domain/audio/IMicrophone';
+import { MicrophonePermission } from '@/domain/audio';
 import { ThemeProvider } from '@/shared/theme';
 
 import { ExercisesScreen } from '../ExercisesScreen';

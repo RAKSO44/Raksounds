@@ -6,7 +6,7 @@ import { spacing, typography, useTheme } from '@/shared/theme';
 import { noteQuestionLabel, optionLetter } from '../labels';
 import { useNoteFormatter } from '../hooks/useNoteFormatter';
 import { NotePlayer } from '../hooks/useNotePlayer';
-import { AnswerOption, answerOptionState } from './AnswerOption';
+import { AnswerOption, answerOptionState } from '@/shared/design-system';
 import { NoteKey } from './NoteKey';
 
 interface NoteExerciseProps {

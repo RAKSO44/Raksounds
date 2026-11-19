@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Header, SectionCard } from '@/shared/design-system';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
-import { CreditLink } from './components';
+import { CreditLink } from '../components';
 
 /**
  * Pantalla de créditos. Además de dar crédito a quien corresponde, cumple la

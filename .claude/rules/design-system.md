@@ -31,11 +31,14 @@ suelto en un feature).
   Créditos; vive en `shared/` porque lo usan 2+ features.
 - **`ConfirmDialog`** — diálogo modal para una acción que se pierde si se hace
   sin querer (abandonar una ronda). Dos `PushButton`: el destructivo en rojo
-  (`solid`) y el de quedarse como `selectable` neutro.
+  (`solid`) y el de quedarse como `selectable` neutro. Sin `cancelLabel` es un
+  aviso de un solo botón (el "Próximamente" de los módulos sin lección).
 - **`Header`** — cabecera morada que pinta el área de la status bar. Con
-  `onBack` muestra una flecha de volver a la izquierda del título.
+  `onBack` muestra una flecha de volver a la izquierda del título; con `action`,
+  un ícono a la derecha (el engranaje de Configuración en el Home).
 - **`DuolingoTabBar`** — barra inferior solo con íconos (sin texto), íconos
-  redondeados y juguetones (`MaterialCommunityIcons`).
+  redondeados y juguetones (`MaterialCommunityIcons`): Home, Librería,
+  Ejercicios y Perfil. Configuración NO es pestaña.
 - **`MicButton`** — el micrófono de los ejercicios de hablar de Duolingo, en el
   azul secundario: cuadrado con ícono en reposo → se ENSANCHA (cambio de
   ancho con `Easing.out`, nunca escala) a una píldora con 9 puntos mientras se
@@ -44,6 +47,21 @@ suelto en un feature).
   Mismo labio, snap y háptica que `PushButton`. El contenido NUNCA cambia a
   la vez que el ancho: se desvanece, el botón cambia de ancho vacío y el
   contenido nuevo entra al terminar (si no, los puntos se salen del cuadrado).
+
+- **Piezas de lección** (`AnswerOption`, `AnswerFeedbackSheet`,
+  `BottomActionBar`, `ExerciseProgressBar`) — las de una ronda de Ejercicios,
+  compartidas con las lecciones del Home. `answerOptionState` es genérico
+  sobre el tipo de opción.
+- **`BottomActionBar`** acepta una acción `secondary` encima de la principal,
+  con su misma forma pero neutra, como el "Revisar lección" de Duolingo
+  ("Reintentar fallos").
+- **`PianoKeyBody`** — cuerpo de una tecla de piano (cara + labio). Al pulsar
+  la cara se ESTIRA hacia abajo tapando el labio, nunca se desplaza (si bajara
+  entera asomaría una franja blanca arriba). Lo usan el teclado de la
+  entonación y las teclas blancas de la teoría: toda tecla nueva va con él.
+
+`PushButton` con `diameter` es circular (los nodos de la ruta del Home): mismo
+labio, snap y háptica, solo cambia la forma. No crees un botón redondo aparte.
 
 `PushButton` acepta un `icon` opcional (nombre de `MaterialCommunityIcons`) que
 se pinta encima del label con el color del texto del botón. Para un **selector
@@ -76,12 +94,21 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   sistema de responders de React Native concede el toque a un solo componente a
   la vez, así que con `Pressable` era imposible mantener dos botones pulsados
   (las notas no se podían tocar simultáneamente). No lo reviertas.
+  **Excepción:** `Pressable` sigue siendo válido donde nunca hace falta pulsar
+  dos cosas a la vez y no hay relieve 3D que hundir: los íconos de
+  `DuolingoTabBar`, las filas de `GroupedOptionList` y los términos y globos de
+  la teoría (`RichText`, `NotesTable`, `TooltipHost`). Todo lo que suena o
+  lleva labio va con gesture-handler.
 - **PROHIBIDO animar escala.** Nada de "crecer y volver": ni el pop al
   habilitarse un botón, ni la celebración de una respuesta correcta, ni
   muelles que se pasan del valor y rebotan. Es lo contrario del carácter de la
   app. Si algo tiene que notarse, se nota por COLOR o por un movimiento corto
   y direccional (el temblor lateral de un fallo, la barra que avanza), nunca
   por tamaño.
+  **Única excepción** (pedida por el usuario, 2026-11-18): el corazón de la
+  teoría del pulso (`PulseHeart`) late con cada golpe —crece un poco y vuelve
+  con `Easing.out`, sin muelle—. Es un latido, no una celebración; no se
+  extiende a nada más.
 - Las animaciones que sí existen son cortas y con curva de salida
   (`Easing.out`), con las duraciones de `motion` en `shared/theme/tokens.ts`.
   `withSpring` no se usa en ningún sitio: su rebote es exactamente lo que no

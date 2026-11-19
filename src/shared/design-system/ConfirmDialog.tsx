@@ -16,7 +16,11 @@ interface ConfirmDialogProps {
    * otro tono cuando confirmar no destruye nada (p. ej. abrir ajustes).
    */
   confirmTone?: PushButtonTone;
-  cancelLabel: string;
+  /**
+   * Texto del botón de quedarse. Sin él, el diálogo es solo un aviso con un
+   * único botón (p. ej. "Próximamente").
+   */
+  cancelLabel?: string;
   onConfirm: () => void;
   /** Cancelar o pedir cerrar el diálogo (backdrop, botón atrás del sistema). */
   onCancel: () => void;
@@ -59,13 +63,15 @@ export function ConfirmDialog({
           <Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
 
           <View style={styles.actions}>
-            <PushButton
-              variant="selectable"
-              label={cancelLabel}
-              style={styles.action}
-              size="compact"
-              onPress={onCancel}
-            />
+            {cancelLabel != null && (
+              <PushButton
+                variant="selectable"
+                label={cancelLabel}
+                style={styles.action}
+                size="compact"
+                onPress={onCancel}
+              />
+            )}
             <PushButton
               variant="solid"
               tone={confirmTone}

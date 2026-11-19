@@ -87,3 +87,10 @@
   cancelan exactamente: no cambia nada.
 - `gradlew assembleRelease` NO regenera los drawables: tras cambiar la config
   del splash correr `npx expo prebuild --platform android` primero.
+
+## Dibujos (SVG)
+
+- `transform: [{ skewX }]` en vistas se ignora en Android (en web sí
+  funciona): una forma inclinada hecha así sale rectangular en el teléfono.
+  Las formas con lados inclinados o degradados van con `react-native-svg`
+  (el metrónomo). Instalarlo exigió rebuild del dev build.
