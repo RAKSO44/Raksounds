@@ -76,7 +76,6 @@ export function BottomActionBar({
           label={secondary.label}
           labelStyle={typography.headerTitle}
           fullWidth
-          style={styles.secondary}
           onPress={secondary.onPress}
         />
       )}
@@ -105,10 +104,5 @@ const styles = StyleSheet.create({
   },
   barTransparent: {
     backgroundColor: 'transparent',
-  },
-  // La acción secundaria se separa más de la principal: son dos decisiones
-  // distintas, no un par de botones pegados.
-  secondary: {
-    marginBottom: spacing.md,
   },
 });

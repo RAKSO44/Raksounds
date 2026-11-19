@@ -305,6 +305,7 @@ export function PushButton({
               style={[
                 styles.texts,
                 iconStart && styles.textsStart,
+                iconStart && fullWidth && styles.textsGrow,
                 align === 'spread' && styles.textsSpread,
               ]}
             >
@@ -428,9 +429,18 @@ const styles = StyleSheet.create({
     // nunca se recorta ni sale con puntos suspensivos).
     flexShrink: 0,
   },
+  // Junto al ícono, el texto mide lo que mide (base automática): con
+  // `flex: 1` su base era 0 y, en un botón que no ocupa todo el ancho, el
+  // texto se quedaba sin sitio y se partía letra por letra hacia abajo
+  // (botones altísimos). Puede encogerse para envolver, nunca desaparecer.
   textsStart: {
-    flex: 1,
+    flexShrink: 1,
     alignItems: 'flex-start',
+  },
+  // A todo el ancho (filas de un menú), el texto ocupa lo que queda a la
+  // derecha del ícono y el conjunto se alinea a la izquierda.
+  textsGrow: {
+    flexGrow: 1,
   },
   textsSpread: {
     flex: 1,

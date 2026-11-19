@@ -115,25 +115,30 @@ export function AnswerOption({
   }));
 
   return (
+    // La entrada y el temblor van en vistas distintas: los dos mueven con
+    // `transform` y, en la misma vista, la animación de entrada pisaría el
+    // temblor (Reanimated lo avisa).
     <Animated.View
       entering={FadeInDown.duration(motion.enter).delay(index * motion.stagger)}
-      style={[styles.option, animatedStyle]}
+      style={styles.option}
     >
-      <PushButton
-        variant="selectable"
-        tone={STATE_TONES[state]}
-        selected={state !== 'idle'}
-        label={label}
-        sublabel={sublabel}
-        icon={icon}
-        labelStyle={labelStyle}
-        fullWidth
-        disabled={disabled}
-        accessibilityLabel={accessibilityLabel}
-        onPressIn={onPressIn}
-        onPressOut={onPressOut}
-        onPress={onPress}
-      />
+      <Animated.View style={animatedStyle}>
+        <PushButton
+          variant="selectable"
+          tone={STATE_TONES[state]}
+          selected={state !== 'idle'}
+          label={label}
+          sublabel={sublabel}
+          icon={icon}
+          labelStyle={labelStyle}
+          fullWidth
+          disabled={disabled}
+          accessibilityLabel={accessibilityLabel}
+          onPressIn={onPressIn}
+          onPressOut={onPressOut}
+          onPress={onPress}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }
