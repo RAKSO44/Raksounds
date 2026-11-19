@@ -53,7 +53,11 @@ export function PulseWhatPage() {
       <View style={styles.notes}>
         {NOTES.map((note) => (
           <View key={note} style={styles.note}>
-            <MaterialCommunityIcons name="check-bold" size={controls.theoryCheckIconSize} color={colors.successText} />
+            <MaterialCommunityIcons
+              name="check-bold"
+              size={controls.theoryCheckIconSize}
+              color={colors.successText}
+            />
             <Text style={[styles.noteText, { color: colors.textPrimary }]}>{note}</Text>
           </View>
         ))}
