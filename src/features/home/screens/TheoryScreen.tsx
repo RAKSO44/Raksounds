@@ -10,6 +10,7 @@ import { controls, motion, spacing, useTheme } from '@/shared/theme';
 import { TheoryPager } from '../components/theory/TheoryPager';
 import { THEORY_PAGES } from '../components/theory/theoryPages';
 import { TooltipHost } from '../components/theory/TooltipHost';
+import { useRevealScroll } from '../hooks/useRevealScroll';
 import { useLessonProgressStore } from '../progressStore';
 
 /**
@@ -25,6 +26,8 @@ export function TheoryScreen() {
   const completeTheory = useLessonProgressStore((state) => state.completeTheory);
   const [page, setPage] = useState(0);
   const [direction, setDirection] = useState<'next' | 'previous'>('next');
+  // Un globo abierto bajo el borde de la pantalla se trae a la vista.
+  const { scrollRef, onScrollLayout, onScroll, reveal } = useRevealScroll(CONTENT_PADDING_TOP);
 
   if (module === undefined) {
     // Enlace viejo o escrito a mano: solo queda volver a la ruta.
@@ -53,8 +56,16 @@ export function TheoryScreen() {
       <Header title={module.title} onBack={() => router.back()} />
 
       {/* La `key` vuelve cada hoja a su inicio (scroll arriba, sin globos abiertos). */}
-      <ScrollView key={page} style={styles.scroll} contentContainerStyle={styles.content}>
-        <TooltipHost>
+      <ScrollView
+        key={page}
+        ref={scrollRef}
+        onLayout={onScrollLayout}
+        onScroll={onScroll}
+        scrollEventThrottle={16}
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+      >
+        <TooltipHost onReveal={reveal}>
           <Animated.View entering={entering}>
             <Page />
           </Animated.View>
@@ -72,6 +83,8 @@ export function TheoryScreen() {
   );
 }
 
+const CONTENT_PADDING_TOP = spacing.lg;
+
 const styles = StyleSheet.create({
   root: {
     flex: 1,
@@ -85,7 +98,7 @@ const styles = StyleSheet.create({
     maxWidth: controls.pathMaxWidth,
     alignSelf: 'center',
     padding: spacing.md,
-    paddingTop: spacing.lg,
+    paddingTop: CONTENT_PADDING_TOP,
     paddingBottom: spacing.xl,
   },
 });
