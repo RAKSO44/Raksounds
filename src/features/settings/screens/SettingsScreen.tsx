@@ -5,7 +5,7 @@ import { Header, PushButton, SectionCard } from '@/shared/design-system';
 import { useSettingsStore } from '@/shared/settings';
 import { spacing, useTheme } from '@/shared/theme';
 
-import { SettingToggle, ThemeModeSelector } from './components';
+import { SettingToggle, ThemeModeSelector } from '../components';
 
 export function SettingsScreen() {
   const { colors } = useTheme();

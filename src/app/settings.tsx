@@ -1,3 +1,3 @@
-import { SettingsScreen } from '@/features/settings/SettingsScreen';
+import { SettingsScreen } from '@/features/settings';
 
 export default SettingsScreen;

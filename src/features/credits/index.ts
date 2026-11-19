@@ -1,1 +1,1 @@
-export * from './CreditsScreen';
+export * from './screens/CreditsScreen';
