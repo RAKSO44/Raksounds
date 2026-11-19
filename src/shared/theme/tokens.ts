@@ -96,8 +96,6 @@ export const controls = {
   stepTileRise: 12,
   /** Ficha de una fila de nombres de nota (con o sin hueco). */
   noteCellSize: 60,
-  /** Cuánto se sube el texto de un botón cuando la fuente lo asienta bajo. */
-  labelNudge: 2,
   /** Ancho mínimo de un botón de escuchar que es solo el parlante. */
   listenButtonMinWidth: 96,
   /** Luz del pulso: el círculo que destella con cada golpe. */

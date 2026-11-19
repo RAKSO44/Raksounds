@@ -1,7 +1,7 @@
 import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { controls, spacing, typography, useTheme } from '@/shared/theme';
+import { spacing, typography, useTheme } from '@/shared/theme';
 
 import { PushButton } from './PushButton';
 
@@ -74,8 +74,9 @@ export function BottomActionBar({
           variant="selectable"
           size="compact"
           label={secondary.label}
-          labelStyle={styles.secondaryLabel}
+          labelStyle={typography.headerTitle}
           fullWidth
+          style={styles.secondary}
           onPress={secondary.onPress}
         />
       )}
@@ -105,9 +106,9 @@ const styles = StyleSheet.create({
   barTransparent: {
     backgroundColor: 'transparent',
   },
-  secondaryLabel: {
-    ...typography.headerTitle,
-    // Poppins asienta el texto bajo en Android: sobre la cara neutra se nota.
-    transform: [{ translateY: -controls.labelNudge }],
+  // La acción secundaria se separa más de la principal: son dos decisiones
+  // distintas, no un par de botones pegados.
+  secondary: {
+    marginBottom: spacing.md,
   },
 });
