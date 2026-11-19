@@ -37,7 +37,8 @@ export function HomeScreen() {
   const [soon, setSoon] = useState<PathModule | null>(null);
   const [visible, setVisible] = useState(true);
   const [bannerHeight, setBannerHeight] = useState(0);
-  const [viewportHeight, setViewportHeight] = useState(0);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const viewportHeight = viewport.height;
   const { scrollRef, onScroll, onSectionLayout, scrollToStage, current, lastHeight } =
     useStageScroll(STAGES.length, bannerHeight);
 
@@ -95,13 +96,19 @@ export function HomeScreen() {
   // Espacio al final para que la última etapa pueda subir hasta la tarjeta:
   // si no, su divisor nunca llegaría arriba y la tarjeta no cambiaría.
   const tail = Math.max(spacing.xl, viewportHeight - bannerHeight - lastHeight);
+  // Ancho de una fila de módulo: la columna (con su tope en pantallas anchas)
+  // menos su margen lateral.
+  const rowWidth = Math.min(viewport.width, controls.pathMaxWidth) - spacing.md * 2;
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Header title="Inicio" action={settings} />
       <View
         style={styles.body}
-        onLayout={(event: LayoutChangeEvent) => setViewportHeight(event.nativeEvent.layout.height)}
+        onLayout={(event: LayoutChangeEvent) => {
+          const { width, height } = event.nativeEvent.layout;
+          setViewport({ width, height });
+        }}
       >
         <Animated.ScrollView
           ref={scrollRef}
@@ -125,6 +132,7 @@ export function HomeScreen() {
                       theoryDone={lesson?.theoryCompleted ?? false}
                       practiceDone={lesson?.practiceCompleted ?? false}
                       visible={visible}
+                      width={rowWidth}
                       onToggle={() => toggle(module, index)}
                       onTheory={() =>
                         module.lessonId && openLesson('/lesson/theory', module.lessonId)
@@ -143,9 +151,7 @@ export function HomeScreen() {
         <StageBanner
           stages={STAGES}
           current={current}
-          onOpen={() =>
-            router.push({ pathname: '/stages', params: { current: String(current) } })
-          }
+          onOpen={() => router.push({ pathname: '/stages', params: { current: String(current) } })}
           onHeight={setBannerHeight}
         />
       </View>

@@ -52,6 +52,13 @@ interface ModuleRowProps {
   practiceDone: boolean;
   /** El Home está a la vista: los cambios de estado solo se animan entonces. */
   visible: boolean;
+  /**
+   * Ancho de la fila (el de la tarjeta abierta). Lo pasa el Home, igual para
+   * todas: medirlo con `onLayout` en cada fila hacía que, mientras una se
+   * abre, TODAS las de abajo mandaran un evento por fotograma (`onLayout`
+   * salta también al desplazarse) y la animación perdía fluidez.
+   */
+  width: number;
   /** Tocar el círculo (o su título) o, abierto, el temario. */
   onToggle: () => void;
   onTheory: () => void;
@@ -78,6 +85,7 @@ export function ModuleRow({
   theoryDone,
   practiceDone,
   visible,
+  width,
   onToggle,
   onTheory,
   onPractice,
@@ -89,7 +97,7 @@ export function ModuleRow({
 
   const morph = useSharedValue(0);
   const pressed = useSharedValue(0);
-  const rowWidth = useSharedValue(0);
+  const rowWidth = useSharedValue(width);
   const cardHeight = useSharedValue(0);
   // El temario existe mientras el módulo está abierto o cerrándose; se mide
   // al montarse y solo entonces empieza a estirarse la forma.
@@ -97,7 +105,7 @@ export function ModuleRow({
   const [measured, setMeasured] = useState(false);
   // El temario se mide y se pinta al ancho FINAL de la tarjeta, no al de la
   // forma que se está estirando: así el texto no se reacomoda a mitad.
-  const [contentWidth, setContentWidth] = useState(0);
+  const contentWidth = Math.max(0, width - BORDER * 2);
   if (open && !mounted) setMounted(true);
 
   useEffect(() => {
@@ -112,10 +120,9 @@ export function ModuleRow({
     });
   }, [open, measured, morph]);
 
-  const onRowLayout = (event: LayoutChangeEvent) => {
-    rowWidth.value = event.nativeEvent.layout.width;
-    setContentWidth(event.nativeEvent.layout.width - BORDER * 2);
-  };
+  useEffect(() => {
+    rowWidth.value = width;
+  }, [width, rowWidth]);
   const onCardLayout = (event: LayoutChangeEvent) => {
     cardHeight.value = event.nativeEvent.layout.height + BORDER * 2;
     setMeasured(true);
@@ -208,7 +215,7 @@ export function ModuleRow({
     : `Módulo ${module.number}: ${module.title}. ${statusLabel(theoryDone, practiceDone)}`;
 
   return (
-    <View style={styles.row} onLayout={onRowLayout}>
+    <View style={styles.row}>
       {/* Toda la franja a la derecha del círculo (de arriba abajo, no solo el
           texto) abre el módulo: es un blanco cómodo para el dedo. */}
       <GestureDetector gesture={titleGesture}>
