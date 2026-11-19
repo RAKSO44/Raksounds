@@ -20,14 +20,21 @@ Reglas concretas:
 - Si aparece un import de `react`, `react-native` o `expo*` dentro de
   `src/domain/`, es un error de arquitectura: detente y avísame.
 - Los componentes de UI dependen de la **interfaz** (`IAudioPlayer`), nunca de
-  la implementación (`ExpoAudioPlayer`). La implementación se inyecta en un
+  la implementación (`PianoSamplerPlayer`). La implementación se inyecta en un
   único punto de composición (hook o provider).
 - Los archivos de `src/app/` son wrappers finos: importan una screen de
   `features/*/screens/` y la devuelven. Cero lógica, cero estilos ahí.
 - Una feature no importa de otra feature. Lo compartido entre features vive en
   `shared/` (UI) o `domain/` (lógica).
-- `home/` y `profile/` son placeholders: no implementar lógica ahí hasta que
-  el alcance del MVP lo indique.
+- `profile/` es un placeholder: no implementar lógica ahí hasta que el
+  alcance del MVP lo indique.
+- Toda feature tiene la misma forma: `screens/` (lo que importa `app/`),
+  `components/`, `hooks/` si los hay, y un `index.ts` que exporta sus
+  pantallas. `app/` importa SIEMPRE del barrel (`@/features/settings`), nunca
+  de `features/x/screens/...`.
+- Excepción al barrel: `infrastructure/audio/` se importa por archivo
+  (`@/infrastructure/audio/pianoPlayer`). Cada archivo crea una instancia
+  única con su motor nativo; un barrel las crearía TODAS al importar una.
 - Cada módulo expone su API pública vía `index.ts` (barrel); desde fuera del
   módulo se importa del barrel, no de archivos internos.
 

@@ -1,4 +1,4 @@
-# Roadmap pedagógico (Home) — EN PREPARACIÓN, no implementar todavía
+# Roadmap pedagógico (Home) — Módulos 1–2 hechos; el resto, solo cuando se pida
 
 El documento fuente es `docs/roadmap/roadmap.md`: visión, metodología
 (microlecciones estilo Duolingo), las 5 etapas / 23 módulos y la forma de
@@ -47,7 +47,7 @@ ajustar antes de seguir. Cada módulo debe poder probarse sin los posteriores.
 
 - Contenido y generación de ejercicios → `domain/lessons/` (TS puro,
   testeado): un `moduleNPractice.ts` por módulo con su plantilla de 15
-  posiciones, registrado en `practice.ts` y en `stage1.ts`. La UI →
+  posiciones, registrado en `practice.ts` y en `stages.ts`. La UI →
   `features/home/` (páginas de teoría en `components/theory/theoryPages.ts`).
 - Una mecánica nueva (p. ej. `build-rhythm` para figuras) se añade como un
   tipo más de `LessonExercise` y una vista en `components/practice/`.

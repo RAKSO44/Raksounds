@@ -1,11 +1,12 @@
 # Flujo de git
 
-- Se trabaja y se commitea **directamente en `develop`**, que es la rama por
-  defecto del repo (`origin/HEAD -> origin/develop`). No crear ramas de feature
-  por iniciativa propia: solo si el usuario lo pide. Aquí NO aplica el reflejo de
-  "si estás en la rama por defecto, crea una rama antes de commitear".
-  Motivo: el usuario prefiere un historial lineal en `develop` antes que ramas
-  que luego hay que mantener y mezclar.
+- **Nunca asumir en qué rama commitear ni a dónde hacer push.** El usuario
+  indica la rama en cada caso; si no lo dijo, se pregunta antes. No crear
+  ramas por iniciativa propia.
+- `develop` es normalmente la rama de **integración** (`origin/HEAD ->
+  origin/develop`): el trabajo suele vivir en ramas de feature que luego se
+  integran ahí, aunque a veces el usuario pide commitear directo en `develop`.
+  Eso es una indicación puntual, no una regla general.
 - `main` solo recibe merges de `develop` cuando el usuario lo pide. Nunca se
   commitea directo en `main`: si `main` y `develop` divergen, los arreglos
   terminan duplicados de dos formas distintas y el merge entra en conflicto.

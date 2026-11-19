@@ -55,11 +55,6 @@ suelto en un feature).
 - **`BottomActionBar`** acepta una acción `secondary` encima de la principal,
   con su misma forma pero neutra, como el "Revisar lección" de Duolingo
   ("Reintentar fallos").
-- **`Overlay` / `OverlayHost`** — capa por encima de toda la app (pestañas y
-  cabeceras incluidas) en el MISMO árbol de vistas. Úsala en vez de `Modal`
-  cuando algo debe crecer desde una pieza de la pantalla: un `Modal` abre otra
-  ventana nativa y parpadea al aparecer. `OverlayHost` va una vez en
-  `app/_layout.tsx`.
 - **`PianoKeyBody`** — cuerpo de una tecla de piano (cara + labio). Al pulsar
   la cara se ESTIRA hacia abajo tapando el labio, nunca se desplaza (si bajara
   entera asomaría una franja blanca arriba). Lo usan el teclado de la
@@ -99,6 +94,11 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   sistema de responders de React Native concede el toque a un solo componente a
   la vez, así que con `Pressable` era imposible mantener dos botones pulsados
   (las notas no se podían tocar simultáneamente). No lo reviertas.
+  **Excepción:** `Pressable` sigue siendo válido donde nunca hace falta pulsar
+  dos cosas a la vez y no hay relieve 3D que hundir: los íconos de
+  `DuolingoTabBar`, las filas de `GroupedOptionList` y los términos y globos de
+  la teoría (`RichText`, `NotesTable`, `TooltipHost`). Todo lo que suena o
+  lleva labio va con gesture-handler.
 - **PROHIBIDO animar escala.** Nada de "crecer y volver": ni el pop al
   habilitarse un botón, ni la celebración de una respuesta correcta, ni
   muelles que se pasan del valor y rebotan. Es lo contrario del carácter de la
