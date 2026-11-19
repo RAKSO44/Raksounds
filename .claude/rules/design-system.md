@@ -105,6 +105,10 @@ No uses dos primarios compitiendo; baja de nivel con la lista agrupada.
   app. Si algo tiene que notarse, se nota por COLOR o por un movimiento corto
   y direccional (el temblor lateral de un fallo, la barra que avanza), nunca
   por tamaño.
+  **Única excepción** (pedida por el usuario, 2026-11-18): el corazón de la
+  teoría del pulso (`PulseHeart`) late con cada golpe —crece un poco y vuelve
+  con `Easing.out`, sin muelle—. Es un latido, no una celebración; no se
+  extiende a nada más.
 - Las animaciones que sí existen son cortas y con curva de salida
   (`Easing.out`), con las duraciones de `motion` en `shared/theme/tokens.ts`.
   `withSpring` no se usa en ningún sitio: su rebote es exactamente lo que no

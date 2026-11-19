@@ -103,10 +103,37 @@ adivinar no suena hasta corregir.
   sigue.
 - **05** (visual): las opciones son luces que parpadean, sin sonido.
 - **14**: se ordenan tres BPM al azar (separados ≥ 20) de lento a rápido.
-- La teoría 2 rotula los presets como **Lento 60 / Moderado 90 / Rápido 120**:
-  es donde se enseña ese vocabulario.
-- El pulso se ve por **color** (la luz se enciende y se apaga), nunca por
-  tamaño: el sistema de diseño prohíbe animar escala.
+- (La teoría vieja de 3 hojas —luz, presets Lento/Moderado/Rápido, +/- de
+  BPM— se reemplazó el 2026-11-18; ver abajo.)
+
+## Módulo 2 — teoría (rehecha el 2026-11-18 a partir de bocetos del usuario)
+
+Dos hojas. La práctica se rehará después; por ahora sigue la anterior.
+
+1. **¿Qué es el pulso?** "Es una sucesión constante de golpes" (*constante*
+   abre "Siempre la misma velocidad"). Un **corazón** a 80 BPM y a su lado una
+   línea tipo **oxímetro**; abajo, "Nota que: ✓ la distancia entre pulsos es
+   igual ✓ algunos pulsos son más fuertes que otros".
+2. **¿Qué es el tempo?** La velocidad del pulso; se mide en **BPM** (*tempo*
+   abre "Velocidad que tiene el pulso"). El mismo corazón con "BPM: n", la
+   línea y un **slider** de 40 a 200 (arranca en 100); debajo, la indicación
+   de tempo (*Allegro*…), que solo cambia al mover la barra y abre
+   "Indicaciones de tempo. Se usan en partituras".
+
+Decisiones (del usuario):
+
+- El corazón es un **interruptor**: un toque arranca un pulso sin fin
+  (`IMetronome.loop`, programado en el reloj de audio con lookahead), otro lo
+  detiene. En la hoja 2 el slider cambia el tempo **en vivo**.
+- **Acento cada 4** (`isAccent`): el golpe fuerte suena más agudo y a pleno,
+  deja una marca más alta en la línea, late más y su "BUM" es más grande.
+- Con cada golpe: háptica seca, el corazón **late** (crece un poco y vuelve,
+  sin rebote: única excepción a la prohibición de animar escala) y suelta un
+  "BUM" hacia arriba en una dirección al azar.
+- La línea avanza a **velocidad constante** (cada marca tarda lo mismo en
+  cruzarla): la distancia entre marcas es el tempo hecho espacio.
+- Indicaciones (`TEMPO_MARKINGS`): Largo < 60 · Adagio 60–75 · Andante
+  76–107 · Moderato 108–119 · Allegro 120–167 · Presto 168–200.
 
 ## Corrección
 
