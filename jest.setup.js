@@ -71,6 +71,7 @@ jest.mock('@/infrastructure/audio/metronome', () => ({
   metronome: {
     load: jest.fn().mockResolvedValue(undefined),
     play: jest.fn(() => 0),
+    loop: jest.fn(() => ({ setBpm: jest.fn(), stop: jest.fn() })),
     stop: jest.fn(),
   },
 }));

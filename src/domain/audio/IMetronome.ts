@@ -4,6 +4,28 @@
  * por adelantado en el reloj de audio, con precisión de muestra, porque un
  * `setTimeout` por golpe tiembla decenas de ms y eso se oye en un pulso.
  */
+/** Un golpe de un pulso continuo, avisado cuando SUENA (no cuando se programa). */
+export interface PulseBeat {
+  /** Número de golpe desde que arrancó el pulso, desde 0. */
+  readonly index: number;
+  /** Golpe fuerte: suena más marcado. */
+  readonly accent: boolean;
+}
+
+export interface PulseLoopOptions {
+  bpm: number;
+  /** Decide qué golpes son fuertes (la regla vive en `domain/lessons`). */
+  isAccent: (index: number) => boolean;
+  onBeat: (beat: PulseBeat) => void;
+}
+
+/** Un pulso que suena sin fin hasta detenerlo. */
+export interface PulseLoop {
+  /** Cambia la velocidad en vivo: el siguiente golpe ya llega al tempo nuevo. */
+  setBpm(bpm: number): void;
+  stop(): void;
+}
+
 export interface IMetronome {
   /** Prepara el sonido del golpe. Memoizado. */
   load(): Promise<void>;
@@ -18,6 +40,13 @@ export interface IMetronome {
    */
   play(onsetsMs: readonly number[]): number | null;
 
-  /** Corta los golpes pendientes. Idempotente. */
+  /**
+   * Arranca un pulso continuo (el corazón de la teoría). Como `play`, cancela
+   * lo que sonara antes; `play` y `stop` también lo detienen. `null` si el
+   * motor no está listo.
+   */
+  loop(options: PulseLoopOptions): PulseLoop | null;
+
+  /** Corta los golpes pendientes (y el pulso continuo). Idempotente. */
   stop(): void;
 }
