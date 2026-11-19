@@ -128,17 +128,12 @@ export const STAGES: readonly Stage[] = [
       {
         number: 9,
         title: 'Alteraciones musicales',
-        topics: ['Sostenido', 'Bemol', 'Becuadro', 'Cómo cambian la altura de una nota'],
-        lessonId: null,
-      },
-      {
-        number: 10,
-        title: 'Intervalos',
         topics: [
-          'Qué es un intervalo',
-          'De la segunda a la octava',
-          'Mayores, menores y justos',
-          'Reconocerlos de oído',
+          'Sostenido',
+          'Bemol',
+          'Becuadro',
+          'Cómo cambian la altura de una nota',
+          'Una tecla, dos nombres',
         ],
         lessonId: null,
       },
@@ -146,10 +141,10 @@ export const STAGES: readonly Stage[] = [
   },
   {
     number: 3,
-    title: 'Escalas y tonalidades',
+    title: 'Escalas, intervalos y tonalidades',
     modules: [
       {
-        number: 11,
+        number: 10,
         title: 'Escalas mayores',
         topics: [
           'Qué es una escala',
@@ -160,7 +155,7 @@ export const STAGES: readonly Stage[] = [
         lessonId: null,
       },
       {
-        number: 12,
+        number: 11,
         title: 'Grados de la escala',
         topics: [
           'Qué son los grados',
@@ -172,12 +167,23 @@ export const STAGES: readonly Stage[] = [
         lessonId: null,
       },
       {
+        number: 12,
+        title: 'Intervalos',
+        topics: [
+          'Qué es un intervalo',
+          'De la segunda a la octava',
+          'Mayores, menores y justos',
+          'Reconocerlos de oído',
+        ],
+        lessonId: null,
+      },
+      {
         number: 13,
-        title: 'Escalas menores',
+        title: 'Escala menor natural',
         topics: [
           'Escala menor natural',
-          'Escala menor armónica',
-          'Escala menor melódica',
+          'Su fórmula de tonos y semitonos',
+          'En qué suena distinta a la mayor',
           'Relación entre mayores y menores',
         ],
         lessonId: null,
@@ -190,7 +196,17 @@ export const STAGES: readonly Stage[] = [
           'Armaduras',
           'Tonalidades mayores y menores',
           'Tonalidades relativas',
-          'Círculo de quintas',
+        ],
+        lessonId: null,
+      },
+      {
+        number: 15,
+        title: 'Círculo de quintas',
+        topics: [
+          'Qué es el círculo de quintas',
+          'Orden de sostenidos y bemoles',
+          'Tonalidades vecinas',
+          'Relativas menores en el círculo',
         ],
         lessonId: null,
       },

@@ -47,14 +47,14 @@ describe('HomeScreen', () => {
     await renderScreen();
     expect(screen.getByLabelText(/^Etapa 1: Reconocimiento musical y ritmo/)).toBeTruthy();
     expect(screen.getByLabelText('Etapa 2: Comprensión de notas y distancias')).toBeTruthy();
-    expect(screen.getByLabelText('Etapa 3: Escalas y tonalidades')).toBeTruthy();
+    expect(screen.getByLabelText('Etapa 3: Escalas, intervalos y tonalidades')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 1: Las notas musicales. Sin empezar')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 2: Pulso y tempo. Sin empezar')).toBeTruthy();
     expect(
       screen.getByLabelText('Módulo 6: Lectura de charts rítmicos. Próximamente'),
     ).toBeTruthy();
-    expect(screen.getByLabelText('Módulo 10: Intervalos. Próximamente')).toBeTruthy();
-    expect(screen.getByLabelText('Módulo 14: Tonalidades y armaduras. Próximamente')).toBeTruthy();
+    expect(screen.getByLabelText('Módulo 12: Intervalos. Próximamente')).toBeTruthy();
+    expect(screen.getByLabelText('Módulo 15: Círculo de quintas. Próximamente')).toBeTruthy();
   });
 
   it('la tarjeta de etapa abre la pantalla de etapas con la actual', async () => {
@@ -146,7 +146,7 @@ describe('HomeScreen', () => {
     const user = userEvent.setup();
     await renderScreen();
 
-    await user.press(screen.getByLabelText('Módulo 10: Intervalos. Próximamente'));
-    expect(useStageSelectionStore.getState().last).toBe(1);
+    await user.press(screen.getByLabelText('Módulo 12: Intervalos. Próximamente'));
+    expect(useStageSelectionStore.getState().last).toBe(2);
   });
 });
