@@ -27,8 +27,8 @@ interface StageBannerProps {
   current: number;
   /** Se tocó la tarjeta: abre la pantalla con todas las etapas. */
   onOpen: () => void;
-  /** Alto que ocupa la tarjeta: lo que tapa de la ruta. */
-  onHeight: (height: number) => void;
+  /** Alto que ocupa la tarjeta (lo que tapa de la ruta) y la etapa medida. */
+  onHeight: (height: number, stageIndex: number) => void;
 }
 
 /**
@@ -50,7 +50,7 @@ export function StageBanner({ stages, current, onOpen, onHeight }: StageBannerPr
     // La primera medida se fija; las siguientes (un título que ocupa otra
     // cantidad de líneas) se animan, para que la tarjeta no salte de alto.
     headerHeight.value = headerHeight.value > 0 ? withTiming(height, STAGE_CHANGE) : height;
-    onHeight(PAD_TOP + height + elevation.buttonLip + PAD_BOTTOM);
+    onHeight(PAD_TOP + height + elevation.buttonLip + PAD_BOTTOM, current);
   };
 
   const faceStyle = useAnimatedStyle(() => ({

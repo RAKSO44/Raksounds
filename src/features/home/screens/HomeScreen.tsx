@@ -36,12 +36,26 @@ export function HomeScreen() {
   const [openNumber, setOpenNumber] = useState<number | null>(null);
   const [soon, setSoon] = useState<PathModule | null>(null);
   const [visible, setVisible] = useState(true);
+  // El alto de la tarjeta cambia con la etapa (un título de 2 líneas, otro de
+  // 1). Si el relleno de la ruta o la línea que decide la etapa actual lo
+  // siguieran, cambiar de etapa movería esa línea, devolvería la etapa anterior
+  // y la tarjeta parpadearía entre las dos. Por eso ninguno depende de la etapa
+  // que se muestra:
+  // - `bannerHeight` (relleno de arriba): el alto con la Etapa 1, la única que
+  //   se ve con la ruta arriba del todo.
+  // - `stageLine` (línea de cambio): el alto MÁS BAJO medido; solo puede bajar,
+  //   así que no oscila, y un divisor ya está tapado al cruzarla.
   const [bannerHeight, setBannerHeight] = useState(0);
+  const [stageLine, setStageLine] = useState(0);
+  const onBannerHeight = useCallback((height: number, stageIndex: number) => {
+    if (stageIndex === 0) setBannerHeight(height);
+    setStageLine((line) => (line === 0 ? height : Math.min(line, height)));
+  }, []);
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const viewportHeight = viewport.height;
   const { scrollRef, onScroll, onSectionLayout, scrollToStage, current, measured } = useStageScroll(
     STAGES.length,
-    bannerHeight,
+    stageLine,
   );
 
   // Al salir (a una lección, a otra pestaña) se cierra lo abierto; y mientras
@@ -160,7 +174,7 @@ export function HomeScreen() {
           stages={STAGES}
           current={current}
           onOpen={() => router.push({ pathname: '/stages', params: { current: String(current) } })}
-          onHeight={setBannerHeight}
+          onHeight={onBannerHeight}
         />
       </View>
 

@@ -9,42 +9,25 @@ interface StageCardHeaderProps {
   /** Se llegó avanzando: el texto nuevo entra desde abajo (si no, desde arriba). */
   forward: boolean;
   color: string;
-  /**
-   * Anima el cambio de etapa (el texto sale y entra). Sin esto el texto se
-   * pinta tal cual: es la copia que se superpone a la tarjeta al expandirse,
-   * y debe verse idéntica a ella desde el primer fotograma.
-   */
-  animate?: boolean;
 }
 
 /**
- * Lo que dice la tarjeta de etapa ("ETAPA 2 / Comprensión de notas…"). Es la
- * MISMA pieza en la tarjeta y en su copia que se expande a pantalla completa:
- * así, al expandirse o plegarse, el texto no salta de sitio.
+ * Lo que dice la tarjeta de etapa ("ETAPA 2 / Comprensión de notas…"). Al
+ * cambiar de etapa, el texto anterior sale y el nuevo entra, deslizándose en
+ * la dirección del recorrido.
  */
-export function StageCardHeader({ stage, forward, color, animate = true }: StageCardHeaderProps) {
-  const texts = (
-    <>
-      <Text style={[styles.label, { color }]}>Etapa {stage.number}</Text>
-      <Text style={[styles.title, { color }]}>{stage.title}</Text>
-    </>
-  );
+export function StageCardHeader({ stage, forward, color }: StageCardHeaderProps) {
   return (
     <View style={styles.header}>
-      {animate ? (
-        // El texto de la etapa anterior sale y el de la nueva entra,
-        // deslizándose en la dirección del recorrido.
-        <Animated.View
-          key={stage.number}
-          entering={(forward ? FadeInDown : FadeInUp).duration(motion.stageColor)}
-          exiting={(forward ? FadeOutUp : FadeOutDown).duration(motion.exit)}
-          style={styles.texts}
-        >
-          {texts}
-        </Animated.View>
-      ) : (
-        <View style={styles.texts}>{texts}</View>
-      )}
+      <Animated.View
+        key={stage.number}
+        entering={(forward ? FadeInDown : FadeInUp).duration(motion.stageColor)}
+        exiting={(forward ? FadeOutUp : FadeOutDown).duration(motion.exit)}
+        style={styles.texts}
+      >
+        <Text style={[styles.label, { color }]}>Etapa {stage.number}</Text>
+        <Text style={[styles.title, { color }]}>{stage.title}</Text>
+      </Animated.View>
     </View>
   );
 }
