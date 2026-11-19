@@ -7,8 +7,8 @@ decisiones prevalecen.
 ## Alcance
 
 - Solo **Módulo 1 (Las notas musicales)** y **Módulo 2 (Pulso y tempo)** tienen
-  lección. Desde el 2026-11-17 la ruta muestra también los Módulos 3–10
-  (Etapas 1 y 2) como "Próximamente" (título + temario del roadmap); al
+  lección. Desde el 2026-11-17 la ruta muestra también los Módulos 3–15
+  (Etapas 1 a 3) como "Próximamente" (título + temario del roadmap); al
   tocarlos solo sale un aviso.
 - Cada módulo tiene dos entradas independientes desde su tarjeta: **Teoría**
   (3 pantallas) y **Práctica** (15 ejercicios).

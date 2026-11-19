@@ -74,3 +74,11 @@ Reglas de negocio clave:
   en el menú (`useMicrophoneGate`): si se niega, `MicPermissionDialog` avisa y
   no deja entrar; volver a pulsar vuelve a pedirlo. El micrófono del ejercicio
   lo sigue pidiendo por si acaso.
+
+## Pendiente (más adelante)
+
+- Cuando la mayoría de los módulos del Home estén construidos, cada tipo de
+  ejercicio indicará qué módulos conviene haber revisado antes (p. ej. la
+  entonación de intervalos → Módulos 8 y 12). Es una recomendación, no un
+  bloqueo: nada se bloquea, igual que en la ruta. Las dependencias salen de
+  `docs/roadmap/roadmap.md` (ruta recomendada para canto).

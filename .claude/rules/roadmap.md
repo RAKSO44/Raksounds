@@ -1,12 +1,12 @@
 # Roadmap pedagógico (Home) — Módulos 1–2 hechos; el resto, solo cuando se pida
 
 El documento fuente es `docs/roadmap/roadmap.md`: visión, metodología
-(microlecciones estilo Duolingo), las 5 etapas / 23 módulos y la forma de
+(microlecciones estilo Duolingo), las 5 etapas / 25 módulos y la forma de
 trabajo. **Léelo entero antes de tocar cualquier cosa del roadmap.**
 
 Estado: implementados **Módulo 1 y Módulo 2** de la Etapa 1
 (`docs/roadmap/etapa-1/`: especificación de partida + `modulos-1-2.md` con
-las decisiones, que prevalecen). Los Módulos 3–14 (Etapas 1 a 3) aparecen en
+las decisiones, que prevalecen). Los Módulos 3–15 (Etapas 1 a 3) aparecen en
 la ruta como "Próximamente" con su título y el temario del roadmap (pedido
 por el usuario el 2026-11-17), pero SIN contenido: su teoría y práctica no se
 escriben hasta que el usuario pida trabajarlos. Nada en la ruta se bloquea.
@@ -52,7 +52,7 @@ ajustar antes de seguir. Cada módulo debe poder probarse sin los posteriores.
 - Una mecánica nueva (p. ej. `build-rhythm` para figuras) se añade como un
   tipo más de `LessonExercise` y una vista en `components/practice/`.
 - Reutilizar lo que ya existe antes de crear: generadores de
-  `domain/ear-training/` (intervalos ≈ Módulos 8 y 10), `music-theory/`
-  (escalas/arpegios ≈ Módulos 11, 13, 18). `AnswerOption`,
+  `domain/ear-training/` (intervalos ≈ Módulos 8 y 12), `music-theory/`
+  (escalas/arpegios ≈ Módulos 10, 13, 19). `AnswerOption`,
   `AnswerFeedbackSheet`, `ExerciseProgressBar` y `BottomActionBar` ya viven en
   `shared/design-system/`; `RoundSummaryView` sigue en Ejercicios.
