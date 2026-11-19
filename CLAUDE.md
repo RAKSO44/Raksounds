@@ -54,7 +54,7 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   cierra el otro; tocar el temario lo devuelve a círculo.
 - **NADA SE BLOQUEA**: se entra a cualquier módulo, teoría o práctica en
   cualquier orden. El progreso solo se indica: teoría leída → labio dorado;
-  práctica completada (≥ 12/15) → cara dorada; en la tarjeta, cada botón se
+  práctica completada (≥ 80 %: 12/15, 9/11) → cara dorada; en la tarjeta, cada botón se
   vuelve dorado. El cambio se anima al volver al Home (color + un destello
   que cruza el nodo, `useStatusTransition`), nunca a escondidas.
 - Teoría: hasta 3 hojas que se pasan con ← n → (el ✓ final la marca como
@@ -62,18 +62,33 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`):
   globo sin color (superficie + borde, como Duolingo) con UNA frase corta,
   del ancho que pide esa frase y centrado bajo el término.
-- Práctica: 15 ejercicios generados de una semilla, plantilla fija por módulo.
+- Práctica: ejercicios generados de una semilla, plantilla fija por módulo
+  (Módulo 1: 15; Módulo 2: 11 — no hace falta llegar a 15 ni repetir un
+  tipo de ejercicio que ya salió; `practiceLength`).
   Reglas en `domain/lessons/progress.ts`; guardado en
   `features/home/progressStore.ts`. En el resultado, si hubo fallos,
   "Reintentar fallos" (botón neutro) repite SOLO esas posiciones, regeneradas; lo
   recuperado se suma al intento ("+3", 12 → 15) y cuenta para completarlo
   (`recordRetry`: no suma un intento nuevo).
 - Los ejercicios son DATOS (`domain/lessons/exercise.ts`): mecánicas `choice`,
-  `clip-choice` (cada opción es un sonido o una luz), `sequence` (ordenar
-  tocando o arrastrando, `domain/lessons/sequenceBoard.ts`), `pick` (marcar
-  los sonidos que van juntos) y `tap` (seguir el pulso, calificado en
-  `domain/lessons/tapSync.ts`). Los estímulos son `Clip`s; los hace sonar
-  `useClipPlayer` (piano para notas, metrónomo para golpes).
+  `clip-choice` (cada opción es un sonido), `tempo-choice` (cada opción es
+  un pulso sin fin), `sequence` (ordenar tocando o arrastrando,
+  `domain/lessons/sequenceBoard.ts`), `pick` (marcar los sonidos que van
+  juntos) y `tap` (4 toques libres sobre un pulso continuo, en golpes
+  seguidos, `judgeTapsOnPulse` en `domain/lessons/tapSync.ts`). Los
+  estímulos son `Clip`s; los hace sonar `useClipPlayer` (piano para notas,
+  metrónomo para golpes).
+- **El metrónomo de la práctica es `Metronome`** (`features/home/components/`),
+  dibujado con `react-native-svg` como un objeto real pero limpio: pirámide
+  de nogal con labio 3D, escala crema con una línea central tenue, brazo de
+  acero que llega a un extremo con cada golpe y pesa de latón a la altura de
+  su BPM (más arriba = más lento, `metronomeWeightPosition`; a media altura
+  mientras el tempo es la pregunta). La placa dice solo el número o "?".
+  Encendido/apagado es un fundido corto: apagado = madera atenuada; al cambiar de tempo el
+  brazo sigue su vaivén sin saltos.
+  Los pulsos de los ejercicios NUNCA se cortan solos: el usuario los enciende
+  y apaga (`useMetronomes`, uno sonando a la vez); en "tocar con el pulso"
+  arranca solo y no se apaga.
 - **Toda tecla que suena en pantalla se puede pulsar junto a otras y suenan a
   la vez** (`playNote`: una nota suelta no corta nada). Toda nota visible
   suena al tocarla, salvo la que hay que adivinar hasta corregir.
@@ -274,6 +289,8 @@ está mal — detente y avísame en vez de continuar.
   de React Native solo concede el toque a un componente a la vez, así que con
   `Pressable` era imposible pulsar varias notas a la vez
 - Zustand para estado global (liviano, suficiente para el alcance actual; instalar cuando se use)
+- **react-native-svg** para dibujos con formas o degradados (el metrónomo).
+  `skewX` en vistas NO funciona en Android: no dibujar formas inclinadas así
 - **Sin framework de estilos** (ni NativeWind ni similares): componentes 100% propios con
   `StyleSheet` y tokens en `shared/theme/`
 - Tipografía **Poppins**: los `.ttf` viven en `assets/fonts/` y se embeben en el
