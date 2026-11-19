@@ -36,16 +36,17 @@ describe('StagesScreen', () => {
     await render(<StagesScreen />, { wrapper: Providers });
     expect(screen.getByLabelText(/^Ir a la etapa 1: /)).toBeTruthy();
     expect(screen.getByLabelText(/^Ir a la etapa 2: .* \(etapa actual\)$/)).toBeTruthy();
-    expect(screen.getByLabelText('Ir a la etapa 3: Escalas, intervalos y tonalidades')).toBeTruthy();
+    expect(screen.getByLabelText('Ir a la etapa 3: Notas y distancias')).toBeTruthy();
+    expect(screen.getByLabelText('Ir a la etapa 4: Escalas, intervalos y tonalidades')).toBeTruthy();
   });
 
   it('elegir una etapa la deja pendiente para el Home, la guarda como última y vuelve atrás', async () => {
     const user = userEvent.setup();
     await render(<StagesScreen />, { wrapper: Providers });
 
-    await user.press(screen.getByLabelText('Ir a la etapa 3: Escalas, intervalos y tonalidades'));
-    expect(useStageSelectionStore.getState().pending).toBe(2);
-    expect(useStageSelectionStore.getState().last).toBe(2);
+    await user.press(screen.getByLabelText('Ir a la etapa 4: Escalas, intervalos y tonalidades'));
+    expect(useStageSelectionStore.getState().pending).toBe(3);
+    expect(useStageSelectionStore.getState().last).toBe(3);
     expect(mockBack).toHaveBeenCalled();
   });
 });

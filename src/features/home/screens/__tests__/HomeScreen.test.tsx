@@ -43,18 +43,19 @@ const renderScreen = () => render(<HomeScreen />, { wrapper: Providers });
 const MODULE_1 = /^Módulo 1: Las notas musicales/;
 
 describe('HomeScreen', () => {
-  it('muestra las etapas 1 a 3 con todos sus módulos, sin bloqueos', async () => {
+  it('muestra las etapas 1 a 4 con todos sus módulos, sin bloqueos', async () => {
     await renderScreen();
-    expect(screen.getByLabelText(/^Etapa 1: Reconocimiento musical y ritmo/)).toBeTruthy();
-    expect(screen.getByLabelText('Etapa 2: Comprensión de notas y distancias')).toBeTruthy();
-    expect(screen.getByLabelText('Etapa 3: Escalas, intervalos y tonalidades')).toBeTruthy();
+    expect(screen.getByLabelText(/^Etapa 1: Primeros pasos/)).toBeTruthy();
+    expect(screen.getByLabelText('Etapa 2: Ritmo')).toBeTruthy();
+    expect(screen.getByLabelText('Etapa 3: Notas y distancias')).toBeTruthy();
+    expect(screen.getByLabelText('Etapa 4: Escalas, intervalos y tonalidades')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 1: Las notas musicales. Sin empezar')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 2: Pulso y tempo. Sin empezar')).toBeTruthy();
     expect(
       screen.getByLabelText('Módulo 6: Lectura de charts rítmicos. Próximamente'),
     ).toBeTruthy();
     expect(screen.getByLabelText('Módulo 12: Intervalos. Próximamente')).toBeTruthy();
-    expect(screen.getByLabelText('Módulo 15: Círculo de quintas. Próximamente')).toBeTruthy();
+    expect(screen.getByLabelText('Módulo 16: Círculo de quintas. Próximamente')).toBeTruthy();
   });
 
   it('la tarjeta de etapa abre la pantalla de etapas con la actual', async () => {
@@ -147,6 +148,6 @@ describe('HomeScreen', () => {
     await renderScreen();
 
     await user.press(screen.getByLabelText('Módulo 12: Intervalos. Próximamente'));
-    expect(useStageSelectionStore.getState().last).toBe(2);
+    expect(useStageSelectionStore.getState().last).toBe(3);
   });
 });

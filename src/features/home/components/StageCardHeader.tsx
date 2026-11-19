@@ -12,7 +12,7 @@ interface StageCardHeaderProps {
 }
 
 /**
- * Lo que dice la tarjeta de etapa ("ETAPA 2 / Comprensión de notas…"). Al
+ * Lo que dice la tarjeta de etapa ("ETAPA 3 / Notas y distancias"). Al
  * cambiar de etapa, el texto anterior sale y el nuevo entra, deslizándose en
  * la dirección del recorrido.
  */
