@@ -28,10 +28,13 @@ jest.mock('expo-router', () => ({
 }));
 
 const mockNoteOn = jest.fn<number, [number]>(() => 1);
+const mockPlayTimed = jest.fn<number, [number, number, number]>(() => 1);
 jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
   createPianoSamplerPlayer: () => ({
     load: jest.fn().mockResolvedValue(undefined),
     noteOn: (midi: number) => mockNoteOn(midi),
+    playTimed: (midi: number, delayMs: number, durationMs: number) =>
+      mockPlayTimed(midi, delayMs, durationMs),
     noteOff: jest.fn(),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
@@ -42,6 +45,7 @@ beforeEach(() => {
   jest.useFakeTimers();
   mockBack.mockClear();
   mockNoteOn.mockClear();
+  mockPlayTimed.mockClear();
   mockParams = { module: 'notes' };
   useLessonProgressStore.setState({ modules: {} });
 });
@@ -206,7 +210,8 @@ describe('TheoryScreen (Módulo 3)', () => {
     expect(screen.getByLabelText('4 manzanas')).toBeTruthy();
     await user.press(screen.getByLabelText('Escuchar blanca'));
     await act(() => jest.advanceTimersByTimeAsync(10));
-    expect(mockNoteOn).toHaveBeenCalledWith(60);
+    // La blanca suena justo lo que vale: dos pulsos a 80 BPM, ni un ms más.
+    expect(mockPlayTimed).toHaveBeenCalledWith(60, 0, 1500);
 
     await user.press(screen.getByText('duración de los sonidos'));
     expect(screen.getByText('Tiempo que permanece sonando una nota')).toBeTruthy();
@@ -232,10 +237,10 @@ describe('TheoryScreen (Módulo 3)', () => {
     expect(screen.getByText('Selecciona una figura musical para ver su detalle')).toBeTruthy();
 
     // En la tabla las figuras no suenan: se seleccionan.
-    mockNoteOn.mockClear();
+    mockPlayTimed.mockClear();
     await user.press(screen.getByLabelText('Ver corchea'));
     await act(() => jest.advanceTimersByTimeAsync(10));
-    expect(mockNoteOn).not.toHaveBeenCalled();
+    expect(mockPlayTimed).not.toHaveBeenCalled();
     expect(screen.getByLabelText('Ver corchea').props.accessibilityState).toEqual({
       selected: true,
     });

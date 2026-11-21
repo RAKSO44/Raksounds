@@ -43,6 +43,17 @@ export interface IAudioPlayer {
    */
   noteOff(handle: VoiceHandle): void;
 
+  /**
+   * Una nota de duración EXACTA, programada en el reloj de audio (sin el
+   * temblor de un temporizador): empieza dentro de `delayMs` y se apaga a los
+   * `durationMs` con un apagado breve, como el apagador de un piano. Es lo que
+   * hace que una figura suene lo que vale: con la duración mínima de
+   * `noteOff`, una corchea y una semicorchea sonaban igual de largas.
+   *
+   * `noteOff` la corta antes de tiempo; si aún no había empezado, ya no suena.
+   */
+  playTimed(midi: number, delayMs: number, durationMs: number): VoiceHandle;
+
   /** Libera todas las voces en curso. */
   stopAll(): void;
 

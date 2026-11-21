@@ -13,8 +13,13 @@ export interface ClipNote {
 }
 
 export type Clip =
-  /** Notas de piano. */
+  /** Notas de piano. Una nota corta igual suena completa (como una tecla tocada). */
   | { readonly kind: 'notes'; readonly notes: readonly ClipNote[] }
+  /**
+   * Notas cuya duración ES lo que se escucha (las figuras musicales): cada una
+   * suena exactamente su `durationMs`, ni más ni menos.
+   */
+  | { readonly kind: 'rhythm'; readonly notes: readonly ClipNote[] }
   /** Golpes de metrónomo, programados con precisión de muestra. */
   | { readonly kind: 'pulse'; readonly onsetsMs: readonly number[] };
 
@@ -33,12 +38,12 @@ export function melodyClip(midis: readonly number[], gapMs = CLIP_NOTE_GAP_MS): 
 
 /** Instantes de cada evento del clip (inicio de nota o golpe), en orden. */
 export function clipEventTimes(clip: Clip): number[] {
-  return clip.kind === 'notes' ? clip.notes.map((note) => note.atMs) : [...clip.onsetsMs];
+  return clip.kind === 'pulse' ? [...clip.onsetsMs] : clip.notes.map((note) => note.atMs);
 }
 
 /** Cuándo termina el clip, en ms desde su inicio. */
 export function clipDurationMs(clip: Clip): number {
-  if (clip.kind === 'notes') {
+  if (clip.kind !== 'pulse') {
     return Math.max(0, ...clip.notes.map((note) => note.atMs + note.durationMs));
   }
   // Un golpe es instantáneo: se deja un margen corto para que se oiga la cola.

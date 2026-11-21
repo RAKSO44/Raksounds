@@ -1,6 +1,7 @@
 import { RandomSource } from '../../ear-training';
-import { figureById } from '../../rhythm';
-import { FIGURE_DEMO_BPM, FIGURE_DEMO_MIDI, figureClip } from '../figureTheory';
+import { figureById, FIGURES } from '../../rhythm';
+import { clipDurationMs } from '../clip';
+import { FIGURE_DEMO_BPM, FIGURE_DEMO_MIDI, figureClip, rhythmClip } from '../figureTheory';
 import { firstSequenceError, isAnswerCorrect } from '../exercise';
 import { generatePractice, generateRetry } from '../practice';
 import {
@@ -307,12 +308,31 @@ describe('pesa del metrónomo', () => {
 });
 
 describe('sonido de las figuras (Módulo 3)', () => {
-  it('cada figura suena una sola nota que dura su parte del pulso', () => {
+  it('cada figura suena una sola nota de duración exacta: su parte del pulso', () => {
     const quarter = figureClip(figureById('quarter'));
-    const half = figureClip(figureById('half'));
-    if (quarter.kind !== 'notes' || half.kind !== 'notes') throw new Error('clip de notas');
+    if (quarter.kind !== 'rhythm') throw new Error('clip de ritmo');
     expect(quarter.notes).toEqual([{ midi: FIGURE_DEMO_MIDI, atMs: 0, durationMs: 750 }]);
-    expect(half.notes[0].durationMs).toBe(quarter.notes[0].durationMs * 2);
     expect(FIGURE_DEMO_BPM).toBe(PULSE_DEMO_BPM);
+  });
+
+  it('cada figura dura justo la mitad de la anterior (redonda 3 s … semicorchea 187,5 ms)', () => {
+    const durations = FIGURES.map((figure) => {
+      const clip = figureClip(figure);
+      if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
+      return clip.notes[0].durationMs;
+    });
+    expect(durations).toEqual([3000, 1500, 750, 375, 187.5]);
+  });
+
+  it('un ritmo pone cada figura justo donde acaba la anterior, sin huecos', () => {
+    const clip = rhythmClip(['half', 'eighth', 'eighth', 'quarter']);
+    if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(clip.notes.map((note) => [note.atMs, note.durationMs])).toEqual([
+      [0, 1500],
+      [1500, 375],
+      [1875, 375],
+      [2250, 750],
+    ]);
+    expect(clipDurationMs(clip)).toBe(3000);
   });
 });

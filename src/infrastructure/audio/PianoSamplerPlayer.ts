@@ -123,11 +123,20 @@ const SILENCE = 0.0001;
 /** Fundido de `stopAll()`: corta rápido pero sin click. */
 const PANIC_RELEASE_S = 0.08;
 
+/**
+ * Apagado de una nota de duración exacta (`playTimed`): el apagador de un
+ * piano, no el pedal. Corto para que la duración se oiga tal cual (una
+ * semicorchea a 80 BPM dura 190 ms) y lo justo para que no haga click.
+ */
+const DAMPER_S = 0.06;
+
 interface Voice {
   readonly source: { stop(when?: number): void; disconnect(): void };
   readonly envelope: GainNode;
-  /** `currentTime` del contexto en el momento del noteOn. */
+  /** `currentTime` del contexto en el que empieza a sonar (puede ser futuro). */
   readonly startedAt: number;
+  /** De duración exacta (`playTimed`): cortarla no respeta la duración mínima. */
+  readonly timed: boolean;
   released: boolean;
 }
 
@@ -149,6 +158,17 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
     if (!ctx) return;
 
     const now = ctx.currentTime;
+    if (now < voice.startedAt) {
+      // Programada y aún sin empezar: se silencia y no llega a sonar.
+      try {
+        voice.envelope.gain.cancelScheduledValues(now);
+        voice.envelope.gain.setValueAtTime(0, now);
+        voice.source.stop(voice.startedAt + ATTACK_S);
+      } catch {
+        /* ya parada */
+      }
+      return;
+    }
     // Un toque instantáneo debe durar MIN_SOUNDING_S en total; uno mantenido,
     // lo que dure el gesto más el release. Ambos casos son este único max().
     const releaseAt = Math.max(now, voice.startedAt + floor);
@@ -163,6 +183,55 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       // La voz pudo terminar sola (la muestra se acabó) entre el noteOn y el
       // noteOff: el nodo ya está parado y no hay nada que liberar.
     }
+  }
+
+  /**
+   * Crea la voz de una nota que empieza dentro de `delaySeconds`, o `null` si
+   * no puede sonar. Sin excepciones: se llama desde un gesto, y si la nota no
+   * está en el banco o el motor no terminó de cargar, simplemente no suena.
+   */
+  function startVoice(
+    midi: number,
+    delaySeconds: number,
+    timed: boolean,
+  ): { handle: VoiceHandle; voice: Voice } | null {
+    const ctx = context;
+    const bus = master;
+    const buffer = buffers.get(midi);
+    if (!ctx || !bus || !buffer || !sampleFor(midi)) return null;
+
+    const at = ctx.currentTime + delaySeconds;
+
+    // Nodo NUEVO por pulsación: nace en la muestra 0 y se descarta al acabar.
+    // Es lo que hace innecesario cualquier seek/rewind y, con él, las carreras.
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+
+    const envelope = ctx.createGain();
+    envelope.gain.setValueAtTime(0, at);
+    envelope.gain.linearRampToValueAtTime(1, at + ATTACK_S);
+
+    source.connect(envelope);
+    envelope.connect(bus);
+
+    const handle = nextHandle;
+    nextHandle += 1;
+    const voice: Voice = { source, envelope, startedAt: at, timed, released: false };
+    voices.set(handle, voice);
+
+    // Si el dedo se queda pulsado más de lo que dura la muestra, la voz se
+    // apaga sola: hay que soltar los nodos igual para no acumular memoria.
+    source.onEnded = () => {
+      voices.delete(handle);
+      try {
+        envelope.disconnect();
+      } catch {
+        /* ya desconectado al cerrar el contexto */
+      }
+    };
+
+    source.start(at);
+    return { handle, voice };
   }
 
   return {
@@ -198,45 +267,7 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
     },
 
     noteOn(midi: number): VoiceHandle {
-      const ctx = context;
-      const bus = master;
-      const buffer = buffers.get(midi);
-      // Sin excepciones: esto se llama desde un gesto. Si la nota no está en el
-      // banco o el motor no terminó de cargar, simplemente no suena.
-      if (!ctx || !bus || !buffer || !sampleFor(midi)) return NO_VOICE;
-
-      const now = ctx.currentTime;
-
-      // Nodo NUEVO por pulsación: nace en la muestra 0 y se descarta al acabar.
-      // Es lo que hace innecesario cualquier seek/rewind y, con él, las carreras.
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-
-      const envelope = ctx.createGain();
-      envelope.gain.setValueAtTime(0, now);
-      envelope.gain.linearRampToValueAtTime(1, now + ATTACK_S);
-
-      source.connect(envelope);
-      envelope.connect(bus);
-
-      const handle = nextHandle;
-      nextHandle += 1;
-      const voice: Voice = { source, envelope, startedAt: now, released: false };
-      voices.set(handle, voice);
-
-      // Si el dedo se queda pulsado más de lo que dura la muestra, la voz se
-      // apaga sola: hay que soltar los nodos igual para no acumular memoria.
-      source.onEnded = () => {
-        voices.delete(handle);
-        try {
-          envelope.disconnect();
-        } catch {
-          /* ya desconectado al cerrar el contexto */
-        }
-      };
-
-      source.start(now);
-      return handle;
+      return startVoice(midi, 0, false)?.handle ?? NO_VOICE;
     },
 
     noteOff(handle: VoiceHandle) {
@@ -244,7 +275,21 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       // Voz desconocida o ya liberada: idempotente por contrato, porque el
       // gesto puede finalizar dos veces (cancelación + soltado).
       if (!voice) return;
-      release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S);
+      if (voice.timed) release(handle, voice, DAMPER_S, 0);
+      else release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S);
+    },
+
+    playTimed(midi: number, delayMs: number, durationMs: number): VoiceHandle {
+      const started = startVoice(midi, Math.max(0, delayMs) / 1000, true);
+      if (started === null) return NO_VOICE;
+      const { voice } = started;
+      // Todo queda programado de una vez: el apagador baja justo al acabar la
+      // duración y el nodo se detiene cuando ya no suena.
+      const gateAt = voice.startedAt + Math.max(0, durationMs) / 1000;
+      voice.envelope.gain.setValueAtTime(1, gateAt);
+      voice.envelope.gain.exponentialRampToValueAtTime(SILENCE, gateAt + DAMPER_S);
+      voice.source.stop(gateAt + DAMPER_S);
+      return started.handle;
     },
 
     stopAll() {
