@@ -20,7 +20,7 @@ dinámicos que las usen.
   propiedades (no hay un dibujo por figura), en espacios de pentagrama. Da
   la caja y el centro de la cabeza: el punto que se apoya en una línea.
 - `domain/rhythm/rhythmBar.ts`: una barra con duración máxima, figuras
-  pegadas sin huecos; insertar, quitar, intercambiar y mover; "no cabe" y
+  pegadas sin huecos; insertar, quitar y mover; "no cabe" y
   "no sobrepasar la duración" son la misma regla.
 - La UI solo pinta: `features/home/components/notation/` (`FigureGlyph`,
   `FigureTile`, `RhythmBarView`). Si otra feature (Ejercicios) las necesita,
@@ -78,20 +78,48 @@ dinámicos que las usen.
 
 ## Hoja 3 — reglas de la barra
 
-- Las figuras de abajo **no se acaban**: se arrastran (viaja una copia
-  encima del dedo) o se tocan (van al final).
-- Van **pegadas desde la izquierda**, sin huecos. Soltar entre dos inserta
-  ahí y corre las demás. Una colocada soltada sobre otra **se intercambian**;
-  soltada en el espacio libre pasa al final; fuera de la barra vuelve a su
-  sitio.
-- Cada figura colocada va en un recuadro discontinuo del ancho que le toca
-  por su duración ("muestra el tamaño horizontal que ocupa"), con la cabeza
-  sobre la línea al inicio de su espacio.
-- **Mantenerla presionada la quita.** Tocarla la hace sonar.
-- Si no cabe, la barra **tiembla** con háptica de error. Colocar, mover y
-  quitar dan un toque suave; al llenarse, háptica de éxito y la línea se
-  vuelve verde. Las demás se corren a su sitio con una transición corta;
-  nada crece ni rebota.
+- Texto: "La siguiente barra puede contener una redonda:" (en palabras; se
+  probó con la figura dibujada en línea y se prefirió el texto). Debajo de las figuras, un recuadro
+  punteado con dos viñetas: "**Toca** o **arrastra** las figuras para llenar
+  la barra." y "**Mantén presionadas** las figuras en la barra para
+  quitarlas." (en morado).
+- Las figuras de abajo **no se acaban**: se arrastran o se tocan (van al
+  final).
+- Cada figura colocada va en un recuadro **sólido de su propio color**
+  (redonda azul, blanca verde, negra morada, corchea naranja, semicorchea
+  rosa; relleno con un velo del mismo color y borde en un tono intermedio:
+  con el color entero el borde resultaba demasiado fuerte), con esquinas apenas
+  redondeadas y **exactamente del ancho de su duración**: los recuadros se
+  tocan, sin hueco entre uno y otro. La cabeza va sobre la línea al inicio de
+  su espacio; la línea se dibuja por encima de los recuadros.
+- Lo que viaja bajo el dedo es **ese mismo recuadro a tamaño real**, flotando
+  por encima del dedo: desde que se empieza a arrastrar se ve cuánto ocupará
+  (antes viajaba la figura sola, chica y tapada por el dedo, y no se notaba
+  que se estaba arrastrando).
+- **Vista previa en vivo**: al acercar la copia a la barra, la figura aparece
+  en el sitio donde caería (la copia se desvanece) y las demás se corren; al
+  moverla, el sitio cambia; al alejarla, todo vuelve a como estaba. Soltar
+  aplica exactamente lo que se ve; soltar lejos no cambia nada (una de la
+  paleta se descarta, una colocada vuelve a su sitio).
+- Para que la ayuda no provoque acciones involuntarias: se entra en la zona
+  de la barra a 16 px y se sale recién a 56 px (`dropEnterSlop` /
+  `dropExitSlop`), y el sitio solo cambia al pasar la mitad de la figura
+  vecina por media semicorchea (`stickyInsertionIndex`). Con el dedo quieto
+  en una frontera, nada parpadea.
+- Una colocada arrastrada **se mueve** (se inserta donde cae y las demás se
+  corren). Antes se intercambiaba al soltarla sobre otra; con la vista previa
+  el intercambio era confuso y se quitó.
+- **Mantenerla presionada la quita.** Tocarla la hace sonar, sin realce
+  visual: el destello al sonar (en la barra y en las fichas de abajo) se
+  quitó porque era muy fuerte y en corcheas y semicorcheas duraba menos que
+  el sonido. Quizás se retome más adelante.
+- Háptica del arrastre: un **tic suave** (`hapticTick`) cada vez que la
+  figura encaja en un sitio nuevo de la vista previa o la deja al alejarse;
+  al soltar, el toque de colocar/mover (también si vuelve a su mismo sitio).
+- Si no cabe, no hay vista previa y al soltarla cerca la barra **tiembla**
+  con háptica de error. Colocar, mover y quitar dan un toque suave; al
+  llenarse, háptica de éxito. La barra **no** se pinta de verde al llenarse
+  (pedido del usuario). Nada crece ni rebota.
 
 ## Sonido
 
