@@ -22,7 +22,8 @@ export type PushButtonVariant = 'solid' | 'selectable';
  * los roles semánticos que necesitan los ejercicios (acierto, error, aviso) y
  * el celeste secundario. El tono NO cambia la forma del botón, solo su color.
  */
-export type PushButtonTone = 'brand' | 'secondary' | 'success' | 'danger' | 'warning' | 'accent';
+export type PushButtonTone =
+  'brand' | 'secondary' | 'success' | 'danger' | 'warning' | 'accent' | 'accentAlt';
 
 /** Colores que aporta cada tono, resueltos desde el tema activo. */
 export interface ToneColors {
@@ -371,6 +372,13 @@ const TONES: Record<PushButtonTone, (colors: ThemeColors) => ToneColors> = {
     lip: colors.accentShadow,
     tint: colors.accentTint,
     text: colors.accentText,
+    onFace: colors.textOnBrand,
+  }),
+  accentAlt: (colors) => ({
+    face: colors.accentAlt,
+    lip: colors.accentAltShadow,
+    tint: colors.accentAltTint,
+    text: colors.accentAltText,
     onFace: colors.textOnBrand,
   }),
   warning: (colors) => ({

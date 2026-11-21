@@ -83,6 +83,12 @@ export interface ThemeColors {
   accentTint: string;
   accentText: string;
 
+  /** Acento alternativo (turquesa). Otro color más para las etapas de la ruta. */
+  accentAlt: string;
+  accentAltShadow: string;
+  accentAltTint: string;
+  accentAltText: string;
+
   /** Aviso (amarillo). Dificultad intermedia. */
   warning: string;
   warningShadow: string;
@@ -207,6 +213,11 @@ export const lightColors: ThemeColors = {
   accentTint: palette.pinkTintLight,
   accentText: palette.pinkTextLight,
 
+  accentAlt: palette.teal,
+  accentAltShadow: palette.tealShadow,
+  accentAltTint: palette.tealTintLight,
+  accentAltText: palette.tealTextLight,
+
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,
   warningTint: palette.yellowTintLight,
@@ -304,6 +315,11 @@ export const darkColors: ThemeColors = {
   accentShadow: palette.pinkShadow,
   accentTint: palette.pinkTintDark,
   accentText: palette.pinkTextDark,
+
+  accentAlt: palette.teal,
+  accentAltShadow: palette.tealShadow,
+  accentAltTint: palette.tealTintDark,
+  accentAltText: palette.tealTextDark,
 
   warning: palette.yellow,
   warningShadow: palette.yellowShadow,

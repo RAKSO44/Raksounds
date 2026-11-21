@@ -82,6 +82,15 @@ export const palette = {
   pinkTintDark: '#3D2537',
   pinkTextDark: '#F5A3DC',
 
+  // Turquesa: color de una etapa de la ruta, lejos del verde, del azul y del
+  // dorado del progreso.
+  teal: '#00CD9C',
+  tealShadow: '#00A37C',
+  tealTintLight: '#E6FAF5',
+  tealTextLight: '#00936F',
+  tealTintDark: '#183A33',
+  tealTextDark: '#5EE6C5',
+
   /** Fondo del panel de "perfecto": velo del morado de marca. */
   purplePanel: '#F0E2FD',
 
