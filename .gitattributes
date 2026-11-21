@@ -1,0 +1,4 @@
+# Finales de línea LF en el repo y en la copia de trabajo, como los guarda Prettier.
+# Sin esto, core.autocrlf=true de Git para Windows marca como modificados
+# archivos idénticos cada vez que Prettier los reformatea.
+* text=auto eol=lf
