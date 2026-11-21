@@ -2,6 +2,9 @@ import { ComponentType } from 'react';
 
 import { ModuleId } from '@/domain/lessons';
 
+import { FiguresListPage } from './FiguresListPage';
+import { FiguresPlayPage } from './FiguresPlayPage';
+import { FiguresWhatPage } from './FiguresWhatPage';
 import { NotesOctavePage } from './NotesOctavePage';
 import { NotesOrderPage } from './NotesOrderPage';
 import { NotesWhatPage } from './NotesWhatPage';
@@ -15,4 +18,5 @@ import { TempoWhatPage } from './TempoWhatPage';
 export const THEORY_PAGES: Record<ModuleId, readonly ComponentType[]> = {
   notes: [NotesWhatPage, NotesOrderPage, NotesOctavePage],
   pulse: [PulseWhatPage, TempoWhatPage],
+  figures: [FiguresWhatPage, FiguresListPage, FiguresPlayPage],
 };

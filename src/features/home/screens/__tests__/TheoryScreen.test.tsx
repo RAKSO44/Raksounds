@@ -109,6 +109,7 @@ describe('TheoryScreen (Módulo 1)', () => {
     for (const [module, total] of [
       ['notes', 3],
       ['pulse', 2],
+      ['figures', 3],
     ] as const) {
       mockParams = { module };
       const { unmount } = await renderScreen();
@@ -185,5 +186,103 @@ describe('TheoryScreen (Módulo 2)', () => {
     // El check de la última hoja da la teoría por leída.
     await user.press(screen.getByLabelText('Terminar teoría'));
     expect(useLessonProgressStore.getState().modules.pulse?.theoryCompleted).toBe(true);
+  });
+});
+
+describe('TheoryScreen (Módulo 3)', () => {
+  beforeEach(() => {
+    mockParams = { module: 'figures' };
+  });
+
+  const placed = (name: string) =>
+    screen.queryAllByLabelText(`${name}. Mantenla presionada para quitarla`);
+
+  it('la hoja 1 compara dos figuras que suenan al tocarlas y revela la referencia', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+
+    expect(screen.getByText('¿Qué son?')).toBeTruthy();
+    expect(screen.getByLabelText('4 manzanas')).toBeTruthy();
+    await user.press(screen.getByLabelText('Escuchar blanca'));
+    await act(() => jest.advanceTimersByTimeAsync(10));
+    expect(mockNoteOn).toHaveBeenCalledWith(60);
+
+    await user.press(screen.getByText('duración de los sonidos'));
+    expect(screen.getByText('Tiempo que permanece sonando una nota')).toBeTruthy();
+
+    // La respuesta a "¿respecto a qué cuentan?" se revela con el corazón.
+    expect(screen.queryByText(/^¡Exacto!/)).toBeNull();
+    await user.press(screen.getByLabelText('Ver la respuesta'));
+    expect(screen.getByText(/^¡Exacto!/)).toBeTruthy();
+  });
+
+  it('la hoja 2 selecciona una figura para ver su detalle y "referencia" lleva al pulso', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await user.press(screen.getByLabelText('Página siguiente'));
+
+    for (const name of ['Redonda', 'Blanca', 'Negra', 'Corchea', 'Semicorchea']) {
+      expect(screen.getByText(name)).toBeTruthy();
+    }
+    for (const value of ['1 unidad', '1/2 unidad', '1/4 unidad', '1/8 unidad', '1/16 unidad']) {
+      expect(screen.getByText(value)).toBeTruthy();
+    }
+    expect(screen.getByText('Selecciona una figura musical para ver su detalle')).toBeTruthy();
+
+    // En la tabla las figuras no suenan: se seleccionan.
+    mockNoteOn.mockClear();
+    await user.press(screen.getByLabelText('Ver corchea'));
+    await act(() => jest.advanceTimersByTimeAsync(10));
+    expect(mockNoteOn).not.toHaveBeenCalled();
+    expect(screen.getByLabelText('Ver corchea').props.accessibilityState).toEqual({
+      selected: true,
+    });
+    expect(screen.queryByText('Selecciona una figura musical para ver su detalle')).toBeNull();
+    expect(screen.getByLabelText('2 corcheas unidas')).toBeTruthy();
+
+    await user.press(screen.getByLabelText('Ver semicorchea'));
+    expect(screen.getByLabelText('2 semicorcheas unidas')).toBeTruthy();
+    expect(screen.queryByLabelText('2 corcheas unidas')).toBeNull();
+
+    // Tocar otra vez la elegida la deselecciona y vuelve el mensaje.
+    await user.press(screen.getByLabelText('Ver semicorchea'));
+    expect(screen.getByText('Selecciona una figura musical para ver su detalle')).toBeTruthy();
+
+    await user.press(screen.getByRole('button', { name: 'referencia' }));
+    expect(screen.getByText(/¡Esa referencia es el pulso!/)).toBeTruthy();
+  });
+
+  it('la barra se llena con figuras, no deja sobrepasarla y se vacía manteniéndolas', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await user.press(screen.getByLabelText('Página siguiente'));
+    await user.press(screen.getByLabelText('Página siguiente'));
+    expect(screen.getByText('¡Experimenta un poco!')).toBeTruthy();
+
+    // Tocar una figura de abajo la pone al final; no se acaban.
+    await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));
+    await user.press(screen.getByLabelText('Negra. Toca para ponerla en la barra'));
+    await user.press(screen.getByLabelText('Negra. Toca para ponerla en la barra'));
+    expect(placed('Blanca')).toHaveLength(1);
+    expect(placed('Negra')).toHaveLength(2);
+
+    // Ya está llena: nada más cabe.
+    await user.press(screen.getByLabelText('Semicorchea. Toca para ponerla en la barra'));
+    expect(placed('Semicorchea')).toHaveLength(0);
+
+    // Quitar una negra deja sitio para dos corcheas, y la tercera ya no entra.
+    await act(() =>
+      placed('Negra')[0].props.onAccessibilityAction({ nativeEvent: { actionName: 'delete' } }),
+    );
+    expect(placed('Negra')).toHaveLength(1);
+    for (let i = 0; i < 3; i += 1) {
+      await user.press(screen.getByLabelText('Corchea. Toca para ponerla en la barra'));
+    }
+    expect(placed('Corchea')).toHaveLength(2);
+
+    await user.press(screen.getByLabelText('Terminar teoría'));
+    expect(useLessonProgressStore.getState().modules.figures?.theoryCompleted).toBe(true);
   });
 });

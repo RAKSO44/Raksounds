@@ -15,7 +15,15 @@ export function generatePractice(id: ModuleId, seed: number): LessonExercise[] {
       return generateModule1Practice(random);
     case 'pulse':
       return generateModule2Practice(random);
+    case 'figures':
+      // La práctica del Módulo 3 aún no está diseñada: solo existe su teoría.
+      return [];
   }
+}
+
+/** ¿El módulo ya tiene ejercicios? Sin ellos, su entrada de práctica avisa "Próximamente". */
+export function hasPractice(id: ModuleId): boolean {
+  return practiceLength(id) > 0;
 }
 
 /**

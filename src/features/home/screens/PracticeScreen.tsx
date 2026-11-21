@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { moduleById, ModuleId } from '@/domain/lessons';
+import { hasPractice, moduleById, ModuleId } from '@/domain/lessons';
 import {
   AnswerFeedbackSheet,
   BottomActionBar,
@@ -43,7 +43,8 @@ export function PracticeScreen() {
   const module = moduleById(params.module);
   const retry = useMemo(() => parsePositions(params.retry), [params.retry]);
 
-  if (module === undefined) {
+  // Enlace viejo o a un módulo que aún solo tiene teoría: solo queda volver.
+  if (module === undefined || !hasPractice(module.id)) {
     return <Header title="Práctica" onBack={() => router.back()} />;
   }
   return (

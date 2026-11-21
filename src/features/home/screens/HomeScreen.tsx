@@ -3,7 +3,7 @@ import { LayoutChangeEvent, StyleSheet, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { useFocusEffect, useRouter } from 'expo-router';
 
-import { ModuleId, PathModule, progressOf, STAGES } from '@/domain/lessons';
+import { hasPractice, ModuleId, PathModule, progressOf, STAGES } from '@/domain/lessons';
 import { ConfirmDialog, Header } from '@/shared/design-system';
 import { useHardwareBack, useSettingsAction } from '@/shared/navigation';
 import { controls, spacing, useTheme } from '@/shared/theme';
@@ -34,7 +34,10 @@ export function HomeScreen() {
   const settings = useSettingsAction();
   const progress = useLessonProgressStore((state) => state.modules);
   const [openNumber, setOpenNumber] = useState<number | null>(null);
-  const [soon, setSoon] = useState<PathModule | null>(null);
+  // Lo que aún no existe: un módulo entero o solo sus ejercicios.
+  const [soon, setSoon] = useState<{ module: PathModule; part: 'module' | 'practice' } | null>(
+    null,
+  );
   const [visible, setVisible] = useState(true);
   // El alto de la tarjeta cambia con la etapa (un título de 2 líneas, otro de
   // 1). Si el relleno de la ruta o la línea que decide la etapa actual lo
@@ -102,14 +105,21 @@ export function HomeScreen() {
   const toggle = useCallback((module: PathModule, stageIndex: number) => {
     useStageSelectionStore.getState().touch(stageIndex);
     if (module.lessonId === null) {
-      setSoon(module);
+      setSoon({ module, part: 'module' });
       return;
     }
     setOpenNumber((now) => (now === module.number ? null : module.number));
   }, []);
 
   const openLesson = useCallback(
-    (pathname: LessonPath, id: ModuleId) => router.push({ pathname, params: { module: id } }),
+    (pathname: LessonPath, id: ModuleId) => {
+      if (pathname === '/lesson/practice' && !hasPractice(id)) {
+        const module = STAGES.flatMap((stage) => stage.modules).find((m) => m.lessonId === id);
+        if (module !== undefined) setSoon({ module, part: 'practice' });
+        return;
+      }
+      router.push({ pathname, params: { module: id } });
+    },
     [router],
   );
 
@@ -136,6 +146,8 @@ export function HomeScreen() {
           ref={scrollRef}
           onScroll={onScroll}
           scrollEventThrottle={16}
+          // Se desplaza igual; solo no se ve la barra de desplazamiento.
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingTop: bannerHeight, paddingBottom: spacing.xl }}
         >
           {STAGES.map((stage, index) => (
@@ -184,7 +196,9 @@ export function HomeScreen() {
         message={
           soon === null
             ? ''
-            : `El módulo ${soon.number}, «${soon.title}», estará disponible muy pronto.`
+            : soon.part === 'module'
+              ? `El módulo ${soon.module.number}, «${soon.module.title}», estará disponible muy pronto.`
+              : `Los ejercicios del módulo ${soon.module.number}, «${soon.module.title}», estarán disponibles muy pronto.`
         }
         confirmLabel="Entendido"
         confirmTone="brand"

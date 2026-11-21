@@ -1,7 +1,7 @@
 import { clipEventTimes, Clip } from '../clip';
 import { LessonExercise, stimulusClips } from '../exercise';
 import { TAPS_PER_EXERCISE } from '../module2Practice';
-import { generatePractice, practiceLength } from '../practice';
+import { generatePractice, hasPractice, practiceLength } from '../practice';
 import { isRegular } from '../tempo';
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
@@ -290,5 +290,14 @@ describe('práctica del Módulo 2 (pulso)', () => {
     const fast = at(1, 5);
     if (slow.mechanic !== 'tap' || fast.mechanic !== 'tap') throw new Error();
     expect(fast.bpm).toBeGreaterThan(slow.bpm);
+  });
+});
+
+describe('módulos sin práctica todavía', () => {
+  it('el Módulo 3 solo tiene teoría: su práctica está vacía', () => {
+    expect(generatePractice('figures', 1)).toEqual([]);
+    expect(hasPractice('figures')).toBe(false);
+    expect(hasPractice('notes')).toBe(true);
+    expect(hasPractice('pulse')).toBe(true);
   });
 });

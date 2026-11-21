@@ -6,7 +6,7 @@
  */
 
 /** Módulos con lección construida. */
-export type ModuleId = 'notes' | 'pulse';
+export type ModuleId = 'notes' | 'pulse' | 'figures';
 
 /** Un módulo con lección: teoría y práctica. */
 export interface LessonModule {
@@ -35,12 +35,13 @@ export interface Stage {
 export const LESSON_MODULES: readonly LessonModule[] = [
   { id: 'notes', number: 1, title: 'Las notas musicales' },
   { id: 'pulse', number: 2, title: 'Pulso y tempo' },
+  { id: 'figures', number: 3, title: 'Figuras musicales' },
 ];
 
 export const STAGES: readonly Stage[] = [
   {
     number: 1,
-    title: 'Primeros pasos',
+    title: 'Introducción',
     modules: [
       {
         number: 1,
@@ -73,7 +74,7 @@ export const STAGES: readonly Stage[] = [
           'Corchea y semicorchea',
           'Relación entre las duraciones',
         ],
-        lessonId: null,
+        lessonId: 'figures',
       },
       {
         number: 4,

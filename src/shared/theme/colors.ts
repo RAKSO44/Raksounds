@@ -54,6 +54,12 @@ export interface ThemeColors {
 
   /** Corazón del pulso (teoría del Módulo 2): sus "BUM" y su línea. */
   heart: string;
+  /** Manzanas que cuentan cantidades (teoría del Módulo 3): cuerpo, labio, hoja, rabo y brillo. */
+  apple: string;
+  appleShadow: string;
+  appleLeaf: string;
+  appleStem: string;
+  appleShine: string;
 
   /** Acento (rosa). Un color más para distinguir las etapas de la ruta. */
   accent: string;
@@ -159,6 +165,11 @@ export const lightColors: ThemeColors = {
   successText: palette.greenTextLight,
 
   heart: palette.red,
+  apple: palette.red,
+  appleShadow: palette.redShadow,
+  appleLeaf: palette.green,
+  appleStem: palette.walnut,
+  appleShine: palette.shine,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintLight,
@@ -241,6 +252,11 @@ export const darkColors: ThemeColors = {
   successText: palette.greenTextDark,
 
   heart: palette.red,
+  apple: palette.red,
+  appleShadow: palette.redShadow,
+  appleLeaf: palette.green,
+  appleStem: palette.walnut,
+  appleShine: palette.shine,
   danger: palette.red,
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,

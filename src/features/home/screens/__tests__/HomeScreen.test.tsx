@@ -45,12 +45,13 @@ const MODULE_1 = /^Módulo 1: Las notas musicales/;
 describe('HomeScreen', () => {
   it('muestra las etapas 1 a 4 con todos sus módulos, sin bloqueos', async () => {
     await renderScreen();
-    expect(screen.getByLabelText(/^Etapa 1: Primeros pasos/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Etapa 1: Introducción/)).toBeTruthy();
     expect(screen.getByLabelText('Etapa 2: Ritmo')).toBeTruthy();
     expect(screen.getByLabelText('Etapa 3: Notas y distancias')).toBeTruthy();
     expect(screen.getByLabelText('Etapa 4: Escalas, intervalos y tonalidades')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 1: Las notas musicales. Sin empezar')).toBeTruthy();
     expect(screen.getByLabelText('Módulo 2: Pulso y tempo. Sin empezar')).toBeTruthy();
+    expect(screen.getByLabelText('Módulo 3: Figuras musicales. Sin empezar')).toBeTruthy();
     expect(
       screen.getByLabelText('Módulo 6: Lectura de charts rítmicos. Próximamente'),
     ).toBeTruthy();
@@ -114,9 +115,30 @@ describe('HomeScreen', () => {
   it('un módulo sin lección avisa de que llega pronto', async () => {
     const user = userEvent.setup();
     await renderScreen();
-    await user.press(screen.getByLabelText(/^Módulo 3: Figuras musicales/));
+    await user.press(screen.getByLabelText(/^Módulo 4: Silencios y prolongaciones/));
     expect(screen.getByText('Próximamente')).toBeTruthy();
     expect(mockPush).not.toHaveBeenCalled();
+    await user.press(screen.getByText('Entendido'));
+  });
+
+  it('el módulo 3 abre su teoría, pero sus ejercicios avisan de que llegan pronto', async () => {
+    const user = userEvent.setup();
+    await renderScreen();
+    await user.press(screen.getByLabelText(/^Módulo 3: Figuras musicales/));
+
+    await user.press(screen.getByLabelText('Teoría'));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/lesson/theory',
+      params: { module: 'figures' },
+    });
+
+    await user.press(screen.getByLabelText('Ejercicios'));
+    expect(mockPush).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByText(
+        'Los ejercicios del módulo 3, «Figuras musicales», estarán disponibles muy pronto.',
+      ),
+    ).toBeTruthy();
     await user.press(screen.getByText('Entendido'));
   });
 

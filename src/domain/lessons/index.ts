@@ -1,5 +1,6 @@
 export * from './clip';
 export * from './exercise';
+export * from './figureTheory';
 export * from './module1Practice';
 export * from './module2Practice';
 export * from './noteNames';

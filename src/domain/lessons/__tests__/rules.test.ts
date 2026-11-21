@@ -1,4 +1,6 @@
 import { RandomSource } from '../../ear-training';
+import { figureById } from '../../rhythm';
+import { FIGURE_DEMO_BPM, FIGURE_DEMO_MIDI, figureClip } from '../figureTheory';
 import { firstSequenceError, isAnswerCorrect } from '../exercise';
 import { generatePractice, generateRetry } from '../practice';
 import {
@@ -28,6 +30,7 @@ import {
   irregularOnsets,
   isAccent,
   isRegular,
+  PULSE_DEMO_BPM,
   metronomeWeightPosition,
   regularOnsets,
   tempoMarking,
@@ -268,7 +271,7 @@ describe('etapas de la ruta', () => {
     ]);
   });
 
-  it('solo los módulos 1 y 2 tienen lección, y coinciden con su LessonModule', () => {
+  it('solo los módulos 1, 2 y 3 tienen lección, y coinciden con su LessonModule', () => {
     const withLesson = STAGES.flatMap((stage) => stage.modules).filter((m) => m.lessonId);
     expect(withLesson.map((m) => m.lessonId)).toEqual(LESSON_MODULES.map((m) => m.id));
     for (const pathModule of withLesson) {
@@ -300,5 +303,16 @@ describe('pesa del metrónomo', () => {
     expect(metronomeWeightPosition(120)).toBeGreaterThan(metronomeWeightPosition(60));
     expect(metronomeWeightPosition(20)).toBe(0);
     expect(metronomeWeightPosition(300)).toBe(1);
+  });
+});
+
+describe('sonido de las figuras (Módulo 3)', () => {
+  it('cada figura suena una sola nota que dura su parte del pulso', () => {
+    const quarter = figureClip(figureById('quarter'));
+    const half = figureClip(figureById('half'));
+    if (quarter.kind !== 'notes' || half.kind !== 'notes') throw new Error('clip de notas');
+    expect(quarter.notes).toEqual([{ midi: FIGURE_DEMO_MIDI, atMs: 0, durationMs: 750 }]);
+    expect(half.notes[0].durationMs).toBe(quarter.notes[0].durationMs * 2);
+    expect(FIGURE_DEMO_BPM).toBe(PULSE_DEMO_BPM);
   });
 });

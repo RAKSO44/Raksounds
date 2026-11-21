@@ -44,6 +44,8 @@ interface PulseHeartProps {
   beat: HeardBeat;
   disabled?: boolean;
   onToggle: () => void;
+  /** Lo que hace el toque, si no es arrancar o detener el pulso. */
+  accessibilityLabel?: string;
 }
 
 /**
@@ -55,7 +57,13 @@ interface PulseHeartProps {
  * Módulo 2): un latido sin muelle ni rebote, subida rápida y vuelta con curva
  * de salida.
  */
-export function PulseHeart({ running, beat, disabled = false, onToggle }: PulseHeartProps) {
+export function PulseHeart({
+  running,
+  beat,
+  disabled = false,
+  onToggle,
+  accessibilityLabel,
+}: PulseHeartProps) {
   const { colors } = useTheme();
   const scale = useSharedValue(1);
   const [bums, setBums] = useState<readonly Bum[]>([]);
@@ -106,7 +114,9 @@ export function PulseHeart({ running, beat, disabled = false, onToggle }: PulseH
         <Animated.View
           accessible
           accessibilityRole="button"
-          accessibilityLabel={running ? 'Detener el pulso' : 'Escuchar el pulso'}
+          accessibilityLabel={
+            accessibilityLabel ?? (running ? 'Detener el pulso' : 'Escuchar el pulso')
+          }
           accessibilityState={{ disabled }}
           style={heartStyle}
         >

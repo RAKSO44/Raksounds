@@ -2,15 +2,19 @@ import { StyleSheet, Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import { PULSE_DEMO_BPM } from '@/domain/lessons';
-import { controls, spacing, typography, useTheme } from '@/shared/theme';
+import { spacing, typography, useTheme } from '@/shared/theme';
 
 import { usePulseLoop } from '../../hooks/usePulseLoop';
 import { PulseHeart } from '../PulseHeart';
 import { PulseTrace } from '../PulseTrace';
 import { CONSTANT_TIP } from './definitions';
 import { RichText, TheoryHeading } from './RichText';
+import { ChecklistItem, TheoryChecklist } from './TheoryChecklist';
 
-const NOTES = ['La distancia entre pulsos es igual.', 'Algunos pulsos son más fuertes que otros.'];
+const NOTES: readonly ChecklistItem[] = [
+  { segments: ['La distancia entre pulsos es igual.'] },
+  { segments: ['Algunos pulsos son más fuertes que otros.'] },
+];
 
 /** Módulo 2 · Página 1: qué es el pulso, con un corazón que late. */
 export function PulseWhatPage() {
@@ -50,18 +54,7 @@ export function PulseWhatPage() {
       </View>
 
       <RichText segments={['Nota que:']} />
-      <View style={styles.notes}>
-        {NOTES.map((note) => (
-          <View key={note} style={styles.note}>
-            <MaterialCommunityIcons
-              name="check-bold"
-              size={controls.theoryCheckIconSize}
-              color={colors.successText}
-            />
-            <Text style={[styles.noteText, { color: colors.textPrimary }]}>{note}</Text>
-          </View>
-        ))}
-      </View>
+      <TheoryChecklist items={NOTES} />
     </View>
   );
 }
@@ -83,18 +76,5 @@ const styles = StyleSheet.create({
   hint: {
     ...typography.chip,
     flexShrink: 0,
-  },
-  notes: {
-    gap: spacing.sm,
-    paddingLeft: spacing.sm,
-  },
-  note: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  noteText: {
-    ...typography.body,
-    flexShrink: 1,
   },
 });

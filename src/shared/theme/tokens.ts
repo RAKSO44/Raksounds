@@ -142,6 +142,40 @@ export const controls = {
   /** Radio de los extremos del canal que dan al tirador (los de fuera son píldora). */
   sliderInnerRadius: 4,
   sliderStopSize: 6,
+  /**
+   * Figuras musicales (Módulo 3): píxeles por espacio de pentagrama, la unidad
+   * con la que se dibujan (la cabeza mide un espacio de alto). Grande para las
+   * dos figuras de la primera hoja, mediano en la tabla y la paleta, chico en
+   * la barra (donde una semicorchea solo tiene 1/16 del ancho) y en línea con
+   * el texto.
+   */
+  figureSpaceHero: 14,
+  figureSpaceTile: 9,
+  figureSpaceBar: 8,
+  figureSpaceInline: 7,
+  /** Manzanas que representan una cantidad ("4 manzanas") en la teoría de figuras. */
+  appleIconSize: 28,
+  /**
+   * Línea de duración de la teoría de figuras: alto de la fila, grosor de la
+   * línea, alto de sus topes y ancho del cursor rojo que la recorre mientras
+   * suena la figura (como el oxímetro del pulso).
+   */
+  durationLineHeight: 32,
+  durationLineStroke: 2,
+  durationLineTickHeight: 16,
+  durationCursorWidth: 4,
+  /** Corazón que se toca para revelar la respuesta ("¡Exacto! El pulso…"). */
+  revealHeartDiameter: 64,
+  /** Barra rítmica: alto total, grosor de la línea y alto de sus topes. */
+  rhythmBarHeight: 64,
+  rhythmBarStroke: 2,
+  rhythmBarTickHeight: 32,
+  /** Hueco entre los recuadros de dos figuras colocadas en la barra. */
+  rhythmBarBoxInset: 1.5,
+  /** Opacidad de una figura colocada mientras se arrastra (su sitio sigue a la vista). */
+  dragSourceOpacity: 0.3,
+  /** Lo que se mantiene pulsada una figura de la barra para quitarla (ms). */
+  removeHoldMs: 450,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
@@ -189,6 +223,8 @@ export const motion = {
   scoreTick: 140,
   /** Cambio de color de la tarjeta de etapa al pasar a otra etapa. */
   stageColor: 220,
+  /** Las figuras de la barra se corren a su nuevo sitio (insertar, quitar, intercambiar). */
+  figureShift: 200,
 } as const;
 
 /**
