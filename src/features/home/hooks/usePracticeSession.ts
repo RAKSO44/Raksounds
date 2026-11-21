@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
   generatePractice,
@@ -73,13 +73,25 @@ export function usePracticeSession(
     [phase],
   );
 
+  // El último ejercicio ya calificado: un segundo "Comprobar" no suena ni cuenta otra vez.
+  const checked = useRef(-1);
+
   const confirm = useCallback(() => {
     if (exercise === null || answer === null || phase !== 'answering') return;
+    if (checked.current === index) return;
+    checked.current = index;
     const correct = isAnswerCorrect(exercise, answer);
-    setResults((previous) => [...previous, correct]);
+    // Cada resultado va en SU posición: un doble toque en "Comprobar" (dos
+    // llamadas en el mismo fotograma, antes de que cambie la fase) añadía
+    // dos y desde ahí cada ejercicio mostraba el veredicto de otro.
+    setResults((previous) => {
+      const next = [...previous];
+      next[index] = correct;
+      return next;
+    });
     setPhase('revealed');
     playEffect(correct ? 'success' : 'error');
-  }, [exercise, answer, phase, playEffect]);
+  }, [exercise, answer, phase, index, playEffect]);
 
   const advance = useCallback(() => {
     if (phase !== 'revealed') return;
