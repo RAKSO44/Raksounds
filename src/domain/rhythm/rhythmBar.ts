@@ -14,6 +14,8 @@ import { figureById, FigureId } from './figures';
 export interface PlacedFigure {
   readonly key: number;
   readonly figure: FigureId;
+  /** Venía puesta (la barra de un ejercicio a completar): no se quita ni se mueve. */
+  readonly locked?: boolean;
 }
 
 export interface RhythmBar {
@@ -26,12 +28,21 @@ export interface RhythmBar {
 export interface FigureSpan {
   readonly key: number;
   readonly figure: FigureId;
+  readonly locked: boolean;
   readonly start: number;
   readonly units: number;
 }
 
 export function emptyBar(capacity: number): RhythmBar {
   return { capacity, figures: [] };
+}
+
+/** Una barra que ya trae figuras fijas (no se pueden quitar ni mover). */
+export function lockedBar(capacity: number, figures: readonly FigureId[]): RhythmBar {
+  return {
+    capacity,
+    figures: figures.map((figure, index) => ({ key: index + 1, figure, locked: true })),
+  };
 }
 
 /** Semicorcheas ocupadas. */
@@ -56,7 +67,13 @@ export function figureSpans(bar: RhythmBar): FigureSpan[] {
   let start = 0;
   return bar.figures.map((placed) => {
     const units = figureById(placed.figure).units;
-    const span = { key: placed.key, figure: placed.figure, start, units };
+    const span = {
+      key: placed.key,
+      figure: placed.figure,
+      locked: placed.locked === true,
+      start,
+      units,
+    };
     start += units;
     return span;
   });
@@ -81,14 +98,18 @@ export function insertFigure(bar: RhythmBar, figure: FigureId, index: number): R
   };
 }
 
+/** Quita una figura; una fija no se quita. */
 export function removeFigure(bar: RhythmBar, key: number): RhythmBar {
-  return { ...bar, figures: bar.figures.filter((placed) => placed.key !== key) };
+  return {
+    ...bar,
+    figures: bar.figures.filter((placed) => placed.key !== key || placed.locked === true),
+  };
 }
 
 /** Lleva una figura colocada a otra posición (contada sin ella). */
 export function moveFigure(bar: RhythmBar, key: number, index: number): RhythmBar {
   const moving = bar.figures.find((placed) => placed.key === key);
-  if (moving === undefined) return bar;
+  if (moving === undefined || moving.locked === true) return bar;
   const rest = bar.figures.filter((placed) => placed.key !== key);
   const at = Math.max(0, Math.min(index, rest.length));
   return { ...bar, figures: [...rest.slice(0, at), moving, ...rest.slice(at)] };

@@ -37,6 +37,8 @@ interface RichTextProps {
   segments: readonly Segment[];
   /** Párrafo en negrita (cierres como "¡Asegúrate de recordarlas!"). */
   strong?: boolean;
+  /** Centrado (el enunciado de un ejercicio). */
+  centered?: boolean;
 }
 
 /**
@@ -45,12 +47,12 @@ interface RichTextProps {
  * medirla para apuntarle con la definición, cosas que un `Text` anidado no
  * puede hacer.
  */
-export function RichText({ segments, strong = false }: RichTextProps) {
+export function RichText({ segments, strong = false, centered = false }: RichTextProps) {
   const { colors } = useTheme();
   const base = [styles.text, strong && styles.strong, { color: colors.textPrimary }];
 
   return (
-    <View style={styles.paragraph}>
+    <View style={[styles.paragraph, centered && styles.centered]}>
       {groupSegments(segments).map((group, index) =>
         Array.isArray(group) ? (
           <InlineFigures key={index} figures={group} />
@@ -201,6 +203,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     alignItems: 'center',
+  },
+  centered: {
+    justifyContent: 'center',
   },
   text: {
     ...typography.body,

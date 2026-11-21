@@ -3,9 +3,12 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 
+import { FigureId } from '@/domain/rhythm';
 import { PRESS_SLOP, PushButtonTone, resolveTone } from '@/shared/design-system';
 import { hapticPressIn } from '@/shared/haptics';
 import { controls, elevation, radii, spacing, typography, useTheme } from '@/shared/theme';
+
+import { FramedFigureGlyph } from './notation/FigureGlyph';
 
 /** Lo que hay que mover el dedo para que tocar pase a ser arrastrar. */
 const DRAG_START = 6;
@@ -18,6 +21,11 @@ export interface TileDrag {
 
 interface NoteTileProps {
   label: string;
+  /**
+   * La ficha es una figura musical: se dibuja en vez del texto (que queda
+   * para el lector de pantalla) y es más angosta, para que quepan las cinco.
+   */
+  figure?: FigureId;
   tone?: PushButtonTone;
   /** Pintada del color del tono (la ficha "encendida"). */
   selected?: boolean;
@@ -43,6 +51,7 @@ interface NoteTileProps {
  */
 export function NoteTile({
   label,
+  figure,
   tone = 'secondary',
   selected = false,
   disabled = false,
@@ -129,13 +138,17 @@ export function NoteTile({
           onPressIn?.();
           onPress?.();
         }}
-        style={[styles.container, containerStyle]}
+        style={[styles.container, figure !== undefined && styles.narrow, containerStyle]}
       >
         <View style={[styles.lip, { backgroundColor: lip }]} />
         <Animated.View
           style={[styles.face, { backgroundColor: face, borderColor: border }, faceStyle]}
         >
-          <Text style={[styles.label, { color: text }]}>{label}</Text>
+          {figure === undefined ? (
+            <Text style={[styles.label, { color: text }]}>{label}</Text>
+          ) : (
+            <FramedFigureGlyph figure={figure} space={controls.figureSpaceTile} color={text} />
+          )}
         </Animated.View>
       </Animated.View>
     </GestureDetector>
@@ -145,6 +158,9 @@ export function NoteTile({
 const styles = StyleSheet.create({
   container: {
     minWidth: controls.noteCellSize,
+  },
+  narrow: {
+    minWidth: controls.figureCellWidth,
   },
   lip: {
     position: 'absolute',
@@ -175,9 +191,12 @@ const styles = StyleSheet.create({
  */
 export function TileSlot({
   label,
+  narrow = false,
   accessibilityLabel,
 }: {
   label?: string;
+  /** Del ancho de una ficha de figura. */
+  narrow?: boolean;
   accessibilityLabel: string;
 }) {
   const { colors } = useTheme();
@@ -187,6 +206,7 @@ export function TileSlot({
       style={[
         styles.face,
         slotStyles.slot,
+        narrow && styles.narrow,
         {
           borderColor: label === undefined ? colors.border : colors.secondary,
           backgroundColor: label === undefined ? 'transparent' : colors.secondaryTint,

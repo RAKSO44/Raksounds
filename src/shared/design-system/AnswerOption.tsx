@@ -1,4 +1,4 @@
-import { ComponentProps, useEffect } from 'react';
+import { ComponentProps, ReactNode, useEffect } from 'react';
 import { StyleProp, StyleSheet, TextStyle } from 'react-native';
 import Animated, {
   FadeInDown,
@@ -64,6 +64,8 @@ interface AnswerOptionProps {
   label?: string;
   sublabel?: string;
   icon?: IconName;
+  /** Dibujo en vez de texto (una figura musical), del color que tendría el texto. */
+  glyph?: (color: string) => ReactNode;
   /** Tamaño del texto de la cara (el color lo fija el propio botón). */
   labelStyle?: StyleProp<TextStyle>;
   state: AnswerOptionState;
@@ -89,6 +91,7 @@ export function AnswerOption({
   label,
   sublabel,
   icon,
+  glyph,
   labelStyle,
   state,
   index,
@@ -130,6 +133,7 @@ export function AnswerOption({
           label={label}
           sublabel={sublabel}
           icon={icon}
+          glyph={glyph}
           labelStyle={labelStyle}
           fullWidth
           disabled={disabled}

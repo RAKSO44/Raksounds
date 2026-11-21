@@ -1,15 +1,21 @@
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { ChoiceExercise } from '@/domain/lessons';
+import { ChoiceExercise, LessonOption, notationFigures, rhythmClip } from '@/domain/lessons';
 import { AnswerOption, answerOptionState } from '@/shared/design-system';
-import { spacing, typography, useTheme } from '@/shared/theme';
+import { controls, spacing, typography, useTheme } from '@/shared/theme';
 
+import { NotationGlyph } from '../notation/NotationGlyph';
+import { ExercisePrompt } from './ExercisePrompt';
 import { StimulusView } from './StimulusView';
 import { ExerciseViewProps } from './types';
 
 /** Etiquetas de hasta este largo caben las tres en una fila. */
 const SHORT_LABEL = 4;
+
+/** Una opción que es UNA figura dibujada (caben varias en una fila). */
+const isSingleFigure = (option: LessonOption) =>
+  option.notation !== undefined && notationFigures(option.notation).length === 1;
 
 /**
  * Elegir una respuesta escrita. Las opciones se pueden elegir desde el
@@ -19,6 +25,10 @@ const SHORT_LABEL = 4;
  * Cuando hay que reconocer de oído una nota en la escala, la pregunta va
  * DEBAJO de la escala, junto a la pista de que las barras suenan: primero se
  * escucha, luego se pregunta.
+ *
+ * Una opción con figuras se dibuja en vez de escribirse y suena al tocarla
+ * (salvo `mutedOptions`, hasta corregir). Tras corregir sigue tocable, con
+ * los colores de la corrección, para escuchar cada una.
  */
 export function ChoiceExerciseView({
   exercise,
@@ -36,14 +46,40 @@ export function ChoiceExerciseView({
 
   const stimulus = exercise.stimulus;
   const byEar = stimulus?.kind === 'steps' && stimulus.listen !== null;
-  const inRow = exercise.options.every((option) => option.label.length <= SHORT_LABEL);
+  const notated = exercise.options.some((option) => option.notation !== undefined);
+  const inRow = notated
+    ? exercise.options.every(isSingleFigure)
+    : exercise.options.every((option) => option.label.length <= SHORT_LABEL);
+  const silent = exercise.mutedOptions === true && !revealed;
+
   const options = exercise.options.map((option, index) => {
-    const midi = option.midi;
+    const { midi, notation } = option;
+    const sound =
+      notation !== undefined
+        ? silent
+          ? undefined
+          : () => player.play(rhythmClip(notationFigures(notation)))
+        : midi === undefined
+          ? undefined
+          : () => player.playNote(midi);
     return (
       <AnswerOption
         key={option.id}
         index={index}
-        label={option.label}
+        label={notation === undefined ? option.label : undefined}
+        glyph={
+          notation === undefined
+            ? undefined
+            : (color) => (
+                <NotationGlyph
+                  notation={notation}
+                  space={inRow ? controls.figureSpaceOption : controls.figureSpaceRow}
+                  // En fila, las cabezas de las tres opciones se alinean; apiladas, cada una se centra en su botón.
+                  framed={inRow}
+                  color={color}
+                />
+              )
+        }
         labelStyle={inRow ? typography.note : undefined}
         state={answerOptionState({
           option: option.id,
@@ -51,17 +87,15 @@ export function ChoiceExerciseView({
           answer: exercise.answer,
           revealed,
         })}
-        disabled={revealed}
+        disabled={revealed && notation === undefined}
         accessibilityLabel={option.label}
-        onPressIn={midi === undefined ? undefined : () => player.playNote(midi)}
-        onPress={() => select(option.id)}
+        onPressIn={sound}
+        onPress={revealed ? undefined : () => select(option.id)}
       />
     );
   });
 
-  const prompt = (
-    <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
-  );
+  const prompt = <ExercisePrompt exercise={exercise} />;
 
   return (
     <View style={styles.container}>
@@ -103,10 +137,6 @@ export function ChoiceExerciseView({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
-  },
-  prompt: {
-    ...typography.question,
-    textAlign: 'center',
   },
   askBlock: {
     gap: spacing.xs,

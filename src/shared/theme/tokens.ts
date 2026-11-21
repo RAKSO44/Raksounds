@@ -152,6 +152,9 @@ export const controls = {
    * el texto.
    */
   figureSpaceHero: 14,
+  /** Figura sola como opción de respuesta, y figuras en fila dentro de una opción. */
+  figureSpaceOption: 12,
+  figureSpaceRow: 10,
   figureSpaceTile: 9,
   figureSpaceBar: 8,
   figureSpaceInline: 7,
@@ -191,6 +194,10 @@ export const controls = {
   dropExitSlop: 56,
   /** Lo que se mantiene pulsada una figura de la barra para quitarla (ms). */
   removeHoldMs: 450,
+  /** Ancho de una ficha de figura al ordenar: caben las cinco en una fila. */
+  figureCellWidth: 58,
+  /** Lado mínimo de la ficha grande de una figura (la que se pregunta). */
+  figureCardSize: 104,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */

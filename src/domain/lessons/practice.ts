@@ -1,6 +1,7 @@
 import { LessonExercise } from './exercise';
 import { generateModule1Practice } from './module1Practice';
 import { generateModule2Practice } from './module2Practice';
+import { generateModule3Practice } from './module3Practice';
 import { seededRandom } from './random';
 import { ModuleId } from './stages';
 
@@ -16,8 +17,7 @@ export function generatePractice(id: ModuleId, seed: number): LessonExercise[] {
     case 'pulse':
       return generateModule2Practice(random);
     case 'figures':
-      // La práctica del Módulo 3 aún no está diseñada: solo existe su teoría.
-      return [];
+      return generateModule3Practice(random);
   }
 }
 

@@ -16,10 +16,11 @@ interface RhythmBarViewProps {
   /** Ancho de la barra en píxeles: cada figura ocupa su parte de él. */
   width: number;
   /** La figura colocada que se está arrastrando lejos de la barra (se atenúa en su sitio). */
-  draggingKey: number | null;
+  draggingKey?: number | null;
   onPress: (span: FigureSpan) => void;
-  onRemove: (key: number) => void;
-  dragFor: (key: number) => FigureDrag;
+  /** Sin esto (y sin `dragFor`) la barra solo se mira y se escucha: ya se corrigió. */
+  onRemove?: (key: number) => void;
+  dragFor?: (key: number) => FigureDrag;
 }
 
 /**
@@ -31,7 +32,7 @@ interface RhythmBarViewProps {
 export function RhythmBarView({
   bar,
   width,
-  draggingKey,
+  draggingKey = null,
   onPress,
   onRemove,
   dragFor,
@@ -65,11 +66,15 @@ interface PlacedFigureProps {
   width: number;
   dimmed: boolean;
   onPress: (span: FigureSpan) => void;
-  onRemove: (key: number) => void;
-  dragFor: (key: number) => FigureDrag;
+  onRemove?: (key: number) => void;
+  dragFor?: (key: number) => FigureDrag;
 }
 
-/** Una figura colocada: tocarla suena, mantenerla la quita, arrastrarla la mueve. */
+/**
+ * Una figura colocada: tocarla suena, mantenerla la quita, arrastrarla la
+ * mueve. Una fija (venía puesta) no se arrastra; mantenerla avisa que no se
+ * quita.
+ */
 const PlacedFigure = memo(function PlacedFigure({
   span,
   width,
@@ -78,15 +83,19 @@ const PlacedFigure = memo(function PlacedFigure({
   onRemove,
   dragFor,
 }: PlacedFigureProps) {
-  const { key } = span;
-  const drag = useMemo(() => dragFor(key), [dragFor, key]);
+  const { key, locked } = span;
+  const drag = useMemo(
+    () => (locked || dragFor === undefined ? undefined : dragFor(key)),
+    [dragFor, key, locked],
+  );
   // Sin labio no hay cara que hundir: tocarla solo da la háptica.
   const { gesture } = useFigureGesture({
     onPress: () => onPress(span),
-    onLongPress: () => onRemove(key),
+    onLongPress: onRemove === undefined ? undefined : () => onRemove(key),
     drag,
   });
   const name = figureById(span.figure).name;
+  const removable = onRemove !== undefined && !locked;
 
   return (
     <Animated.View
@@ -99,9 +108,9 @@ const PlacedFigure = memo(function PlacedFigure({
         <View
           accessible
           accessibilityRole="button"
-          accessibilityLabel={`${name}. Mantenla presionada para quitarla`}
-          accessibilityActions={[{ name: 'delete', label: 'Quitar' }]}
-          onAccessibilityAction={() => onRemove(key)}
+          accessibilityLabel={removable ? `${name}. Mantenla presionada para quitarla` : name}
+          accessibilityActions={removable ? [{ name: 'delete', label: 'Quitar' }] : undefined}
+          onAccessibilityAction={() => onRemove?.(key)}
           onAccessibilityTap={() => onPress(span)}
         >
           <FigureBox figure={span.figure} width={width} />

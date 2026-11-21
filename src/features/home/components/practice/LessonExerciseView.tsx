@@ -2,6 +2,7 @@ import { LessonExercise } from '@/domain/lessons';
 
 import { ChoiceExerciseView } from './ChoiceExerciseView';
 import { ClipChoiceExerciseView } from './ClipChoiceExerciseView';
+import { FillBarExerciseView } from './FillBarExerciseView';
 import { PickExerciseView } from './PickExerciseView';
 import { SequenceExerciseView } from './SequenceExerciseView';
 import { TapExerciseView } from './TapExerciseView';
@@ -26,5 +27,7 @@ export function LessonExerciseView({ exercise, ...rest }: ExerciseViewProps<Less
       return <TapExerciseView exercise={exercise} {...rest} />;
     case 'pick':
       return <PickExerciseView exercise={exercise} {...rest} />;
+    case 'fill-bar':
+      return <FillBarExerciseView exercise={exercise} {...rest} />;
   }
 }

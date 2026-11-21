@@ -8,7 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import { PLAYGROUND_BAR_UNITS } from '@/domain/lessons';
-import { figureById, FigureId, FIGURES, FigureSpan } from '@/domain/rhythm';
+import { figureById, FigureId, FIGURES, FigureSpan, RhythmBar } from '@/domain/rhythm';
 import { controls, motion, spacing } from '@/shared/theme';
 
 import { DragSource, useBarPlayground } from '../../hooks/useBarPlayground';
@@ -29,6 +29,20 @@ interface Rect {
 const widthOf = (figure: FigureId, barWidth: number) =>
   (figureById(figure).units / PLAYGROUND_BAR_UNITS) * barWidth;
 
+const ALL_FIGURES: readonly FigureId[] = FIGURES.map((figure) => figure.id);
+const NONE: readonly FigureId[] = [];
+
+interface FigurePlaygroundProps {
+  /** Las figuras de abajo (todas, por defecto). No se acaban. */
+  palette?: readonly FigureId[];
+  /** Las que la barra ya trae y no se pueden quitar (un ejercicio a completar). */
+  given?: readonly FigureId[];
+  /** Ya se corrigió: la barra solo se escucha y la paleta desaparece. */
+  disabled?: boolean;
+  /** Cada vez que la barra cambia. */
+  onChange?: (bar: RhythmBar) => void;
+}
+
 /**
  * Borde izquierdo de la copia (respecto al contenedor): centrada en el dedo,
  * pero sin salirse por los lados.
@@ -48,9 +62,18 @@ function ghostLeft(fingerX: number, originX: number, ghostWidth: number, barWidt
  * que se ve. Dentro de la barra se reordenan igual y se quitan
  * manteniéndolas pulsadas. Si algo no cabe, la barra tiembla.
  */
-export function FigurePlayground() {
-  const playground = useBarPlayground(PLAYGROUND_BAR_UNITS);
-  const { shown, previewing, hover, drop, add, remove, figureOf } = playground;
+export function FigurePlayground({
+  palette = ALL_FIGURES,
+  given = NONE,
+  disabled = false,
+  onChange,
+}: FigurePlaygroundProps) {
+  const playground = useBarPlayground(PLAYGROUND_BAR_UNITS, given);
+  const { bar, shown, previewing, hover, drop, add, remove, figureOf } = playground;
+
+  useEffect(() => {
+    onChange?.(bar);
+  }, [bar, onChange]);
   const { play: playSound } = useFigureSound();
   const [width, setWidth] = useState(0);
   const [dragging, setDragging] = useState<DragSource | null>(null);
@@ -108,11 +131,8 @@ export function FigurePlayground() {
   );
 
   const paletteDrags = useMemo(
-    () =>
-      new Map(
-        FIGURES.map((figure) => [figure.id, dragFrom({ kind: 'palette', figure: figure.id })]),
-      ),
-    [dragFrom],
+    () => new Map(palette.map((figure) => [figure, dragFrom({ kind: 'palette', figure })])),
+    [dragFrom, palette],
   );
   const barDragFor = useCallback((key: number) => dragFrom({ kind: 'bar', key }), [dragFrom]);
 
@@ -142,24 +162,32 @@ export function FigurePlayground() {
           // se ve entera donde va a caer.
           draggingKey={dragging?.kind === 'bar' && !previewing ? dragging.key : null}
           onPress={playPlaced}
-          onRemove={remove}
-          dragFor={barDragFor}
+          onRemove={disabled ? undefined : remove}
+          dragFor={disabled ? undefined : barDragFor}
         />
       </Animated.View>
 
-      <View style={styles.palette}>
-        {FIGURES.map((figure) => (
-          <FigureTile
-            key={figure.id}
-            figure={figure.id}
-            space={controls.figureSpaceTile}
-            accessibilityLabel={`${figure.name}. Toca para ponerla en la barra`}
-            onPressIn={() => playSound(figure.id)}
-            onPress={() => add(figure.id)}
-            drag={paletteDrags.get(figure.id)}
-          />
-        ))}
-      </View>
+      {!disabled && (
+        <View
+          style={[
+            styles.palette,
+            // Con pocas figuras, juntas al centro; las cinco, de borde a borde.
+            palette.length < ALL_FIGURES.length && styles.paletteFew,
+          ]}
+        >
+          {palette.map((figure) => (
+            <FigureTile
+              key={figure}
+              figure={figure}
+              space={controls.figureSpaceTile}
+              accessibilityLabel={`${figureById(figure).name}. Toca para ponerla en la barra`}
+              onPressIn={() => playSound(figure)}
+              onPress={() => add(figure)}
+              drag={paletteDrags.get(figure)}
+            />
+          ))}
+        </View>
+      )}
 
       {ghostFigure !== null && (
         <Ghost
@@ -216,6 +244,10 @@ const styles = StyleSheet.create({
   palette: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  paletteFew: {
+    justifyContent: 'center',
+    gap: spacing.lg,
   },
   ghost: {
     position: 'absolute',

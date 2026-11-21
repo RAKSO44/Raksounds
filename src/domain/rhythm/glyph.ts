@@ -48,6 +48,27 @@ export interface FigureGlyph {
   readonly head: { readonly x: number; readonly y: number };
   /** Contornos rellenos (regla even-odd: un óvalo dentro de otro es un hueco). */
   readonly paths: readonly string[];
+  /**
+   * La tinta: cuánta hay (área, en espacios²) y dónde está su centro de masa
+   * horizontal. Es el CENTRO ÓPTICO: el ojo centra por el peso visual, no por
+   * la caja. En un grupo unido por barras la barra (lo más pesado) va sobre
+   * las plicas, a la derecha de las cabezas, y centrado por la caja se ve
+   * corrido a la derecha.
+   */
+  readonly ink: { readonly area: number; readonly x: number };
+}
+
+/** Un trozo de tinta: su área y la x de su centro de masa. */
+interface Mass {
+  readonly area: number;
+  readonly x: number;
+}
+
+/** Centro de masa de varios trozos. */
+function combine(masses: readonly Mass[]): Mass {
+  const area = masses.reduce((sum, mass) => sum + mass.area, 0);
+  const x = masses.reduce((sum, mass) => sum + mass.area * mass.x, 0) / area;
+  return { area, x };
 }
 
 const round = (value: number) => Math.round(value * 1000) / 1000;
@@ -102,6 +123,43 @@ function flagPath(x: number, y: number, squash: number): string {
   ].join(' ');
 }
 
+/** Punto de una curva de Bézier cúbica en `t`. */
+function bezier(p0: number, p1: number, p2: number, p3: number, t: number): number {
+  const u = 1 - t;
+  return u ** 3 * p0 + 3 * u ** 2 * t * p1 + 3 * u * t ** 2 * p2 + t ** 3 * p3;
+}
+
+/**
+ * Tinta de un corchete con la esquina en (0, 0): el contorno de `flagPath`
+ * muestreado como polígono (fórmula del área de Gauss y su centroide).
+ */
+function flagMass(squash: number): Mass {
+  const w = STEM.width;
+  const curves: [number, number][][] = [
+    [[w, 0], [w + 0.12, 0.62], [w + 0.98, 0.9], [w + 0.9, 1.98]],
+    [[w + 0.9, 1.98], [w + 0.86, 2.36], [w + 0.74, 2.62], [w + 0.56, 2.84]],
+    [[w + 0.56, 2.84], [w + 0.66, 2.42], [w + 0.7, 1.62], [0, 0.86]],
+  ];
+  const points: [number, number][] = [[0, 0]];
+  for (const [a, b, c, d] of curves) {
+    for (let step = 1; step <= 24; step++) {
+      const t = step / 24;
+      points.push([bezier(a[0], b[0], c[0], d[0], t), bezier(a[1], b[1], c[1], d[1], t) * squash]);
+    }
+  }
+  let doubled = 0;
+  let moment = 0;
+  points.forEach(([x0, y0], index) => {
+    const [x1, y1] = points[(index + 1) % points.length];
+    const cross = x0 * y1 - x1 * y0;
+    doubled += cross;
+    moment += (x0 + x1) * cross;
+  });
+  return { area: Math.abs(doubled) / 2, x: moment / (3 * doubled) };
+}
+
+const ellipseArea = ({ rx, ry }: Ellipse) => Math.PI * rx * ry;
+
 /** Lo que el corchete sobresale a la derecha de la plica (hasta sus puntos de control). */
 const FLAG_REACH = 0.98;
 /** Lo que baja la punta de un corchete desde donde empieza. */
@@ -120,6 +178,9 @@ export function figureGlyph(figure: RhythmFigure): FigureGlyph {
   let maxY = box.y;
 
   const hole = figure.head === 'hollow' ? (figure.stem ? HALF_HOLE : WHOLE_HOLE) : null;
+  const masses: Mass[] = [
+    { area: ellipseArea(head) - (hole === null ? 0 : ellipseArea(hole)), x: 0 },
+  ];
   shapes.push(
     (dx, dy) => ellipsePath(dx, dy, head) + (hole === null ? '' : ` ${ellipsePath(dx, dy, hole)}`),
   );
@@ -129,12 +190,15 @@ export function figureGlyph(figure: RhythmFigure): FigureGlyph {
     const stemLeft = box.x - STEM.width;
     const stemTop = -(STEM.length + Math.max(0, figure.flags - 1) * STEM.extraPerFlag);
     shapes.push((dx, dy) => stemPath(stemLeft + dx, stemTop + dy, dy));
+    masses.push({ area: STEM.width * -stemTop, x: stemLeft + STEM.width / 2 });
     minY = Math.min(minY, stemTop);
 
     const squash = figure.flags > 1 ? STACKED_FLAG_SQUASH : 1;
     for (let flag = 0; flag < figure.flags; flag++) {
       const flagTop = stemTop + flag * FLAG_GAP;
       shapes.push((dx, dy) => flagPath(stemLeft + dx, flagTop + dy, squash));
+      const flagInk = flagMass(squash);
+      masses.push({ area: flagInk.area, x: stemLeft + flagInk.x });
       maxX = Math.max(maxX, box.x + FLAG_REACH);
       maxY = Math.max(maxY, flagTop + FLAG_DROP * squash);
     }
@@ -142,11 +206,13 @@ export function figureGlyph(figure: RhythmFigure): FigureGlyph {
 
   const headX = -minX;
   const headY = -minY;
+  const ink = combine(masses);
   return {
     width: round(maxX - minX),
     height: round(maxY - minY),
     head: { x: round(headX), y: round(headY) },
     paths: shapes.map((shape) => shape(headX, headY)),
+    ink: { area: round(ink.area), x: round(headX + ink.x) },
   };
 }
 
@@ -191,10 +257,25 @@ export function beamedGlyph(figure: RhythmFigure, count: number): FigureGlyph {
     ),
   ];
 
+  const beamLeft = headX + stemLefts[0];
+  const beamRight = headX + stemLefts[count - 1] + STEM.width;
+  const ink = combine([
+    ...stemLefts.map((_, note) => ({
+      area: ellipseArea(HEAD),
+      x: headX + note * BEAMED_NOTE_STEP,
+    })),
+    ...stemLefts.map((left) => ({ area: STEM.width * headY, x: headX + left + STEM.width / 2 })),
+    {
+      area: figure.flags * (beamRight - beamLeft) * BEAM.thickness,
+      x: (beamLeft + beamRight) / 2,
+    },
+  ]);
+
   return {
     width: round((count - 1) * BEAMED_NOTE_STEP + 2 * box.x),
     height: round(headY + box.y),
     head: { x: round(headX), y: round(headY) },
     paths,
+    ink: { area: round(ink.area), x: round(ink.x) },
   };
 }

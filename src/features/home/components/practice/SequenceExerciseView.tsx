@@ -1,20 +1,25 @@
 import { useRef, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import {
   dropOnSlot,
   emptySlots,
   filledSequence,
   firstSequenceError,
+  LessonOption,
+  notationFigures,
   placeInFirstEmpty,
   removeFromSlots,
+  rhythmClip,
   SequenceExercise,
   SequenceSlots,
 } from '@/domain/lessons';
+import { FigureId } from '@/domain/rhythm';
 import { PushButtonTone } from '@/shared/design-system';
-import { radii, spacing, typography, useTheme } from '@/shared/theme';
+import { radii, spacing, useTheme } from '@/shared/theme';
 
 import { NoteTile, TileDrag, TileSlot } from '../NoteTile';
+import { ExercisePrompt } from './ExercisePrompt';
 import { ExerciseViewProps } from './types';
 
 interface Rect {
@@ -26,6 +31,14 @@ interface Rect {
 
 /** Margen alrededor de un hueco que aún cuenta como "soltada encima". */
 const DROP_SLOP = spacing.sm;
+
+/** La figura de una ficha que es UNA figura dibujada. */
+function figureOfTile(tile: LessonOption | undefined): FigureId | undefined {
+  const notation = tile?.notation;
+  if (notation === undefined) return undefined;
+  const figures = notationFigures(notation);
+  return figures.length === 1 ? figures[0] : undefined;
+}
 
 function contains(rect: Rect | null | undefined, x: number, y: number, slop = 0): boolean {
   return (
@@ -44,7 +57,7 @@ function contains(rect: Rect | null | undefined, x: number, y: number, slop = 0)
  * - Arrastrar: la ficha viaja bajo el dedo y se suelta en un hueco (si estaba
  *   ocupado, se intercambian) o abajo, para devolverla.
  *
- * Cada ficha suena al tocarla. Al corregir, las bien puestas se ven en verde y
+ * Cada ficha suena al tocarla (una figura, lo que dura). Al corregir, las bien puestas se ven en verde y
  * la primera que rompe el orden en rojo.
  */
 export function SequenceExerciseView({
@@ -70,9 +83,11 @@ export function SequenceExerciseView({
 
   const tileOf = (id: string) => exercise.tiles.find((tile) => tile.id === id);
   const play = (id: string) => {
-    const midi = tileOf(id)?.midi;
-    if (midi !== undefined) player.playNote(midi);
+    const tile = tileOf(id);
+    if (tile?.notation !== undefined) player.play(rhythmClip(notationFigures(tile.notation)));
+    else if (tile?.midi !== undefined) player.playNote(tile.midi);
   };
+  const narrow = exercise.tiles.some((tile) => figureOfTile(tile) !== undefined);
 
   // Los huecos se miden al empezar a arrastrar (no al colocarse): así valen
   // aunque la pantalla se haya desplazado desde entonces.
@@ -116,7 +131,7 @@ export function SequenceExerciseView({
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.prompt, { color: colors.textPrimary }]}>{exercise.prompt}</Text>
+      <ExercisePrompt exercise={exercise} />
 
       <View style={[styles.slots, dragging?.from === 'slots' && styles.onTop]}>
         {slots.map((id, index) => (
@@ -129,10 +144,11 @@ export function SequenceExerciseView({
             style={id !== null && dragging?.id === id && styles.onTop}
           >
             {id === null ? (
-              <TileSlot accessibilityLabel={`Hueco ${index + 1}`} />
+              <TileSlot narrow={narrow} accessibilityLabel={`Hueco ${index + 1}`} />
             ) : (
               <NoteTile
                 label={tileOf(id)?.label ?? ''}
+                figure={figureOfTile(tileOf(id))}
                 tone={slotTone(index)}
                 selected={!revealed || slotTone(index) !== 'secondary'}
                 accessibilityLabel={`Posición ${index + 1}: ${tileOf(id)?.label ?? ''}${
@@ -160,6 +176,7 @@ export function SequenceExerciseView({
             <NoteTile
               key={tile.id}
               label={tile.label}
+              figure={figureOfTile(tile)}
               // Una ficha ya colocada deja su sitio vacío (gris) en vez de
               // desaparecer: así el resto no se mueve bajo el dedo.
               disabled={used || revealed}
@@ -178,10 +195,6 @@ export function SequenceExerciseView({
 const styles = StyleSheet.create({
   container: {
     gap: spacing.lg,
-  },
-  prompt: {
-    ...typography.question,
-    textAlign: 'center',
   },
   slots: {
     flexDirection: 'row',

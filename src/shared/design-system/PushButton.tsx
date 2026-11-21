@@ -1,4 +1,4 @@
-import { ComponentProps, useCallback, useMemo } from 'react';
+import { ComponentProps, ReactNode, useCallback, useMemo } from 'react';
 import { StyleProp, StyleSheet, Text, TextStyle, View, ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
@@ -61,6 +61,11 @@ interface PushButtonProps {
   sublabel?: string;
   /** Ícono opcional encima del label (toma el color del texto del botón). */
   icon?: IconName;
+  /**
+   * Un dibujo propio en la cara (una figura musical), pintado con el color
+   * que tendría el texto: así cambia con el estado igual que una etiqueta.
+   */
+  glyph?: (color: string) => ReactNode;
   /** Se dispara al SOLTAR, solo si el gesto no se canceló (tap completo). */
   onPress?: () => void;
   /**
@@ -143,6 +148,7 @@ export function PushButton({
   label,
   sublabel,
   icon,
+  glyph,
   onPress,
   onPressIn,
   onPressOut,
@@ -299,6 +305,7 @@ export function PushButton({
           ]}
         >
           {icon != null && <MaterialCommunityIcons name={icon} size={26} color={labelColor} />}
+          {glyph?.(labelColor)}
           {/* Sin texto no hay caja de texto: con el ícono al inicio, esa caja
               vacía (flex: 1) empujaba el ícono a la izquierda en vez de centrarlo. */}
           {hasText && (

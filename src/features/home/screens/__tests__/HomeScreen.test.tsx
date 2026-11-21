@@ -121,7 +121,7 @@ describe('HomeScreen', () => {
     await user.press(screen.getByText('Entendido'));
   });
 
-  it('el módulo 3 abre su teoría, pero sus ejercicios avisan de que llegan pronto', async () => {
+  it('el módulo 3 abre su teoría y su práctica', async () => {
     const user = userEvent.setup();
     await renderScreen();
     await user.press(screen.getByLabelText(/^Módulo 3: Figuras musicales/));
@@ -133,13 +133,10 @@ describe('HomeScreen', () => {
     });
 
     await user.press(screen.getByLabelText('Ejercicios'));
-    expect(mockPush).toHaveBeenCalledTimes(1);
-    expect(
-      screen.getByText(
-        'Los ejercicios del módulo 3, «Figuras musicales», estarán disponibles muy pronto.',
-      ),
-    ).toBeTruthy();
-    await user.press(screen.getByText('Entendido'));
+    expect(mockPush).toHaveBeenLastCalledWith({
+      pathname: '/lesson/practice',
+      params: { module: 'figures' },
+    });
   });
 
   it('marca por separado la teoría leída y los ejercicios completados', async () => {

@@ -1,5 +1,13 @@
+import { figureById, FigureId, FIGURES } from '../../rhythm';
 import { clipEventTimes, Clip } from '../clip';
-import { LessonExercise, stimulusClips } from '../exercise';
+import {
+  FillBarExercise,
+  isAnswerCorrect,
+  judgeFilledBar,
+  LessonExercise,
+  notationFigures,
+  stimulusClips,
+} from '../exercise';
 import { TAPS_PER_EXERCISE } from '../module2Practice';
 import { generatePractice, hasPractice, practiceLength } from '../practice';
 import { isRegular } from '../tempo';
@@ -64,7 +72,14 @@ function expectValid(exercise: LessonExercise) {
       expect(exercise.answer.length).toBeLessThan(ids.length);
       break;
     }
+    case 'fill-bar':
+      // La forma de ejemplo es correcta, y la barra no viene ya llena.
+      expect(judgeFilledBar(exercise, exercise.example)).toBe(true);
+      expect(isAnswerCorrect(exercise, { kind: 'bar', figures: exercise.example })).toBe(true);
+      expect(judgeFilledBar(exercise, exercise.given)).toBe(false);
+      break;
   }
+  expect(exercise.explanation.length).toBeGreaterThan(0);
   for (const midi of midisOf(exercise)) {
     expect(midi).toBeGreaterThanOrEqual(MIN_MIDI);
     expect(midi).toBeLessThanOrEqual(MAX_MIDI);
@@ -84,6 +99,7 @@ function expectValid(exercise: LessonExercise) {
 describe.each([
   ['notes', 15],
   ['pulse', 11],
+  ['figures', 17],
 ] as const)('práctica del módulo %s', (id, length) => {
   it(`genera ${length} ejercicios en las posiciones 1–${length}`, () => {
     const exercises = generatePractice(id, 42);
@@ -293,11 +309,213 @@ describe('práctica del Módulo 2 (pulso)', () => {
   });
 });
 
-describe('módulos sin práctica todavía', () => {
-  it('el Módulo 3 solo tiene teoría: su práctica está vacía', () => {
-    expect(generatePractice('figures', 1)).toEqual([]);
-    expect(hasPractice('figures')).toBe(false);
+const unitsOf = (id: string) => figureById(id as FigureId).units;
+const sum = (ids: readonly FigureId[]) => ids.reduce((total, id) => total + unitsOf(id), 0);
+/** Lo que dura una semicorchea a 80 BPM, en ms. */
+const SIXTEENTH_MS = 187.5;
+
+describe('práctica del Módulo 3 (figuras)', () => {
+  const at = (seed: number, position: number) => generatePractice('figures', seed)[position - 1];
+  const fillAt = (seed: number, position: number): FillBarExercise => {
+    const exercise = at(seed, position);
+    if (exercise.mechanic !== 'fill-bar') throw new Error(`${position} no es de llenar`);
+    return exercise;
+  };
+
+  it('todos los módulos ya tienen práctica', () => {
     expect(hasPractice('notes')).toBe(true);
     expect(hasPractice('pulse')).toBe(true);
+    expect(hasPractice('figures')).toBe(true);
+  });
+
+  it('"¿cómo se llama?": la figura dibujada es la respuesta; el 3 es corchea o semicorchea', () => {
+    for (const seed of SEEDS) {
+      for (const position of [1, 3]) {
+        const exercise = at(seed, position);
+        if (exercise.mechanic !== 'choice' || exercise.stimulus?.kind !== 'notation') {
+          throw new Error();
+        }
+        expect(exercise.stimulus.notation).toEqual({
+          kind: 'figures',
+          figures: [exercise.answer],
+        });
+        if (position === 3) expect(['eighth', 'sixteenth']).toContain(exercise.answer);
+      }
+    }
+  });
+
+  it('"¿cuál dura más / menos?" responde según lo que dura cada una', () => {
+    for (const seed of SEEDS) {
+      const exercise = at(seed, 4);
+      if (exercise.mechanic !== 'choice') throw new Error();
+      const [a, b] = exercise.options.map((option) => option.id);
+      const longer = unitsOf(a) > unitsOf(b) ? a : b;
+      const shorter = longer === a ? b : a;
+      expect(exercise.answer).toBe(exercise.prompt.includes('más') ? longer : shorter);
+    }
+  });
+
+  it('"la mitad de": la respuesta dura justo la mitad de la figura pedida', () => {
+    for (const seed of SEEDS) {
+      const exercise = at(seed, 5);
+      if (exercise.mechanic !== 'choice') throw new Error();
+      const asked = exercise.promptParts?.find((part) => typeof part !== 'string');
+      if (asked === undefined || typeof asked === 'string') throw new Error();
+      expect(unitsOf(exercise.answer) * 2).toBe(unitsOf(asked.figure));
+      expect(exercise.options).toHaveLength(3);
+    }
+  });
+
+  it('ordenar: 4 figuras de la que más dura a la que menos; las 5 al revés al final', () => {
+    for (const seed of SEEDS) {
+      const first = at(seed, 6);
+      const last = at(seed, 17);
+      if (first.mechanic !== 'sequence' || last.mechanic !== 'sequence') throw new Error();
+      const units = first.answer.map(unitsOf);
+      expect(units).toHaveLength(4);
+      expect(units).toEqual([...units].sort((a, b) => b - a));
+      expect(last.answer).toEqual(FIGURES.map((figure) => figure.id).reverse());
+    }
+  });
+
+  it('valor relativo: 1/n con n las que caben en una redonda, entre tres valores seguidos', () => {
+    for (const seed of SEEDS) {
+      const exercise = at(seed, 7);
+      if (exercise.mechanic !== 'choice') throw new Error();
+      const values = exercise.options.map((option) => Number(option.id));
+      expect(values).toHaveLength(3);
+      expect(values[1]).toBe(values[0] * 2);
+      expect(values[2]).toBe(values[1] * 2);
+      const asked = exercise.promptParts?.filter((part) => typeof part !== 'string').at(-1);
+      if (asked === undefined || typeof asked === 'string') throw new Error();
+      expect(Number(exercise.answer)).toBe(unitsOf('whole') / unitsOf(asked.figure));
+      expect(values).toContain(Number(exercise.answer));
+    }
+  });
+
+  it('equivalencia: varía las figuras, cada opción es una fila par y la correcta suma lo mismo', () => {
+    const pairs = new Set<string>();
+    for (const seed of SEEDS) {
+      const exercise = at(seed, 8);
+      if (exercise.mechanic !== 'choice' || exercise.stimulus?.kind !== 'notation') {
+        throw new Error();
+      }
+      const [long] = notationFigures(exercise.stimulus.notation);
+      const rows = exercise.options.map((option) => {
+        if (option.notation === undefined) throw new Error();
+        return notationFigures(option.notation);
+      });
+      pairs.add(`${long}-${rows[0][0]}`);
+      for (const row of rows) {
+        expect(row.length % 2).toBe(0);
+        expect(new Set(row).size).toBe(1);
+      }
+      const right = rows[exercise.options.findIndex((option) => option.id === exercise.answer)];
+      expect(sum(right)).toBe(unitsOf(long));
+      expect(rows.filter((row) => sum(row) === unitsOf(long))).toHaveLength(1);
+    }
+    expect(pairs.size).toBe(5);
+  });
+
+  it('completar la barra: lo que falta no se llena con una sola figura', () => {
+    for (const seed of SEEDS) {
+      const exercise = fillAt(seed, 9);
+      const missing = exercise.capacity - sum(exercise.given);
+      expect(missing).toBeGreaterThan(0);
+      expect(FIGURES.map((figure) => figure.units)).not.toContain(missing);
+    }
+  });
+
+  it('llenar con regla: alterna "exactamente N" y "combinando"', () => {
+    const kinds = new Set<string>();
+    for (const seed of SEEDS) {
+      const exercise = fillAt(seed, 14);
+      kinds.add(exercise.rule.kind);
+      expect(exercise.given).toEqual([]);
+      if (exercise.rule.kind === 'mix') expect(exercise.palette).toEqual(exercise.rule.figures);
+    }
+    expect(kinds).toEqual(new Set(['count', 'mix']));
+  });
+
+  it('de oído, las opciones no suenan hasta corregir; el patrón es el mismo ritmo reordenado', () => {
+    for (const seed of SEEDS) {
+      for (const position of [10, 11, 12, 15]) {
+        expect(at(seed, position)).toMatchObject({ mechanic: 'choice', mutedOptions: true });
+      }
+      for (const [position, size] of [
+        [12, 3],
+        [15, 4],
+      ]) {
+        const pattern = at(seed, position);
+        if (pattern.mechanic !== 'choice' || pattern.stimulus?.kind !== 'clips') throw new Error();
+        expect(pattern.options).toHaveLength(3);
+        expect(new Set(pattern.options.map((option) => option.id)).size).toBe(3);
+        const sorted = pattern.options.map((option) => option.id.split('-').sort().join());
+        expect(new Set(sorted).size).toBe(1);
+        expect(pattern.answer.split('-')).toHaveLength(size);
+        const [{ clip }] = pattern.stimulus.clips;
+        if (clip.kind !== 'rhythm') throw new Error();
+        expect(clip.notes.map((note) => note.durationMs / SIXTEENTH_MS)).toEqual(
+          pattern.answer.split('-').map(unitsOf),
+        );
+      }
+    }
+  });
+
+  it('dictados: el ritmo llena la barra; el primero trae su primera figura, el segundo nada', () => {
+    for (const seed of SEEDS) {
+      for (const position of [13, 16]) {
+        const exercise = fillAt(seed, position);
+        if (exercise.rule.kind !== 'dictation') throw new Error();
+        const { figures } = exercise.rule;
+        expect(sum(figures)).toBe(exercise.capacity);
+        expect(new Set(figures).size).toBeGreaterThanOrEqual(2);
+        expect(exercise.given).toEqual(position === 13 ? figures.slice(0, 1) : []);
+        expect(judgeFilledBar(exercise, figures)).toBe(true);
+      }
+    }
+  });
+});
+
+describe('calificar una barra llena', () => {
+  const exercise = (rule: FillBarExercise['rule'], given: FigureId[] = []): FillBarExercise => ({
+    position: 1,
+    mechanic: 'fill-bar',
+    prompt: '',
+    explanation: '',
+    capacity: 16,
+    given,
+    palette: FIGURES.map((figure) => figure.id),
+    rule,
+    example: [],
+  });
+
+  it('vale cualquier forma que sume justo la barra y conserve las que traía', () => {
+    const complete = exercise({ kind: 'complete' }, ['half']);
+    expect(judgeFilledBar(complete, ['half', 'quarter', 'eighth', 'eighth'])).toBe(true);
+    expect(judgeFilledBar(complete, ['eighth', 'half', 'eighth', 'quarter'])).toBe(true);
+    expect(judgeFilledBar(complete, ['half', 'quarter'])).toBe(false);
+    expect(judgeFilledBar(complete, ['half', 'half', 'eighth'])).toBe(false);
+    expect(judgeFilledBar(complete, ['quarter', 'quarter', 'quarter', 'quarter'])).toBe(false);
+  });
+
+  it('"exactamente N" cuenta todas las figuras', () => {
+    const three = exercise({ kind: 'count', count: 3 });
+    expect(judgeFilledBar(three, ['half', 'quarter', 'quarter'])).toBe(true);
+    expect(judgeFilledBar(three, ['half', 'half'])).toBe(false);
+  });
+
+  it('"combinando" exige las dos figuras y solo ellas', () => {
+    const mix = exercise({ kind: 'mix', figures: ['half', 'eighth'] });
+    expect(judgeFilledBar(mix, ['half', 'eighth', 'eighth', 'eighth', 'eighth'])).toBe(true);
+    expect(judgeFilledBar(mix, ['half', 'half'])).toBe(false);
+    expect(judgeFilledBar(mix, ['half', 'quarter', 'quarter'])).toBe(false);
+  });
+
+  it('un dictado exige justo esas figuras y en ese orden', () => {
+    const dictation = exercise({ kind: 'dictation', figures: ['half', 'quarter', 'eighth', 'eighth'] });
+    expect(judgeFilledBar(dictation, ['half', 'quarter', 'eighth', 'eighth'])).toBe(true);
+    expect(judgeFilledBar(dictation, ['quarter', 'half', 'eighth', 'eighth'])).toBe(false);
+    expect(judgeFilledBar(dictation, ['half', 'quarter', 'quarter'])).toBe(false);
   });
 });

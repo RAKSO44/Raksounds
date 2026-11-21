@@ -84,3 +84,30 @@ describe('beamedGlyph', () => {
     expect(() => beamedGlyph(figureById('eighth'), 1)).toThrow();
   });
 });
+
+describe('centro óptico (tinta)', () => {
+  it('la redonda es simétrica: su tinta está en el centro de la caja', () => {
+    const whole = figureGlyph(figureById('whole'));
+    expect(whole.ink.x).toBeCloseTo(whole.width / 2, 3);
+  });
+
+  it('la tinta queda dentro de la caja y la blanca pesa menos que la negra (hueco)', () => {
+    for (const figure of FIGURES) {
+      const glyph = figureGlyph(figure);
+      expect(glyph.ink.x).toBeGreaterThan(0);
+      expect(glyph.ink.x).toBeLessThan(glyph.width);
+    }
+    expect(figureGlyph(figureById('half')).ink.area).toBeLessThan(
+      figureGlyph(figureById('quarter')).ink.area,
+    );
+  });
+
+  it('en un grupo unido la barra corre la tinta a la derecha, más con dos barras', () => {
+    const shift = (id: 'eighth' | 'sixteenth') => {
+      const glyph = beamedGlyph(figureById(id), 4);
+      return glyph.ink.x - glyph.width / 2;
+    };
+    expect(shift('eighth')).toBeGreaterThan(0.2);
+    expect(shift('sixteenth')).toBeGreaterThan(shift('eighth'));
+  });
+});

@@ -1,12 +1,14 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Clip, Stimulus } from '@/domain/lessons';
-import { spacing, typography, useTheme } from '@/shared/theme';
+import { Clip, Notation, notationFigures, rhythmClip, Stimulus } from '@/domain/lessons';
+import { figureById, FigureId } from '@/domain/rhythm';
+import { controls, spacing, typography, useTheme } from '@/shared/theme';
 
 import { ClipPlayer } from '../../hooks/useClipPlayer';
 import { ListenButton } from '../ListenButton';
 import { NoteRow } from '../NoteRow';
 import { NoteSteps } from '../NoteSteps';
+import { NotationSlot, NotationTile } from '../notation/NotationTile';
 import { MetronomePair } from './MetronomePair';
 
 interface StimulusViewProps {
@@ -16,6 +18,15 @@ interface StimulusViewProps {
   solution: string | null;
   revealed: boolean;
 }
+
+/**
+ * Lo que suena al tocar la ficha es UNA de sus duraciones posibles: una
+ * figura no dura un tiempo fijo.
+ */
+const DURATION_HINT = 'Recuerda que la duración es referencial';
+
+/** Una figura sola, escrita. */
+const one = (figure: FigureId): Notation => ({ kind: 'figures', figures: [figure] });
 
 /** La altura de un clip de una sola nota (se toca como una tecla), o `null`. */
 export function singleNote(clip: Clip): number | null {
@@ -106,6 +117,58 @@ export function StimulusView({ stimulus, player, solution, revealed }: StimulusV
       );
     case 'metronomes':
       return <MetronomePair bpms={stimulus.bpms} revealed={revealed} />;
+    case 'notation': {
+      const silent = stimulus.muted && !revealed;
+      return (
+        <View style={styles.block}>
+          <NotationTile
+            notation={stimulus.notation}
+            space={controls.figureSpaceHero}
+            onPressIn={
+              silent ? undefined : () => player.play(rhythmClip(notationFigures(stimulus.notation)))
+            }
+          />
+          {!silent && (
+            <Text style={[styles.hint, { color: colors.textSecondary }]}>
+              {DURATION_HINT}
+            </Text>
+          )}
+        </View>
+      );
+    }
+    case 'reference': {
+      const { known, hidden } = stimulus;
+      return (
+        <View style={styles.block}>
+          <View style={styles.listenRow}>
+            <Text style={[styles.listenLabel, { color: colors.textPrimary }]}>Escucha:</Text>
+            <ListenButton
+              accessibilityLabel="Las dos notas"
+              disabled={!player.ready}
+              onPress={() => player.play(rhythmClip([known, hidden]))}
+            />
+          </View>
+          <View style={styles.pair}>
+            <NotationTile
+              notation={one(known)}
+              space={controls.figureSpaceHero}
+              accessibilityLabel={`Primera nota: ${figureById(known).name.toLowerCase()}`}
+              onPressIn={() => player.play(rhythmClip([known]))}
+            />
+            {revealed ? (
+              <NotationTile
+                notation={one(hidden)}
+                space={controls.figureSpaceHero}
+                highlighted
+                onPressIn={() => player.play(rhythmClip([hidden]))}
+              />
+            ) : (
+              <NotationSlot accessibilityLabel="Segunda nota: la que hay que adivinar" />
+            )}
+          </View>
+        </View>
+      );
+    }
   }
 }
 
@@ -123,5 +186,15 @@ const styles = StyleSheet.create({
   listenLabel: {
     ...typography.question,
     flexShrink: 0,
+  },
+  hint: {
+    ...typography.caption,
+    textAlign: 'center',
+  },
+  pair: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
 });

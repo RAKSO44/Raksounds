@@ -2,11 +2,11 @@ import { useCallback, useRef, useState } from 'react';
 import { useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 import {
-  emptyBar,
   FigureId,
   fits,
   insertFigure,
   isFull,
+  lockedBar,
   moveFigure,
   removeFigure,
   RhythmBar,
@@ -14,6 +14,8 @@ import {
 } from '@/domain/rhythm';
 import { hapticError, hapticSuccess, hapticTap, hapticTick } from '@/shared/haptics';
 import { controls, motion } from '@/shared/theme';
+
+const NONE: readonly FigureId[] = [];
 
 /** De dónde sale lo que se arrastra: la paleta (no se acaba) o la propia barra. */
 export type DragSource =
@@ -58,9 +60,12 @@ const sameOrder = (a: RhythmBar, b: RhythmBar) =>
  *
  * Mientras se arrastra cerca de la barra, `shown` ya la muestra como quedaría
  * (`hover`); soltar aplica exactamente eso, y lejos de ella no cambia nada.
+ *
+ * `given` son figuras que la barra ya trae (un ejercicio a completar): no se
+ * quitan ni se mueven, y querer quitarlas la hace temblar.
  */
-export function useBarPlayground(capacity: number) {
-  const [bar, setBar] = useState<RhythmBar>(() => emptyBar(capacity));
+export function useBarPlayground(capacity: number, given: readonly FigureId[] = NONE) {
+  const [bar, setBar] = useState<RhythmBar>(() => lockedBar(capacity, given));
   // Los gestos llaman desde fuera del render: leen siempre la barra actual.
   // Solo `commit` la cambia, y actualiza las dos a la vez.
   const current = useRef(bar);
@@ -104,7 +109,14 @@ export function useBarPlayground(capacity: number) {
     [commit, reject],
   );
 
-  const remove = useCallback((key: number) => commit(removeFigure(current.current, key)), [commit]);
+  const remove = useCallback(
+    (key: number) => {
+      const placed = current.current.figures.find((figure) => figure.key === key);
+      if (placed?.locked === true) reject();
+      else commit(removeFigure(current.current, key));
+    },
+    [commit, reject],
+  );
 
   /**
    * Lo arrastrado está sobre el punto `position` de la barra (semicorcheas

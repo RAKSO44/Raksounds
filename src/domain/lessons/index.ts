@@ -3,6 +3,7 @@ export * from './exercise';
 export * from './figureTheory';
 export * from './module1Practice';
 export * from './module2Practice';
+export * from './module3Practice';
 export * from './noteNames';
 export * from './practice';
 export * from './progress';
