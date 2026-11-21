@@ -260,6 +260,7 @@ describe('TheoryScreen (Módulo 3)', () => {
     await user.press(screen.getByLabelText('Página siguiente'));
     await user.press(screen.getByLabelText('Página siguiente'));
     expect(screen.getByText('¡Experimenta un poco!')).toBeTruthy();
+    expect(screen.getByText('Mantén presionadas')).toBeTruthy();
 
     // Tocar una figura de abajo la pone al final; no se acaban.
     await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));

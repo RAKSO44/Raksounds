@@ -24,7 +24,10 @@ export interface FigureDrag {
   /** El dedo, actualizado en el hilo de UI (la copia lo sigue sin pasar por React). */
   finger: SharedValue<FingerPoint>;
   onStart: () => void;
-  onEnd: (x: number, y: number) => void;
+  /** Cada paso del dedo, en el hilo de JS (para mostrar dónde caería). */
+  onMove: (x: number, y: number) => void;
+  /** Al soltar; `completed` es falso si el sistema canceló el gesto. */
+  onEnd: (completed: boolean) => void;
 }
 
 export interface FigureGestureOptions {
@@ -64,7 +67,7 @@ export function useFigureGesture({ onPressIn, onPress, onLongPress, drag }: Figu
 
     const rivals: GestureType[] = [];
     if (drag !== undefined) {
-      const { finger, onStart, onEnd } = drag;
+      const { finger, onStart, onMove, onEnd } = drag;
       rivals.push(
         Gesture.Pan()
           .minDistance(DRAG_START)
@@ -75,9 +78,10 @@ export function useFigureGesture({ onPressIn, onPress, onLongPress, drag }: Figu
           })
           .onUpdate((event) => {
             finger.value = { x: event.absoluteX, y: event.absoluteY };
+            runOnJS(onMove)(event.absoluteX, event.absoluteY);
           })
-          .onEnd((event) => {
-            runOnJS(onEnd)(event.absoluteX, event.absoluteY);
+          .onEnd((_event, success) => {
+            runOnJS(onEnd)(success);
           }),
       );
     }

@@ -85,19 +85,6 @@ export function removeFigure(bar: RhythmBar, key: number): RhythmBar {
   return { ...bar, figures: bar.figures.filter((placed) => placed.key !== key) };
 }
 
-/**
- * Intercambia dos figuras colocadas. Siempre cabe: la suma no cambia, solo se
- * reparte distinto (las de en medio se corren si sus duraciones difieren).
- */
-export function swapFigures(bar: RhythmBar, a: number, b: number): RhythmBar {
-  const ia = bar.figures.findIndex((placed) => placed.key === a);
-  const ib = bar.figures.findIndex((placed) => placed.key === b);
-  if (ia < 0 || ib < 0 || ia === ib) return bar;
-  const figures = [...bar.figures];
-  [figures[ia], figures[ib]] = [figures[ib], figures[ia]];
-  return { ...bar, figures };
-}
-
 /** Lleva una figura colocada a otra posición (contada sin ella). */
 export function moveFigure(bar: RhythmBar, key: number, index: number): RhythmBar {
   const moving = bar.figures.find((placed) => placed.key === key);
@@ -105,14 +92,6 @@ export function moveFigure(bar: RhythmBar, key: number, index: number): RhythmBa
   const rest = bar.figures.filter((placed) => placed.key !== key);
   const at = Math.max(0, Math.min(index, rest.length));
   return { ...bar, figures: [...rest.slice(0, at), moving, ...rest.slice(at)] };
-}
-
-/** La figura colocada que ocupa el punto `position` (en semicorcheas), si hay. */
-export function figureAt(bar: RhythmBar, position: number): FigureSpan | null {
-  return (
-    figureSpans(bar).find((span) => position >= span.start && position < span.start + span.units) ??
-    null
-  );
 }
 
 /**
@@ -125,4 +104,25 @@ export function insertionIndex(bar: RhythmBar, position: number): number {
   const spans = figureSpans(bar);
   const index = spans.findIndex((span) => position < span.start + span.units / 2);
   return index < 0 ? spans.length : index;
+}
+
+/**
+ * Como `insertionIndex`, pero mientras se arrastra: si ya se mostraba un
+ * sitio (`previous`), se queda en él hasta que el punto pase la mitad de la
+ * figura vecina por más de `margin` semicorcheas. Así, con el dedo quieto
+ * justo en una frontera, la vista previa no salta de un lado a otro.
+ */
+export function stickyInsertionIndex(
+  bar: RhythmBar,
+  position: number,
+  previous: number | null,
+  margin: number,
+): number {
+  const fresh = insertionIndex(bar, position);
+  const spans = figureSpans(bar);
+  if (previous === null || previous === fresh || previous > spans.length) return fresh;
+  const middle = (index: number) => spans[index].start + spans[index].units / 2;
+  const low = previous === 0 ? -Infinity : middle(previous - 1) - margin;
+  const high = previous === spans.length ? Infinity : middle(previous) + margin;
+  return position >= low && position < high ? previous : fresh;
 }

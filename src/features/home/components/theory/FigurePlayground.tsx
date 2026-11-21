@@ -1,15 +1,20 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Animated, { SharedValue, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import Animated, {
+  SharedValue,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { PLAYGROUND_BAR_UNITS } from '@/domain/lessons';
-import { FigureId, FIGURES, FigureSpan } from '@/domain/rhythm';
-import { controls, spacing, useTheme } from '@/shared/theme';
+import { figureById, FigureId, FIGURES, FigureSpan } from '@/domain/rhythm';
+import { controls, motion, spacing } from '@/shared/theme';
 
 import { DragSource, useBarPlayground } from '../../hooks/useBarPlayground';
 import { useFigureSound } from '../../hooks/useFigureSound';
 import { FigureDrag, FingerPoint } from '../../hooks/useFigureGesture';
-import { FIGURE_FRAME, FramedFigureGlyph } from '../notation/FigureGlyph';
+import { BAR_HEIGHT, FigureBox } from '../notation/FigureBox';
 import { FigureTile } from '../notation/FigureTile';
 import { RhythmBarView } from '../notation/RhythmBarView';
 
@@ -20,33 +25,42 @@ interface Rect {
   height: number;
 }
 
-/** La copia que viaja bajo el dedo, a tamaño de la paleta. */
-const GHOST_SPACE = controls.figureSpaceTile;
-const GHOST = {
-  width: FIGURE_FRAME.width * GHOST_SPACE,
-  height: (FIGURE_FRAME.above + FIGURE_FRAME.below) * GHOST_SPACE,
-};
-/** Margen por encima y por debajo de la barra que aún cuenta como "soltada en ella". */
-const DROP_SLOP = spacing.lg;
+/** Ancho que ocupa una figura en una barra de `barWidth` píxeles. */
+const widthOf = (figure: FigureId, barWidth: number) =>
+  (figureById(figure).units / PLAYGROUND_BAR_UNITS) * barWidth;
+
+/**
+ * Borde izquierdo de la copia (respecto al contenedor): centrada en el dedo,
+ * pero sin salirse por los lados.
+ */
+function ghostLeft(fingerX: number, originX: number, ghostWidth: number, barWidth: number) {
+  'worklet';
+  const centered = fingerX - originX - ghostWidth / 2;
+  return Math.min(Math.max(centered, 0), Math.max(0, barWidth - ghostWidth));
+}
 
 /**
  * "¡Experimenta un poco!": una barra que admite una redonda y, debajo, las
  * cinco figuras. Se arrastran (o se tocan) para llenarla; las de la paleta
- * no se acaban. Dentro de la barra se intercambian arrastrando una sobre otra
- * y se quitan manteniéndolas pulsadas. Si algo no cabe, la barra tiembla.
+ * no se acaban. La copia que viaja ya mide lo que la figura ocupará; al
+ * acercarla a la barra, la figura se muestra en el sitio donde caería y las
+ * demás se corren, y al alejarla todo vuelve a como estaba. Soltar aplica lo
+ * que se ve. Dentro de la barra se reordenan igual y se quitan
+ * manteniéndolas pulsadas. Si algo no cabe, la barra tiembla.
  */
 export function FigurePlayground() {
-  const { colors } = useTheme();
   const playground = useBarPlayground(PLAYGROUND_BAR_UNITS);
-  const { bar, drop, add, remove } = playground;
-  const { sounding, play: playSound } = useFigureSound();
-  const [soundingKey, setSoundingKey] = useState<number | null>(null);
+  const { shown, previewing, hover, drop, add, remove, figureOf } = playground;
+  const { play: playSound } = useFigureSound();
   const [width, setWidth] = useState(0);
   const [dragging, setDragging] = useState<DragSource | null>(null);
 
   const container = useRef<View>(null);
   const barView = useRef<View>(null);
   const barRect = useRef<Rect | null>(null);
+  const widthRef = useRef(0);
+  // Cerca de la barra: decide qué margen hay que cruzar para dejar de estarlo.
+  const near = useRef(false);
   const finger = useSharedValue<FingerPoint>({ x: 0, y: 0 });
   const origin = useSharedValue<FingerPoint>({ x: 0, y: 0 });
 
@@ -56,6 +70,8 @@ export function FigurePlayground() {
     (source: DragSource): FigureDrag => ({
       finger,
       onStart: () => {
+        near.current = false;
+        barRect.current = null;
         barView.current?.measureInWindow((x, y, w, h) => {
           barRect.current = { x, y, width: w, height: h };
         });
@@ -64,21 +80,31 @@ export function FigurePlayground() {
           setDragging(source);
         });
       },
-      onEnd: (x, y) => {
-        setDragging(null);
-        // Cuenta donde está la cabeza de la copia, que va por encima del dedo.
-        const headY = y - FIGURE_FRAME.below * GHOST_SPACE;
+      onMove: (x, y) => {
         const rect = barRect.current;
-        const inside =
-          rect !== null &&
-          x >= rect.x &&
-          x <= rect.x + rect.width &&
-          headY >= rect.y - DROP_SLOP &&
-          headY <= rect.y + rect.height + DROP_SLOP;
-        drop(source, inside ? ((x - rect.x) / rect.width) * PLAYGROUND_BAR_UNITS : null);
+        const figure = figureOf(source);
+        const barWidth = widthRef.current;
+        if (rect === null || figure === null || barWidth === 0) return;
+        // Cuenta el centro de la copia, que flota por encima del dedo.
+        const ghostWidth = widthOf(figure, barWidth);
+        const centerX =
+          origin.value.x + ghostLeft(x, origin.value.x, ghostWidth, barWidth) + ghostWidth / 2;
+        const centerY = y - controls.dragGhostLift - BAR_HEIGHT / 2;
+        const slop = near.current ? controls.dropExitSlop : controls.dropEnterSlop;
+        near.current = centerY >= rect.y - slop && centerY <= rect.y + rect.height + slop;
+        hover(
+          source,
+          near.current ? ((centerX - rect.x) / rect.width) * PLAYGROUND_BAR_UNITS : null,
+        );
+      },
+      onEnd: (completed) => {
+        setDragging(null);
+        near.current = false;
+        if (!completed) hover(source, null);
+        drop(source);
       },
     }),
-    [drop, finger, origin],
+    [drop, figureOf, finger, hover, origin],
   );
 
   const paletteDrags = useMemo(
@@ -90,42 +116,31 @@ export function FigurePlayground() {
   );
   const barDragFor = useCallback((key: number) => dragFrom({ kind: 'bar', key }), [dragFrom]);
 
-  const playPalette = (figure: FigureId) => {
-    setSoundingKey(null);
-    playSound(figure);
-  };
-  const playPlaced = useCallback(
-    (span: FigureSpan) => {
-      setSoundingKey(span.key);
-      playSound(span.figure);
-    },
-    [playSound],
-  );
+  const playPlaced = useCallback((span: FigureSpan) => playSound(span.figure), [playSound]);
 
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: playground.shake.value }],
   }));
-  const ghostFigure =
-    dragging === null
-      ? null
-      : dragging.kind === 'palette'
-        ? dragging.figure
-        : (bar.figures.find((placed) => placed.key === dragging.key)?.figure ?? null);
+  const ghostFigure = dragging === null ? null : figureOf(dragging);
 
   return (
     <View
       ref={container}
       collapsable={false}
-      onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
+      onLayout={(event) => {
+        widthRef.current = event.nativeEvent.layout.width;
+        setWidth(event.nativeEvent.layout.width);
+      }}
       style={styles.container}
     >
       <Animated.View ref={barView} collapsable={false} style={shakeStyle}>
         {/* Hasta medir el ancho (un fotograma) la barra mide 0 y no se ve. */}
         <RhythmBarView
-          bar={bar}
+          bar={shown}
           width={width}
-          draggingKey={dragging?.kind === 'bar' ? dragging.key : null}
-          soundingKey={sounding === null ? null : soundingKey}
+          // Lejos de la barra, una colocada se atenúa en su sitio; cerca, ya
+          // se ve entera donde va a caer.
+          draggingKey={dragging?.kind === 'bar' && !previewing ? dragging.key : null}
           onPress={playPlaced}
           onRemove={remove}
           dragFor={barDragFor}
@@ -138,9 +153,8 @@ export function FigurePlayground() {
             key={figure.id}
             figure={figure.id}
             space={controls.figureSpaceTile}
-            active={soundingKey === null && sounding === figure.id}
             accessibilityLabel={`${figure.name}. Toca para ponerla en la barra`}
-            onPressIn={() => playPalette(figure.id)}
+            onPressIn={() => playSound(figure.id)}
             onPress={() => add(figure.id)}
             drag={paletteDrags.get(figure.id)}
           />
@@ -148,7 +162,14 @@ export function FigurePlayground() {
       </View>
 
       {ghostFigure !== null && (
-        <Ghost figure={ghostFigure} finger={finger} origin={origin} color={colors.brandText} />
+        <Ghost
+          figure={ghostFigure}
+          width={widthOf(ghostFigure, width)}
+          barWidth={width}
+          finger={finger}
+          origin={origin}
+          hidden={previewing}
+        />
       )}
     </View>
   );
@@ -156,22 +177,34 @@ export function FigurePlayground() {
 
 interface GhostProps {
   figure: FigureId;
+  /** Lo que ocupará en la barra, en píxeles. */
+  width: number;
+  barWidth: number;
   finger: SharedValue<FingerPoint>;
   origin: SharedValue<FingerPoint>;
-  color: string;
+  /** Ya se muestra en su sitio dentro de la barra: la copia se aparta. */
+  hidden: boolean;
 }
 
-/** La figura que viaja: justo encima del dedo, para que el dedo no la tape. */
-function Ghost({ figure, finger, origin, color }: GhostProps) {
+/** La figura que viaja, con su recuadro a tamaño real, justo encima del dedo. */
+function Ghost({ figure, width, barWidth, finger, origin, hidden }: GhostProps) {
+  const opacity = useSharedValue(1);
+
+  useEffect(() => {
+    opacity.value = withTiming(hidden ? 0 : 1, { duration: motion.exit });
+  }, [hidden, opacity]);
+
   const style = useAnimatedStyle(() => ({
+    opacity: opacity.value,
     transform: [
-      { translateX: finger.value.x - origin.value.x - GHOST.width / 2 },
-      { translateY: finger.value.y - origin.value.y - GHOST.height },
+      { translateX: ghostLeft(finger.value.x, origin.value.x, width, barWidth) },
+      { translateY: finger.value.y - origin.value.y - controls.dragGhostLift - BAR_HEIGHT },
     ],
   }));
+
   return (
     <Animated.View pointerEvents="none" style={[styles.ghost, style]}>
-      <FramedFigureGlyph figure={figure} space={GHOST_SPACE} color={color} />
+      <FigureBox figure={figure} width={width} />
     </Animated.View>
   );
 }
