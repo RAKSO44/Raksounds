@@ -1,8 +1,10 @@
 # Home — ruta de aprendizaje
 
-Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
-(Pulso y tempo)**. Documento de partida y decisiones en `docs/roadmap/etapa-1/`
-(las decisiones de `modulos-1-2.md` prevalecen sobre la especificación).
+**Módulo 1 (Las notas musicales)** y **Módulo 2 (Pulso y tempo)** de la
+Etapa 1, y **Módulo 3 (Figuras musicales)** de la Etapa 2. Documento de
+partida y decisiones en `docs/roadmap/etapa-1/` (las decisiones de
+`modulos-1-2.md` prevalecen sobre la especificación) y
+`docs/roadmap/etapa-2/modulo-3.md`.
 
 - Las etapas y módulos de la ruta viven en `domain/lessons/stages.ts`. Arriba
   hay UNA sola tarjeta fija (`StageBanner`) con la etapa en curso; entre etapas,
@@ -25,7 +27,7 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   cierra el otro; tocar el temario lo devuelve a círculo.
 - **NADA SE BLOQUEA**: se entra a cualquier módulo, teoría o práctica en
   cualquier orden. El progreso solo se indica: teoría leída → labio dorado;
-  práctica completada (≥ 80 %: 12/15, 9/11) → cara dorada; en la tarjeta, cada botón se
+  práctica completada (≥ 80 %: 12/15, 9/11, 14/17) → cara dorada; en la tarjeta, cada botón se
   vuelve dorado. El cambio se anima al volver al Home (color + un destello
   que cruza el nodo, `useStatusTransition`), nunca a escondidas.
 - Teoría: hasta 3 hojas que se pasan con ← n → (el ✓ final la marca como
@@ -34,7 +36,7 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   globo sin color (superficie + borde, como Duolingo) con UNA frase corta,
   del ancho que pide esa frase y centrado bajo el término.
 - Práctica: ejercicios generados de una semilla, plantilla fija por módulo
-  (Módulo 1: 15; Módulo 2: 11 — no hace falta llegar a 15 ni repetir un
+  (Módulo 1: 15; Módulo 2: 11; Módulo 3: 17 — no hace falta llegar a 15 ni repetir un
   tipo de ejercicio que ya salió; `practiceLength`).
   Reglas en `domain/lessons/progress.ts`; guardado en
   `features/home/progressStore.ts`. En el resultado, si hubo fallos,
@@ -45,10 +47,13 @@ Etapa 1 del roadmap, solo **Módulo 1 (Las notas musicales)** y **Módulo 2
   `clip-choice` (cada opción es un sonido), `tempo-choice` (cada opción es
   un pulso sin fin), `sequence` (ordenar tocando o arrastrando,
   `domain/lessons/sequenceBoard.ts`), `pick` (marcar los sonidos que van
-  juntos) y `tap` (4 toques libres sobre un pulso continuo, en golpes
-  seguidos, `judgeTapsOnPulse` en `domain/lessons/tapSync.ts`). Los
+  juntos), `tap` (4 toques libres sobre un pulso continuo, en golpes
+  seguidos, `judgeTapsOnPulse` en `domain/lessons/tapSync.ts`) y
+  `fill-bar` (llenar la barra rítmica, `judgeFilledBar`). Una opción o
+  ficha puede ser una figura escrita (`notation`) en vez de texto. Los
   estímulos son `Clip`s; los hace sonar `useClipPlayer` (piano para notas,
-  metrónomo para golpes).
+  metrónomo para golpes, y notas de duración EXACTA para las figuras:
+  `rhythm`, `IAudioPlayer.playTimed`).
 - **El metrónomo de la práctica es `Metronome`** (`features/home/components/`),
   dibujado con `react-native-svg` como un objeto real pero limpio: pirámide
   de nogal con labio 3D, escala crema con una línea central tenue, brazo de

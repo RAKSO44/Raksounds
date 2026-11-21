@@ -33,6 +33,12 @@
   curva acabando en 1, cualquier exceso era recorte duro. No reintroducir un
   slider que amplifique.
 
+- **Duraciones que importan (figuras): `playTimed`, nunca `noteOn`/`noteOff`.**
+  `noteOff` garantiza 1,5 s por nota (una tecla tocada no debe sonar a
+  chasquido) más 0,7 s de release: con él la negra, la corchea y la
+  semicorchea sonaban igual. Un clip `rhythm` programa cada nota en el reloj
+  de audio con su duración exacta y un apagador de 60 ms.
+
 ## Micrófono (entonación)
 
 - Se captura con el `AudioRecorder` de react-native-audio-api (`onAudioReady`,

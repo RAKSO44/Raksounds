@@ -1,9 +1,7 @@
 # Etapa 2 · Módulo 3 (Figuras musicales) — decisiones de implementación
 
 Hecha a partir de bocetos del usuario (2026-11-20). Estas decisiones
-prevalecen sobre `roadmap.md`. Por ahora solo existe la **teoría**; la
-práctica no está diseñada y su botón muestra el aviso "Próximamente"
-(`hasPractice` en `domain/lessons/practice.ts`).
+prevalecen sobre `roadmap.md`. La **práctica** (2026-11-21) está al final.
 
 ## Figuras vectoriales como objetos (decisión de arquitectura)
 
@@ -132,3 +130,91 @@ reproducirse entera.
 
 - La Etapa 1 se llama **Introducción** (antes "Primeros pasos").
 - El Home no muestra la barra de desplazamiento (el scroll sigue igual).
+
+## Práctica (2026-11-21, revisada con el usuario)
+
+Diecisiete ejercicios (`domain/lessons/module3Practice.ts`); se completa con
+14/17. Van de reconocer a aplicar:
+
+| # | Ejercicio | Mecánica |
+|---|---|---|
+| 1 | ¿Cómo se llama esta figura? (redonda, blanca o negra en grande) | choice |
+| 2 | ¿Cuál de estas es la X? (tres figuras dibujadas) | choice con figuras |
+| 3 | ¿Cómo se llama esta figura? (corchea o semicorchea: la pareja que más se confunde) | choice |
+| 4 | ¿Cuál dura más / menos? (vecinas o a dos pasos) | choice con figuras |
+| 5 | ¿Qué figura dura la mitad de 𝅗𝅥? | choice con figuras |
+| 6 | Ordena de la que más dura a la que menos (4 figuras) | sequence |
+| 7 | Si 𝅝 vale 1 unidad, ¿cuánto vale ♪? (tres valores seguidos: 1/2, 1/4, 1/8…) | choice |
+| 8 | ¿Qué vale lo mismo que esta figura? (filas de una figura más corta) | choice con figuras |
+| 9 | Completa la barra (trae figuras fijas; lo que falta no cabe en UNA figura) | fill-bar |
+| 10 | La primera nota es una negra. ¿Qué figura es la segunda? | choice, de oído |
+| 11 | ¿Qué figuras son estas? (corcheas o semicorcheas unidas por barras) | choice |
+| 12 | Escucha y elige cómo se escribe (una figura y dos de otra, reordenadas) | choice, de oído |
+| 13 | Escucha y escribe el ritmo en la barra (trae puesta la primera figura) | fill-bar, dictado |
+| 14 | Llena la barra con exactamente N figuras, o combinando dos figuras (al azar) | fill-bar |
+| 15 | Escucha y elige cómo se escribe (dos y dos de figuras cortas, reordenadas) | choice, de oído |
+| 16 | Escucha y escribe el ritmo en la barra (vacía, con semicorcheas) | fill-bar, dictado |
+| 17 | Ordena de la que menos dura a la que más (las 5) | sequence |
+
+Decisiones:
+
+- **Límites de lo enseñado.** Nada de "la negra dura un pulso" (se ve en
+  Compases y métrica), ni silencios, ni compases. Las correcciones comparan
+  con "la mitad de", como la tabla de la teoría.
+- **De oído siempre hay referencia**: una figura sola no dura un tiempo
+  fijo. El 10 da la negra; el 12 y el 15 comparan las figuras del mismo
+  ritmo entre sí; en los dictados la referencia es la barra (dura una
+  redonda) y, en el 13, además la primera figura ya puesta.
+- **Fuera "¿Qué nota dura más?" de oído** (pedido del usuario): dos notas
+  sueltas A/B no dicen qué figura es cada una; afirmarlo al corregir no
+  tenía sentido. Lo reemplazan el segundo "Escucha y elige" (15) y los dos
+  dictados.
+- **Fuera la balanza** (pedido del usuario: no gustó). La equivalencia es
+  ahora el 8: la figura en grande y tres filas de una figura más corta.
+  Parejas de 4 y 8 (la de 2 ya es el ejercicio 5); las filas son siempre
+  pares (2/4/8 o 4/6/8): un impar se descartaría sin pensar.
+- **Las opciones con figura suenan al tocarlas**, salvo en los de oído y en
+  el 11 (`mutedOptions`), donde se resolverían comparando sonidos sin leer.
+  Tras corregir suenan todas y conservan los colores de la corrección.
+- **Bajo la ficha grande**: "Recuerda que la duración es referencial"
+  (texto del usuario, en vez de "Toca la figura para escucharla"): lo que
+  suena es una duración posible, no la única.
+- **Duraciones exactas** (pedido del usuario: "que suene bien"). Antes cada
+  nota duraba al menos 1,5 s (`noteOff` garantiza un mínimo para las teclas)
+  y la corchea y la semicorchea sonaban igual. Ahora una figura es un clip
+  `rhythm` y cada nota se programa en el reloj de audio con
+  `IAudioPlayer.playTimed`: suena justo lo que vale a 80 BPM (redonda 3 s,
+  blanca 1,5 s, negra 0,75 s, corchea 375 ms, semicorchea 187,5 ms) y se
+  apaga con un apagador de 60 ms. Las notas de un ritmo van pegadas, sin
+  huecos. Vale también para la teoría.
+- El 14 pide 3, 5, 6 o 7 figuras (2, 4 u 8 saldrían solas) o combinar
+  blanca+negra, blanca+corchea o negra+corchea.
+- **Llenar la barra** reutiliza la barra de "¡Experimenta un poco!"
+  (`FigurePlayground`, con `palette`, `given`, `disabled` y `onChange`).
+  Siempre dice "La barra dura una redonda 𝅝" (pedido del usuario). Las
+  figuras que trae son fijas: querer quitarlas hace temblar la barra.
+  "Comprobar" se habilita con la barra llena y vale cualquier forma que
+  cumpla la regla (`judgeFilledBar`); si falla, debajo aparece "Una forma
+  correcta:".
+- **Dictados** (regla `dictation`): el parlante toca el ritmo entero las
+  veces que haga falta y solo vale ese ritmo en ese orden; al fallar se
+  muestra "Lo que sonó:". Se arman con trozos que suman un pulso de negra
+  (blanca, negra, dos corcheas; en el 16 también cuatro semicorcheas), con
+  al menos dos figuras distintas y no más de 8.
+- Una figura sola en su ficha grande va sin el marco común (centrada). En
+  filas de botones vecinos todas apoyan la cabeza a la misma altura; en las
+  opciones apiladas y en la ficha grande, cada fila se mide con SUS figuras
+  y queda centrada (con el marco común, una fila de negras se veía caída).
+- **Centro óptico** (pedido del usuario: las corcheas unidas "se sienten a
+  la derecha aunque estén centradas"). El ojo centra por el peso visual, no
+  por la caja: en un grupo unido la barra (lo más pesado) va sobre las
+  plicas, a la derecha de las cabezas, y su tinta quedaba 0,3–0,4 espacios
+  a la derecha del centro de la caja. Cada dibujo calcula su tinta
+  (`FigureGlyph.ink`: área y centro de masa horizontal, con los corchetes
+  muestreados como polígono) y la ficha grande y las opciones apiladas se
+  centran por ella. En filas alineadas (botones vecinos) no se corrige:
+  ahí manda que las cabezas coincidan.
+- **Calificación de un doble toque.** Dos "Comprobar" en el mismo fotograma
+  añadían dos resultados y desde ahí cada ejercicio mostraba el veredicto de
+  otro (una barra bien llena salió "No es correcto"). Ahora cada resultado
+  va en su posición y un segundo "Comprobar" se ignora.
