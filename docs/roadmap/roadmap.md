@@ -169,7 +169,7 @@ Los módulos representan temas principales. No significa que cada uno deba desar
 - Los grados se nombran con números (1–7), no con solfeo móvil; los
   intervalos incluyen el unísono y, al final, aumentados y disminuidos.
 - El resultado son 25 módulos (antes 23).
-- La antigua Etapa 1 (notas + ritmo) se divide en **Primeros pasos**
+- La antigua Etapa 1 (notas + ritmo) se divide en **Introducción**
   (Módulos 1–2) y **Ritmo** (3–6). Son 6 etapas; los módulos no cambian de
   número.
 
@@ -177,7 +177,7 @@ Los módulos representan temas principales. No significa que cada uno deba desar
 a donde prefiera (nada se bloquea), así que la ruta funciona como un mapa:
 cada etapa agrupa un solo tema y el alumno elige cuál recorrer. Por eso no
 se alternan módulos de ritmo y de altura. La única etapa con las dos
-materias es Primeros pasos, que es la introducción.
+materias es la Etapa 1, Introducción.
 
 **Ritmo y altura son ramas independientes.** Los módulos de ritmo (2–6) no
 son prerrequisito de ningún módulo de altura, y viceversa.
@@ -207,7 +207,7 @@ completa quedan para quien quiera entender armonía. Dicho por etapas: de la
 Etapa 1 solo el Módulo 1, la 3 sin el pentagrama, la 4 hasta el Módulo 14
 y, para arpegios, parte de la 5.
 
-# Etapa 1 — Primeros pasos
+# Etapa 1 — Introducción
 
 El objetivo es un primer contacto con las dos materias de la app: qué es una nota (altura) y qué es el pulso (ritmo). Es la puerta de entrada a cualquiera de las etapas siguientes.
 

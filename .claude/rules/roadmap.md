@@ -1,12 +1,14 @@
-# Roadmap pedagógico (Home) — Módulos 1–2 hechos; el resto, solo cuando se pida
+# Roadmap pedagógico (Home) — Módulos 1–2 y teoría del 3 hechos; el resto, solo cuando se pida
 
 El documento fuente es `docs/roadmap/roadmap.md`: visión, metodología
 (microlecciones estilo Duolingo), las 6 etapas / 25 módulos y la forma de
 trabajo. **Léelo entero antes de tocar cualquier cosa del roadmap.**
 
-Estado: implementados **Módulo 1 y Módulo 2** (Etapa 1, Primeros pasos)
+Estado: implementados **Módulo 1 y Módulo 2** (Etapa 1, Introducción) y la
+**teoría del Módulo 3** (Figuras musicales, `docs/roadmap/etapa-2/modulo-3.md`;
+su práctica aún no: el botón avisa "Próximamente")
 (`docs/roadmap/etapa-1/`: especificación de partida + `modulos-1-2.md` con
-las decisiones, que prevalecen). Los Módulos 3–16 (Etapas 2 a 4) aparecen en
+las decisiones, que prevalecen). Los Módulos 4–16 (Etapas 2 a 4) aparecen en
 la ruta como "Próximamente" con su título y el temario del roadmap (pedido
 por el usuario el 2026-11-17), pero SIN contenido: su teoría y práctica no se
 escriben hasta que el usuario pida trabajarlos. Nada en la ruta se bloquea.
