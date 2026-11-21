@@ -14,6 +14,8 @@ export const spacing = {
 } as const;
 
 export const radii = {
+  /** Esquinas apenas suavizadas: recuadros que deben encajar uno con otro. */
+  xs: 4,
   sm: 8,
   md: 12,
   lg: 16,
@@ -170,10 +172,23 @@ export const controls = {
   rhythmBarHeight: 64,
   rhythmBarStroke: 2,
   rhythmBarTickHeight: 32,
-  /** Hueco entre los recuadros de dos figuras colocadas en la barra. */
+  /**
+   * Margen vertical del recuadro de una figura en la barra. A lo ancho no
+   * lleva: los recuadros se tocan, cada uno justo del ancho de su duración.
+   */
   rhythmBarBoxInset: 1.5,
   /** Opacidad de una figura colocada mientras se arrastra (su sitio sigue a la vista). */
   dragSourceOpacity: 0.3,
+  /** Lo que la copia arrastrada flota por encima del dedo, para que el dedo no la tape. */
+  dragGhostLift: 12,
+  /**
+   * Cercanía a la barra (por arriba y por abajo) a la que la figura
+   * arrastrada empieza a mostrarse en su sitio, y la distancia, mayor, a la
+   * que deja de hacerlo. La diferencia evita que la vista previa parpadee
+   * con el dedo en el borde.
+   */
+  dropEnterSlop: 16,
+  dropExitSlop: 56,
   /** Lo que se mantiene pulsada una figura de la barra para quitarla (ms). */
   removeHoldMs: 450,
 } as const;
@@ -223,7 +238,7 @@ export const motion = {
   scoreTick: 140,
   /** Cambio de color de la tarjeta de etapa al pasar a otra etapa. */
   stageColor: 220,
-  /** Las figuras de la barra se corren a su nuevo sitio (insertar, quitar, intercambiar). */
+  /** Las figuras de la barra se corren a su nuevo sitio (insertar, quitar, mover). */
   figureShift: 200,
 } as const;
 

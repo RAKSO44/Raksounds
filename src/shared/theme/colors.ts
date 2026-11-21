@@ -61,6 +61,22 @@ export interface ThemeColors {
   appleStem: string;
   appleShine: string;
 
+  /**
+   * Color propio de cada figura en la barra rítmica (Módulo 3): el borde
+   * suave de su recuadro y el velo que pinta lo que ocupa. Cada figura con el suyo, para distinguirlas de un
+   * vistazo.
+   */
+  figureWholeEdge: string;
+  figureWholeTint: string;
+  figureHalfEdge: string;
+  figureHalfTint: string;
+  figureQuarterEdge: string;
+  figureQuarterTint: string;
+  figureEighthEdge: string;
+  figureEighthTint: string;
+  figureSixteenthEdge: string;
+  figureSixteenthTint: string;
+
   /** Acento (rosa). Un color más para distinguir las etapas de la ruta. */
   accent: string;
   accentShadow: string;
@@ -175,6 +191,17 @@ export const lightColors: ThemeColors = {
   dangerTint: palette.redTintLight,
   dangerText: palette.redTextLight,
 
+  figureWholeEdge: palette.blueEdgeLight,
+  figureWholeTint: palette.bluePanel,
+  figureHalfEdge: palette.greenEdgeLight,
+  figureHalfTint: palette.greenPanel,
+  figureQuarterEdge: palette.purpleEdgeLight,
+  figureQuarterTint: palette.purplePanel,
+  figureEighthEdge: palette.orangeEdgeLight,
+  figureEighthTint: palette.orangePanel,
+  figureSixteenthEdge: palette.pinkEdgeLight,
+  figureSixteenthTint: palette.pinkPanel,
+
   accent: palette.pink,
   accentShadow: palette.pinkShadow,
   accentTint: palette.pinkTintLight,
@@ -261,6 +288,17 @@ export const darkColors: ThemeColors = {
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,
   dangerText: palette.redTextDark,
+
+  figureWholeEdge: palette.blueEdgeDark,
+  figureWholeTint: palette.blueTintDark,
+  figureHalfEdge: palette.greenEdgeDark,
+  figureHalfTint: palette.greenTintDark,
+  figureQuarterEdge: palette.purpleEdgeDark,
+  figureQuarterTint: palette.purpleTintDark,
+  figureEighthEdge: palette.orangeEdgeDark,
+  figureEighthTint: palette.orangeTintDark,
+  figureSixteenthEdge: palette.pinkEdgeDark,
+  figureSixteenthTint: palette.pinkTintDark,
 
   accent: palette.pink,
   accentShadow: palette.pinkShadow,

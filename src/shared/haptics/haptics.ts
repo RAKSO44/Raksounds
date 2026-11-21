@@ -61,6 +61,22 @@ export function hapticTap(): void {
 }
 
 /**
+ * Tic suave mientras se arrastra algo: marca cada vez que lo arrastrado
+ * encaja en un sitio nuevo (las demás piezas se corren) o lo deja. Más leve
+ * que `hapticTap`, porque puede repetirse seguido sin soltar el dedo.
+ *
+ * `Clock_Tick` es el tic del sistema para pasos de un deslizamiento; en iOS,
+ * el feedback de selección.
+ */
+export function hapticTick(): void {
+  if (Platform.OS === 'android') {
+    safe(() => Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Clock_Tick));
+    return;
+  }
+  safe(() => Haptics.selectionAsync());
+}
+
+/**
  * Golpe seco al PRESIONAR un botón alzado (relieve 3D). Es el ÚNICO impacto
  * del botón: al soltar no hay háptica (convención del proyecto — un solo golpe
  * por pulsación, no un par baja/sube).

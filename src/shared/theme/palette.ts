@@ -85,6 +85,27 @@ export const palette = {
   /** Fondo del panel de "perfecto": velo del morado de marca. */
   purplePanel: '#F0E2FD',
 
+  // Naranja (Fox), solo para el recuadro de la corchea en la barra rítmica.
+  orangeTintDark: '#3D2A14',
+
+  // Velos "de panel" (más presentes que los tints) para el relleno de los
+  // recuadros de la barra rítmica: sobre blanco, un tint casi no se ve.
+  bluePanel: '#DDF4FF',
+  pinkPanel: '#FBDDF2',
+  orangePanel: '#FFE8CC',
+  // Bordes de esos recuadros: a medio camino entre el color entero y el
+  // fondo (blanco en claro, midnight en oscuro), para que no griten.
+  blueEdgeLight: '#8DD7FA',
+  greenEdgeLight: '#ABE580',
+  purpleEdgeLight: '#D2AFF3',
+  orangeEdgeLight: '#FFCA7F',
+  pinkEdgeLight: '#F3ADDF',
+  blueEdgeDark: '#17678D',
+  greenEdgeDark: '#357513',
+  purpleEdgeDark: '#5C3F86',
+  orangeEdgeDark: '#895A12',
+  pinkEdgeDark: '#7D3D71',
+
   // Teclado de piano dibujado en la app (corrección de entonación).
   ivory: '#FFFFFF',
   ebony: '#2B2B2B',
