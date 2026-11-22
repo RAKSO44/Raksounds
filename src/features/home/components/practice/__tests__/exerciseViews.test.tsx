@@ -1,7 +1,13 @@
 import { ReactNode } from 'react';
 import { render, screen, userEvent, waitFor } from '@testing-library/react-native';
 
-import { generatePractice, LessonExercise, PickExercise, SequenceExercise } from '@/domain/lessons';
+import {
+  generatePractice,
+  LessonExercise,
+  PickExercise,
+  rhythmClip,
+  SequenceExercise,
+} from '@/domain/lessons';
 import { figureById, FigureId } from '@/domain/rhythm';
 import { ThemeProvider } from '@/shared/theme';
 
@@ -251,10 +257,16 @@ describe('ejercicios del Módulo 2', () => {
 
 describe('ejercicios del Módulo 3', () => {
   const figuresAt = (position: number) => generatePractice('figures', 2024)[position - 1];
-  /** Lo que se oye de una figura: una nota que dura justo lo que vale a 80 BPM. */
-  const soundOf = (id: FigureId) => ({
-    kind: 'rhythm',
-    notes: [{ midi: 60, atMs: 0, durationMs: figureById(id).units * 187.5 }],
+  /** Lo que dura una semicorchea al tempo del módulo (72 BPM). */
+  const sixteenth = 60000 / 72 / 4;
+  /** Lo que se oye de una figura: una nota que dura justo lo que vale, sobre el pulso. */
+  const soundOf = (id: FigureId) => rhythmClip([id], { pulse: true });
+
+  it('las figuras suenan sobre el pulso: un golpe por negra', () => {
+    const whole = soundOf('whole');
+    if (whole.kind !== 'rhythm') throw new Error();
+    expect(whole.notes).toEqual([{ midi: 60, atMs: 0, durationMs: 16 * sixteenth }]);
+    expect(whole.pulseOnsetsMs).toHaveLength(4);
   });
 
   it('opciones con figuras: cada una suena lo que dura al tocarla y se elige', async () => {
@@ -300,14 +312,17 @@ describe('ejercicios del Módulo 3', () => {
     }
     await show(exercise);
     await user.press(screen.getByLabelText('Las dos notas: escuchar'));
-    const hidden = figureById(exercise.stimulus.hidden).units * 187.5;
-    expect(player.play).toHaveBeenLastCalledWith({
-      kind: 'rhythm',
-      notes: [
-        { midi: 60, atMs: 0, durationMs: 750 },
-        { midi: 60, atMs: 750, durationMs: hidden },
-      ],
-    });
+    const hidden = figureById(exercise.stimulus.hidden).units * sixteenth;
+    expect(player.play).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        kind: 'rhythm',
+        notes: [
+          { midi: 60, atMs: 0, durationMs: 4 * sixteenth },
+          { midi: 60, atMs: 4 * sixteenth, durationMs: hidden },
+        ],
+      }),
+    );
+    expect(player.play.mock.calls.at(-1)?.[0].pulseOnsetsMs.length).toBeGreaterThan(0);
   });
 
   it('equivalencia: la figura grande suena y cada fila de figuras se puede elegir', async () => {
@@ -315,7 +330,7 @@ describe('ejercicios del Módulo 3', () => {
     const exercise = figuresAt(8);
     if (exercise.mechanic !== 'choice') throw new Error();
     const { onAnswer } = await show(exercise);
-    expect(screen.getByText('Recuerda que la duración es referencial')).toBeTruthy();
+    expect(screen.queryByText('Recuerda que la duración es referencial')).toBeNull();
     for (const option of exercise.options) {
       await user.press(screen.getByLabelText(option.label));
       expect(onAnswer).toHaveBeenLastCalledWith({ kind: 'option', id: option.id });
@@ -352,14 +367,7 @@ describe('ejercicios del Módulo 3', () => {
     const { onAnswer } = await show(exercise);
     expect(screen.getByLabelText('La barra dura una redonda')).toBeTruthy();
     await user.press(screen.getByLabelText('El ritmo: escuchar'));
-    expect(player.play).toHaveBeenLastCalledWith({
-      kind: 'rhythm',
-      notes: figures.map((id, index) => ({
-        midi: 60,
-        atMs: figures.slice(0, index).reduce((sum, f) => sum + figureById(f).units * 187.5, 0),
-        durationMs: figureById(id).units * 187.5,
-      })),
-    });
+    expect(player.play).toHaveBeenLastCalledWith(rhythmClip(figures, { pulse: true }));
     for (const id of figures) {
       await user.press(
         screen.getByLabelText(`${figureById(id).name}. Toca para ponerla en la barra`),
@@ -373,15 +381,15 @@ describe('ejercicios del Módulo 3', () => {
     expect(screen.getByText('Lo que sonó:')).toBeTruthy();
   });
 
-  it('ordenar figuras: cada ficha suena lo que dura y se coloca', async () => {
+  it('ordenar figuras: las fichas NO suenan (se ordenan leyendo) y se colocan', async () => {
     const user = userEvent.setup();
     const exercise = figuresAt(17);
     if (exercise.mechanic !== 'sequence') throw new Error();
     const { onAnswer } = await show(exercise);
     for (const id of exercise.answer) {
       await user.press(screen.getByLabelText(figureById(id as FigureId).name));
-      expect(player.play).toHaveBeenLastCalledWith(soundOf(id as FigureId));
     }
+    expect(player.play).not.toHaveBeenCalled();
     expect(onAnswer).toHaveBeenLastCalledWith({ kind: 'sequence', ids: exercise.answer });
   });
 });

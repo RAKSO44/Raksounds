@@ -250,7 +250,7 @@ const EQUIVALENT_COUNTS: Record<number, readonly number[]> = {
   8: [4, 6, 8],
 };
 
-/** 8: "¿Qué vale lo mismo que esta figura?", con filas de una figura más corta. */
+/** 8: "¿Qué opción tiene la misma duración que esta figura?", con filas de una figura más corta. */
 function equivalence(position: number, random: RandomSource): ChoiceExercise {
   const [long, short] = pickOne(EQUIVALENT_PAIRS, random);
   const count = unitsOf(long) / unitsOf(short);
@@ -258,7 +258,7 @@ function equivalence(position: number, random: RandomSource): ChoiceExercise {
   return {
     position,
     mechanic: 'choice',
-    prompt: '¿Qué vale lo mismo que esta figura?',
+    prompt: '¿Qué opción tiene la misma duración que esta figura?',
     explanation: `Una ${nameOf(long)} vale lo mismo que ${count} ${pluralOf(short)}.`,
     stimulus: { kind: 'notation', notation: { kind: 'figures', figures: [long] }, muted: false },
     options: EQUIVALENT_COUNTS[count].map((n) => figuresOption(row(n), String(n))),
@@ -459,7 +459,10 @@ function patternByEar(
     mechanic: 'choice',
     prompt: 'Escucha y elige cómo se escribe',
     explanation: `Sonó: ${answer.map(nameOf).join(', ')}.`,
-    stimulus: { kind: 'clips', clips: [{ name: 'El ritmo', clip: rhythmClip(answer) }] },
+    stimulus: {
+      kind: 'clips',
+      clips: [{ name: 'El ritmo', clip: rhythmClip(answer, { pulse: true }) }],
+    },
     options: patterns.map((figures) => figuresOption(figures)),
     answer: answer.join('-'),
     mutedOptions: true,

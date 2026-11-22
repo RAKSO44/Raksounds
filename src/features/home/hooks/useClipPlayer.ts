@@ -80,10 +80,14 @@ export function useClipPlayer(): ClipPlayer {
         start = metronome.play(clip.onsetsMs);
       } else if (clip.kind === 'rhythm') {
         // La duración es el contenido: todo se programa de una vez en el reloj
-        // de audio, cada nota con su duración exacta.
-        start = performance.now();
+        // de audio, cada nota con su duración exacta. Con pulso de fondo, las
+        // notas arrancan con el primer golpe (el metrónomo fija el instante).
+        const pulseStart =
+          clip.pulseOnsetsMs === undefined ? null : metronome.play(clip.pulseOnsetsMs);
+        start = pulseStart ?? performance.now();
+        const lead = Math.max(0, start - performance.now());
         for (const note of clip.notes) {
-          const voice = pianoPlayer.playTimed(note.midi, note.atMs, note.durationMs);
+          const voice = pianoPlayer.playTimed(note.midi, lead + note.atMs, note.durationMs);
           if (voice !== NO_VOICE) voices.current.push(voice);
         }
       } else {

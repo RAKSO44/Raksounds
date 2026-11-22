@@ -58,7 +58,7 @@ export function ChoiceExerciseView({
       notation !== undefined
         ? silent
           ? undefined
-          : () => player.play(rhythmClip(notationFigures(notation)))
+          : () => player.play(rhythmClip(notationFigures(notation), { pulse: true }))
         : midi === undefined
           ? undefined
           : () => player.playNote(midi);

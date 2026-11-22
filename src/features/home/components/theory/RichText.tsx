@@ -5,6 +5,7 @@ import { beamedGlyph, figureById, FigureGlyph as Glyph, FigureId } from '@/domai
 import { controls, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 import { glyphOf, GlyphSvg } from '../notation/FigureGlyph';
+import { Apple } from './Apple';
 import { TipIcon, useTooltip } from './TooltipHost';
 
 /**
@@ -20,6 +21,8 @@ import { TipIcon, useTooltip } from './TooltipHost';
  *   de 𝅗𝅥"), dibujada en vectores, nunca un carácter de una fuente.
  * - `{ beamed, count }`: varias figuras con corchetes escritas juntas, con
  *   sus plicas unidas por barras.
+ * - `{ apple }`: la manzana de "los números cuentan manzanas", del alto del
+ *   texto.
  */
 export type Segment =
   | string
@@ -31,7 +34,8 @@ export type Segment =
       readonly figure?: FigureId;
     }
   | { readonly figure: FigureId }
-  | { readonly beamed: FigureId; readonly count: number };
+  | { readonly beamed: FigureId; readonly count: number }
+  | { readonly apple: true };
 
 interface RichTextProps {
   segments: readonly Segment[];
@@ -56,6 +60,10 @@ export function RichText({ segments, strong = false, centered = false }: RichTex
       {groupSegments(segments).map((group, index) =>
         Array.isArray(group) ? (
           <InlineFigures key={index} figures={group} />
+        ) : typeof group !== 'string' && 'apple' in group ? (
+          <View key={index} accessible accessibilityLabel="manzana" style={styles.apple}>
+            <Apple size={controls.appleInlineSize} />
+          </View>
         ) : typeof group === 'string' ? (
           // Cada palabra lleva su espacio final: así el espaciado es el de la fuente.
           (group.match(/\S+\s*|\s+/g) ?? []).map((word, wordIndex) => (
@@ -73,16 +81,17 @@ export function RichText({ segments, strong = false, centered = false }: RichTex
 
 type FigureSegment = Extract<Segment, { figure: FigureId } | { beamed: FigureId }>;
 type MarkSegment = Extract<Segment, { text: string }>;
+type AppleSegment = Extract<Segment, { apple: true }>;
 
 function isFigure(segment: Segment): segment is FigureSegment {
-  return typeof segment !== 'string' && !('text' in segment);
+  return typeof segment !== 'string' && !('text' in segment) && !('apple' in segment);
 }
 
 /** Figuras seguidas ("𝅘𝅥𝅮 𝅘𝅥𝅮") van juntas en una sola ficha, como una palabra. */
 function groupSegments(
   segments: readonly Segment[],
-): (string | MarkSegment | FigureSegment[])[] {
-  const groups: (string | MarkSegment | FigureSegment[])[] = [];
+): (string | MarkSegment | AppleSegment | FigureSegment[])[] {
+  const groups: (string | MarkSegment | AppleSegment | FigureSegment[])[] = [];
   segments.forEach((segment) => {
     const last = groups[groups.length - 1];
     if (!isFigure(segment)) groups.push(segment);
@@ -233,6 +242,9 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     borderWidth: 2,
     borderRadius: radii.md,
+  },
+  apple: {
+    marginHorizontal: spacing.xs / 2,
   },
   circle: {
     borderWidth: 2,

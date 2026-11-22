@@ -134,6 +134,13 @@ export const controls = {
   pulseAccentTickHeight: 44,
   pulseTraceStroke: 2,
   /**
+   * Línea del pulso con figuras encima (Módulo 3: "un pulso = una negra"): la
+   * figura manda, así que las marcas son más bajas que las del Módulo 2.
+   */
+  pulseTraceFigureSpace: 8,
+  figureTraceTickHeight: 14,
+  figureTraceAccentTickHeight: 24,
+  /**
    * Slider de BPM (estilo Material 3): canal grueso partido por un tirador de
    * barra vertical, con un hueco a cada lado y un punto al final del canal.
    */
@@ -160,6 +167,8 @@ export const controls = {
   figureSpaceInline: 7,
   /** Manzanas que representan una cantidad ("4 manzanas") en la teoría de figuras. */
   appleIconSize: 28,
+  /** Manzana dentro de un párrafo ("Los números cuentan manzanas 🍎"). */
+  appleInlineSize: 22,
   /**
    * Línea de duración de la teoría de figuras: alto de la fila, grosor de la
    * línea, alto de sus topes y ancho del cursor rojo que la recorre mientras
@@ -231,6 +240,8 @@ export const motion = {
   heartFall: 200,
   /** Vuelo de un "BUM" desde el corazón hasta desvanecerse. */
   bum: 650,
+  /** Un globo dentro de la hoja se despliega (o se recoge) empujando lo de abajo. */
+  reveal: 300,
   /** Lo que tarda una marca en cruzar la línea del pulso, a velocidad constante. */
   traceCross: 2400,
   /** Un nodo de la ruta se abre en tarjeta (o vuelve a círculo). */

@@ -1,4 +1,4 @@
-import { LessonExercise } from './exercise';
+import { LessonExercise, PromptPart } from './exercise';
 import { generateModule1Practice } from './module1Practice';
 import { generateModule2Practice } from './module2Practice';
 import { generateModule3Practice } from './module3Practice';
@@ -45,4 +45,23 @@ export function generateRetry(
  */
 export function practiceLength(id: ModuleId): number {
   return generatePractice(id, 0).length;
+}
+
+/**
+ * Lo que se lee antes del primer ejercicio, con "Continuar" debajo, o `null`
+ * si el módulo empieza directo. En el Módulo 3 fija la referencia con la que
+ * suena todo: el pulso de fondo marca negras.
+ */
+export function practiceIntro(id: ModuleId): readonly PromptPart[] | null {
+  switch (id) {
+    case 'figures':
+      return [
+        'Para todos los ejercicios, asumiremos que una negra ',
+        { figure: 'quarter' },
+        ' siempre vale un pulso.',
+      ];
+    case 'notes':
+    case 'pulse':
+      return null;
+  }
 }

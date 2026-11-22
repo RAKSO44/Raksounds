@@ -19,7 +19,12 @@ export type Clip =
    * Notas cuya duración ES lo que se escucha (las figuras musicales): cada una
    * suena exactamente su `durationMs`, ni más ni menos.
    */
-  | { readonly kind: 'rhythm'; readonly notes: readonly ClipNote[] }
+  | {
+      readonly kind: 'rhythm';
+      readonly notes: readonly ClipNote[];
+      /** Golpes del pulso que suenan de fondo (ms desde el inicio), si los lleva. */
+      readonly pulseOnsetsMs?: readonly number[];
+    }
   /** Golpes de metrónomo, programados con precisión de muestra. */
   | { readonly kind: 'pulse'; readonly onsetsMs: readonly number[] };
 

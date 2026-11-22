@@ -3,7 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 
-import { hasPractice, moduleById, ModuleId } from '@/domain/lessons';
+import { hasPractice, moduleById, ModuleId, practiceIntro } from '@/domain/lessons';
 import {
   AnswerFeedbackSheet,
   BottomActionBar,
@@ -15,6 +15,7 @@ import { useHardwareBack } from '@/shared/navigation';
 import { motion, spacing, typography, useTheme } from '@/shared/theme';
 
 import { LessonExerciseView } from '../components/practice/LessonExerciseView';
+import { RichText } from '../components/theory/RichText';
 import { useClipPlayer } from '../hooks/useClipPlayer';
 import { usePracticeSession } from '../hooks/usePracticeSession';
 import { feedbackTitle } from '../labels';
@@ -74,6 +75,10 @@ function PracticeRound({ moduleId, moduleNumber, retry, base }: PracticeRoundPro
   const recordPractice = useLessonProgressStore((state) => state.recordPractice);
   const recordRetry = useLessonProgressStore((state) => state.recordRetry);
 
+  // Lo que se lee antes del primer ejercicio (si el módulo lo trae).
+  const intro = practiceIntro(moduleId);
+  const [introRead, setIntroRead] = useState(intro === null);
+
   const [leaving, setLeaving] = useState(false);
   const [actionBarHeight, setActionBarHeight] = useState(0);
 
@@ -120,43 +125,58 @@ function PracticeRound({ moduleId, moduleNumber, retry, base }: PracticeRoundPro
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
-        {session.exercise !== null && (
-          <Animated.View
-            key={session.index}
-            entering={FadeIn.duration(motion.enter)}
-            style={styles.exercise}
-          >
-            <LessonExerciseView
-              exercise={session.exercise}
-              revealed={revealed}
-              player={player}
-              onAnswer={session.setAnswer}
+      {introRead ? (
+        <>
+          <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+            {session.exercise !== null && (
+              <Animated.View
+                key={session.index}
+                entering={FadeIn.duration(motion.enter)}
+                style={styles.exercise}
+              >
+                <LessonExerciseView
+                  exercise={session.exercise}
+                  revealed={revealed}
+                  player={player}
+                  onAnswer={session.setAnswer}
+                />
+              </Animated.View>
+            )}
+            {!player.ready && (
+              <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
+            )}
+          </ScrollView>
+
+          {session.exercise !== null && (
+            <AnswerFeedbackSheet
+              visible={revealed}
+              result={session.isCorrect === true ? 'correct' : 'wrong'}
+              title={feedbackTitle(session.isCorrect ?? false)}
+              detail={session.exercise.explanation}
+              bottomInset={actionBarHeight}
             />
-          </Animated.View>
-        )}
-        {!player.ready && (
-          <Text style={[styles.hint, { color: colors.textSecondary }]}>Cargando sonidos…</Text>
-        )}
-      </ScrollView>
+          )}
 
-      {session.exercise !== null && (
-        <AnswerFeedbackSheet
-          visible={revealed}
-          result={session.isCorrect === true ? 'correct' : 'wrong'}
-          title={feedbackTitle(session.isCorrect ?? false)}
-          detail={session.exercise.explanation}
-          bottomInset={actionBarHeight}
-        />
+          <BottomActionBar
+            label={answering ? 'Comprobar' : 'Continuar'}
+            disabled={answering && session.answer === null}
+            transparent={revealed}
+            onPress={answering ? session.confirm : session.advance}
+            onHeight={setActionBarHeight}
+          />
+        </>
+      ) : (
+        <>
+          <ScrollView contentContainerStyle={styles.content} style={styles.scroll}>
+            {intro !== null && (
+              <View style={styles.exercise}>
+                <RichText segments={intro} strong centered />
+              </View>
+            )}
+          </ScrollView>
+          <BottomActionBar label="Continuar" onPress={() => setIntroRead(true)} />
+        </>
       )}
-
-      <BottomActionBar
-        label={answering ? 'Comprobar' : 'Continuar'}
-        disabled={answering && session.answer === null}
-        transparent={revealed}
-        onPress={answering ? session.confirm : session.advance}
-        onHeight={setActionBarHeight}
-      />
 
       <ConfirmDialog
         visible={leaving}

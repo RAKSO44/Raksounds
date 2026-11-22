@@ -21,9 +21,10 @@ function Providers({ children }: { children: ReactNode }) {
 }
 
 const mockBack = jest.fn();
+let mockModule = 'notes';
 jest.mock('expo-router', () => ({
   useRouter: () => ({ push: jest.fn(), back: mockBack, replace: jest.fn() }),
-  useLocalSearchParams: () => ({ module: 'notes' }),
+  useLocalSearchParams: () => ({ module: mockModule }),
 }));
 
 const mockNoteOn = jest.fn((_midi: number) => 1);
@@ -49,6 +50,7 @@ const RIGHT = first.answer;
 const WRONG = first.options.find((option) => option.id !== RIGHT)!.label;
 
 beforeEach(() => {
+  mockModule = 'notes';
   jest.spyOn(Date, 'now').mockReturnValue(SEED);
   mockSoundEffects.play.mockClear();
   mockBack.mockClear();
@@ -110,6 +112,27 @@ describe('PracticeScreen', () => {
     for (const name of ['DO', 'RE', 'MI', 'FA', 'SOL', 'LA', 'SI']) {
       expect(screen.getByLabelText(`Nota ${name}`)).toBeTruthy();
     }
+  });
+
+  it('el Módulo 3 avisa antes del primer ejercicio que una negra vale un pulso', async () => {
+    mockModule = 'figures';
+    const user = userEvent.setup();
+    await renderScreen();
+    const firstFigures = generatePractice('figures', SEED)[0];
+
+    expect(screen.getByText('pulso.')).toBeTruthy();
+    expect(screen.getByLabelText('Negra')).toBeTruthy();
+    expect(screen.queryByText(firstFigures.prompt)).toBeNull();
+
+    await user.press(screen.getByRole('button', { name: 'Continuar' }));
+    expect(screen.getByText(firstFigures.prompt)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Comprobar' })).toBeDisabled();
+  });
+
+  it('el Módulo 1 empieza directo en el primer ejercicio', async () => {
+    await renderScreen();
+    expect(screen.queryByText('pulso.')).toBeNull();
+    expect(screen.getByText(first.prompt)).toBeTruthy();
   });
 
   it('salir pide confirmación', async () => {

@@ -1,4 +1,4 @@
-import { figureById, FigureId, FIGURES } from '../../rhythm';
+import { figureById, figureDurationMs, FigureId, FIGURES } from '../../rhythm';
 import { clipEventTimes, Clip } from '../clip';
 import {
   FillBarExercise,
@@ -8,8 +8,9 @@ import {
   notationFigures,
   stimulusClips,
 } from '../exercise';
+import { FIGURE_DEMO_BPM } from '../figureTheory';
 import { TAPS_PER_EXERCISE } from '../module2Practice';
-import { generatePractice, hasPractice, practiceLength } from '../practice';
+import { generatePractice, hasPractice, practiceIntro, practiceLength } from '../practice';
 import { isRegular } from '../tempo';
 
 const SEEDS = Array.from({ length: 200 }, (_, i) => i * 7919 + 1);
@@ -311,8 +312,20 @@ describe('práctica del Módulo 2 (pulso)', () => {
 
 const unitsOf = (id: string) => figureById(id as FigureId).units;
 const sum = (ids: readonly FigureId[]) => ids.reduce((total, id) => total + unitsOf(id), 0);
-/** Lo que dura una semicorchea a 80 BPM, en ms. */
-const SIXTEENTH_MS = 187.5;
+/** Lo que dura una semicorchea al tempo del módulo, en ms. */
+const SIXTEENTH_MS = figureDurationMs(figureById('sixteenth'), FIGURE_DEMO_BPM);
+
+describe('introducción de la práctica', () => {
+  it('solo el Módulo 3 la lleva: la negra vale un pulso', () => {
+    expect(practiceIntro('notes')).toBeNull();
+    expect(practiceIntro('pulse')).toBeNull();
+    expect(practiceIntro('figures')).toEqual([
+      'Para todos los ejercicios, asumiremos que una negra ',
+      { figure: 'quarter' },
+      ' siempre vale un pulso.',
+    ]);
+  });
+});
 
 describe('práctica del Módulo 3 (figuras)', () => {
   const at = (seed: number, position: number) => generatePractice('figures', seed)[position - 1];
@@ -455,8 +468,12 @@ describe('práctica del Módulo 3 (figuras)', () => {
         expect(pattern.answer.split('-')).toHaveLength(size);
         const [{ clip }] = pattern.stimulus.clips;
         if (clip.kind !== 'rhythm') throw new Error();
-        expect(clip.notes.map((note) => note.durationMs / SIXTEENTH_MS)).toEqual(
-          pattern.answer.split('-').map(unitsOf),
+        expect(
+          clip.notes.map((note) => Math.round((note.durationMs / SIXTEENTH_MS) * 1000) / 1000),
+        ).toEqual(pattern.answer.split('-').map(unitsOf));
+        // El ritmo suena sobre el pulso: un golpe por negra.
+        expect(clip.pulseOnsetsMs?.length).toBe(
+          Math.ceil(sum(pattern.answer.split('-') as FigureId[]) / 4),
         );
       }
     }
@@ -513,7 +530,10 @@ describe('calificar una barra llena', () => {
   });
 
   it('un dictado exige justo esas figuras y en ese orden', () => {
-    const dictation = exercise({ kind: 'dictation', figures: ['half', 'quarter', 'eighth', 'eighth'] });
+    const dictation = exercise({
+      kind: 'dictation',
+      figures: ['half', 'quarter', 'eighth', 'eighth'],
+    });
     expect(judgeFilledBar(dictation, ['half', 'quarter', 'eighth', 'eighth'])).toBe(true);
     expect(judgeFilledBar(dictation, ['quarter', 'half', 'eighth', 'eighth'])).toBe(false);
     expect(judgeFilledBar(dictation, ['half', 'quarter', 'quarter'])).toBe(false);

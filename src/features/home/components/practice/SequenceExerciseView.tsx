@@ -10,7 +10,6 @@ import {
   notationFigures,
   placeInFirstEmpty,
   removeFromSlots,
-  rhythmClip,
   SequenceExercise,
   SequenceSlots,
 } from '@/domain/lessons';
@@ -82,10 +81,10 @@ export function SequenceExerciseView({
   };
 
   const tileOf = (id: string) => exercise.tiles.find((tile) => tile.id === id);
+  // Las figuras de "Ordena de la que más dura…" no suenan: se ordenan leyendo.
   const play = (id: string) => {
-    const tile = tileOf(id);
-    if (tile?.notation !== undefined) player.play(rhythmClip(notationFigures(tile.notation)));
-    else if (tile?.midi !== undefined) player.playNote(tile.midi);
+    const midi = tileOf(id)?.midi;
+    if (midi !== undefined) player.playNote(midi);
   };
   const narrow = exercise.tiles.some((tile) => figureOfTile(tile) !== undefined);
 

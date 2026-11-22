@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import { figureClip } from '@/domain/lessons';
-import { figureById, FigureId } from '@/domain/rhythm';
+import { rhythmClip } from '@/domain/lessons';
+import { FigureId } from '@/domain/rhythm';
 
 import { useClipPlayer } from './useClipPlayer';
 
@@ -19,9 +19,10 @@ export interface FigureSound {
 /**
  * Hace sonar figuras: una nota de piano que dura lo que la figura. Suena una
  * a la vez (otra figura corta la anterior), y `sounding` dice cuál, para que
- * la figura se encienda exactamente lo que dura su sonido.
+ * la figura se encienda exactamente lo que dura su sonido. Con `pulse`, suena
+ * sobre el pulso (la práctica: "una negra = un pulso").
  */
-export function useFigureSound(): FigureSound {
+export function useFigureSound(pulse = false): FigureSound {
   const player = useClipPlayer();
   const [sounding, setSounding] = useState<FigureId | null>(null);
   const [take, setTake] = useState(0);
@@ -29,13 +30,13 @@ export function useFigureSound(): FigureSound {
 
   const play = useCallback(
     (figure: FigureId) => {
-      const start = playClip(figureClip(figureById(figure)), {
+      const start = playClip(rhythmClip([figure], { pulse }), {
         onEnd: () => setSounding(null),
       });
       setSounding(start === null ? null : figure);
       setTake((current) => current + 1);
     },
-    [playClip],
+    [playClip, pulse],
   );
 
   return { sounding, take, play };

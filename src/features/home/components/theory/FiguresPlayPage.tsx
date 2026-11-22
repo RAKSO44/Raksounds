@@ -1,17 +1,18 @@
+import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { radii, spacing, typography, useTheme } from '@/shared/theme';
+import { isFull, RhythmBar } from '@/domain/rhythm';
+import { PushButton } from '@/shared/design-system';
+import { spacing, typography, useTheme } from '@/shared/theme';
 
+import { useBarPlayback } from '../../hooks/useBarPlayback';
+import { DashedBox } from './DashedBox';
+import { DashedDivider } from './DashedDivider';
+import { REFERENCE_TIP } from './definitions';
 import { FigurePlayground } from './FigurePlayground';
 import { RichText, Segment, TheoryHeading } from './RichText';
+import { TheoryBullets } from './TheoryBullets';
 import { ChecklistItem, TheoryChecklist } from './TheoryChecklist';
-
-const NOTES: readonly ChecklistItem[] = [
-  { segments: ['Puedes llenarla de muchas formas.'] },
-  {
-    segments: ['No puedes sobrepasar el tamaño (o duración) que definimos para nuestra barra.'],
-  },
-];
 
 const INSTRUCTIONS: readonly (readonly Segment[])[] = [
   [
@@ -23,29 +24,82 @@ const INSTRUCTIONS: readonly (readonly Segment[])[] = [
   [{ text: 'Mantén presionadas', mark: 'highlight' }, ' las figuras en la barra para quitarlas.'],
 ];
 
-/** Módulo 3 · Página 3: llenar una barra con figuras para sentir cuánto ocupa cada una. */
+const TO_REMEMBER: readonly ChecklistItem[] = [
+  {
+    segments: [
+      'Las figuras necesitan una ',
+      { text: 'referencia', mark: 'highlight', tip: REFERENCE_TIP, tipIcon: 'heart' },
+      ' sobre la cual contar.',
+    ],
+  },
+  {
+    segments: [
+      'Son ',
+      { text: '"las letras"', mark: 'highlight' },
+      ' que usaremos para aprender a leer y escribir música.',
+    ],
+  },
+];
+
+/**
+ * Módulo 3 · Página 4: llenar una barra con figuras y, ya llena, escucharla
+ * entera sobre el pulso.
+ */
 export function FiguresPlayPage() {
   const { colors } = useTheme();
+  const playback = useBarPlayback();
+  const [bar, setBar] = useState<RhythmBar | null>(null);
+  const full = bar !== null && isFull(bar);
+  const playing = playback.playhead !== null;
+
+  // Cambiar la barra (o tocar una figura) corta la reproducción: lo que sonaba ya no es la barra.
+  const { stop } = playback;
+  const handleChange = useCallback(
+    (next: RhythmBar) => {
+      setBar(next);
+      stop();
+    },
+    [stop],
+  );
 
   return (
     <View style={styles.page}>
       <TheoryHeading>¡Experimenta un poco!</TheoryHeading>
-      <RichText segments={['La siguiente barra puede contener una redonda:']} />
+      <RichText
+        segments={[
+          'Esta barrita puede contener el tamaño de una redonda. ¡Llénala de la forma que quieras y escucha cómo suena!',
+        ]}
+      />
 
-      <FigurePlayground />
+      <FigurePlayground onChange={handleChange} onSound={stop} playhead={playback.playhead} />
 
-      <View style={[styles.instructions, { borderColor: colors.border }]}>
-        {INSTRUCTIONS.map((segments, index) => (
-          <View key={index} style={styles.instruction}>
-            <Text style={[styles.bullet, { color: colors.textPrimary }]}>•</Text>
-            <View style={styles.instructionText}>
-              <RichText segments={segments} />
-            </View>
-          </View>
-        ))}
+      <DashedBox>
+        <TheoryBullets items={INSTRUCTIONS} />
+      </DashedBox>
+
+      <View style={styles.player}>
+        <PushButton
+          variant="solid"
+          size="compact"
+          icon={playing ? 'pause' : 'play'}
+          accessibilityLabel={playing ? 'Detener' : 'Escuchar la barra'}
+          disabled={!full || !playback.ready}
+          onPress={() => {
+            if (playing) stop();
+            else if (bar !== null) playback.play(bar.figures.map((placed) => placed.figure));
+          }}
+        />
+        <Text style={[styles.playerText, { color: colors.textSecondary }]}>
+          {full
+            ? '¡Escucha cómo suena! Recuerda que asumimos que un pulso es una negra.'
+            : 'Llena por completo la barra para escuchar cómo suena.'}
+        </Text>
       </View>
 
-      <TheoryChecklist items={NOTES} />
+      <DashedDivider />
+
+      <RichText segments={['Para recordar:']} />
+      <TheoryChecklist items={TO_REMEMBER} />
     </View>
   );
 }
@@ -54,22 +108,14 @@ const styles = StyleSheet.create({
   page: {
     gap: spacing.lg,
   },
-  instructions: {
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    borderRadius: radii.lg,
-    padding: spacing.md,
-    gap: spacing.sm,
-  },
-  instruction: {
+  player: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    alignItems: 'center',
+    gap: spacing.md,
   },
-  bullet: {
-    ...typography.body,
-    flexShrink: 0,
-  },
-  instructionText: {
+  playerText: {
+    ...typography.chip,
     flex: 1,
+    flexShrink: 0,
   },
 });

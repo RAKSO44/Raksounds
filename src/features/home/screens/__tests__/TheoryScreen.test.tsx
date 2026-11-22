@@ -29,13 +29,14 @@ jest.mock('expo-router', () => ({
 
 const mockNoteOn = jest.fn<number, [number]>(() => 1);
 const mockPlayTimed = jest.fn<number, [number, number, number]>(() => 1);
+const mockNoteOff = jest.fn();
 jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
   createPianoSamplerPlayer: () => ({
     load: jest.fn().mockResolvedValue(undefined),
     noteOn: (midi: number) => mockNoteOn(midi),
     playTimed: (midi: number, delayMs: number, durationMs: number) =>
       mockPlayTimed(midi, delayMs, durationMs),
-    noteOff: jest.fn(),
+    noteOff: (handle: number) => mockNoteOff(handle),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
   }),
@@ -109,11 +110,11 @@ describe('TheoryScreen (Módulo 1)', () => {
     expect(screen.getByText(/entre dos notas con el mismo nombre/)).toBeTruthy();
   });
 
-  it('nunca tiene más de 3 páginas', async () => {
+  it('cada módulo tiene sus páginas', async () => {
     for (const [module, total] of [
       ['notes', 3],
       ['pulse', 2],
-      ['figures', 3],
+      ['figures', 4],
     ] as const) {
       mockParams = { module };
       const { unmount } = await renderScreen();
@@ -201,7 +202,7 @@ describe('TheoryScreen (Módulo 3)', () => {
   const placed = (name: string) =>
     screen.queryAllByLabelText(`${name}. Mantenla presionada para quitarla`);
 
-  it('la hoja 1 compara dos figuras que suenan al tocarlas y revela la referencia', async () => {
+  it('la hoja 1 compara dos figuras que suenan al tocarlas: la blanca dura el doble', async () => {
     const user = setupUser();
     await renderScreen();
     await act(() => jest.advanceTimersByTimeAsync(0));
@@ -210,19 +211,17 @@ describe('TheoryScreen (Módulo 3)', () => {
     expect(screen.getByLabelText('4 manzanas')).toBeTruthy();
     await user.press(screen.getByLabelText('Escuchar blanca'));
     await act(() => jest.advanceTimersByTimeAsync(10));
-    // La blanca suena justo lo que vale: dos pulsos a 80 BPM, ni un ms más.
-    expect(mockPlayTimed).toHaveBeenCalledWith(60, 0, 1500);
+    // La blanca suena justo lo que vale: dos pulsos a 72 BPM, ni un ms más.
+    expect(mockPlayTimed).toHaveBeenCalledWith(60, 0, (2 * 60000) / 72);
 
     await user.press(screen.getByText('duración de los sonidos'));
     expect(screen.getByText('Tiempo que permanece sonando una nota')).toBeTruthy();
-
-    // La respuesta a "¿respecto a qué cuentan?" se revela con el corazón.
-    expect(screen.queryByText(/^¡Exacto!/)).toBeNull();
-    await user.press(screen.getByLabelText('Ver la respuesta'));
-    expect(screen.getByText(/^¡Exacto!/)).toBeTruthy();
+    expect(screen.getByText('doble ')).toBeTruthy();
+    // La pregunta del pulso pasó a la hoja 3.
+    expect(screen.queryByLabelText('Ver la respuesta')).toBeNull();
   });
 
-  it('la hoja 2 selecciona una figura para ver su detalle y "referencia" lleva al pulso', async () => {
+  it('la hoja 2 selecciona una figura para ver su detalle', async () => {
     const user = setupUser();
     await renderScreen();
     await act(() => jest.advanceTimersByTimeAsync(0));
@@ -254,9 +253,116 @@ describe('TheoryScreen (Módulo 3)', () => {
     // Tocar otra vez la elegida la deselecciona y vuelve el mensaje.
     await user.press(screen.getByLabelText('Ver semicorchea'));
     expect(screen.getByText('Selecciona una figura musical para ver su detalle')).toBeTruthy();
+    expect(screen.queryByText('Para recordar:')).toBeNull();
+  });
 
-    await user.press(screen.getByRole('button', { name: 'referencia' }));
-    expect(screen.getByText(/¡Esa referencia es el pulso!/)).toBeTruthy();
+  describe('hoja 3: el pulso como referencia', () => {
+    const { metronome } = jest.requireMock<{
+      metronome: { loop: jest.Mock };
+    }>('@/infrastructure/audio/metronome');
+    const beat = 60000 / 72;
+
+    beforeEach(() => {
+      metronome.loop.mockClear();
+      // El primer golpe suena 100 ms después de arrancar (como el margen real).
+      metronome.loop.mockImplementation(() => ({
+        startMs: performance.now() + 100,
+        setBpm: jest.fn(),
+        stop: jest.fn(),
+      }));
+    });
+
+    afterEach(() => {
+      metronome.loop.mockImplementation(() => ({ startMs: 0, setBpm: jest.fn(), stop: jest.fn() }));
+    });
+
+    const openPage = async () => {
+      const user = setupUser();
+      await renderScreen();
+      await act(() => jest.advanceTimersByTimeAsync(0));
+      await user.press(screen.getByLabelText('Página siguiente'));
+      await user.press(screen.getByLabelText('Página siguiente'));
+      return user;
+    };
+
+    it('el corazón despliega la respuesta: el pulso es la referencia', async () => {
+      const user = await openPage();
+      expect(screen.getByText('¿Respecto a qué cuentan?')).toBeTruthy();
+      expect(screen.getByLabelText('manzana')).toBeTruthy();
+
+      expect(screen.queryByText(/^Exacto 😊/)).toBeNull();
+      await user.press(screen.getByLabelText('Ver la respuesta'));
+      expect(screen.getByText(/^Exacto 😊/)).toBeTruthy();
+      expect(screen.getByText('El pulso')).toBeTruthy();
+      expect(screen.getByText('¡Es el pulso!')).toBeTruthy();
+      // Saltos de línea tras "personalizable." y "manzanas." (sin normalizar espacios).
+      const raw = { normalizer: (text: string) => text };
+      expect(screen.getByText(/personalizable\.\nNo los segundos/, raw)).toBeTruthy();
+      expect(screen.getByText(/manzanas\.\n¡Es el pulso!/, raw)).toBeTruthy();
+
+      // Se recoge al tocar de nuevo el corazón.
+      await user.press(screen.getByLabelText('Ver la respuesta'));
+      await act(() => jest.advanceTimersByTimeAsync(400));
+      expect(screen.queryByText(/^Exacto 😊/)).toBeNull();
+    });
+
+    it('el primer reproductor toca una negra en cada pulso, dibujada con su golpe', async () => {
+      const user = await openPage();
+      mockPlayTimed.mockClear();
+      await user.press(screen.getByLabelText('Escuchar la negra sobre el pulso'));
+      expect(metronome.loop).toHaveBeenCalledTimes(1);
+      expect(metronome.loop.mock.calls[0][0].bpm).toBe(72);
+      expect(mockPlayTimed).toHaveBeenCalledTimes(1);
+      expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(beat);
+
+      // Cada golpe programa la negra del siguiente.
+      await act(() => metronome.loop.mock.calls[0][0].onBeat({ index: 0, accent: true }));
+      expect(mockPlayTimed).toHaveBeenCalledTimes(2);
+
+      // Pausar lo detiene y vuelve a "reproducir".
+      const handle = metronome.loop.mock.results[0].value;
+      await user.press(screen.getByLabelText('Detener'));
+      expect(handle.stop).toHaveBeenCalled();
+      expect(screen.getByLabelText('Escuchar la negra sobre el pulso')).toBeTruthy();
+    });
+
+    it('el segundo reproductor suena solo el pulso o la figura elegida (que se puede quitar)', async () => {
+      const user = await openPage();
+      mockPlayTimed.mockClear();
+      await user.press(screen.getByLabelText('Corchea sobre el pulso'));
+      expect(screen.getByLabelText('Corchea sobre el pulso').props.accessibilityState).toEqual({
+        selected: true,
+      });
+
+      await user.press(screen.getByLabelText('Escuchar la figura elegida sobre el pulso'));
+      // Dos corcheas en el primer pulso, una pegada a la otra.
+      expect(mockPlayTimed).toHaveBeenCalledTimes(2);
+      expect(mockPlayTimed.mock.calls.map((call) => call[2])).toEqual([beat / 2, beat / 2]);
+      expect(mockPlayTimed.mock.calls[1][1] - mockPlayTimed.mock.calls[0][1]).toBeCloseTo(beat / 2);
+
+      // Sin figura elegida, el siguiente pulso suena solo. Las corcheas de este
+      // pulso terminan: lo que sonaba se apaga recién en el siguiente golpe.
+      mockNoteOff.mockClear();
+      await user.press(screen.getByLabelText('Corchea sobre el pulso'));
+      expect(screen.getByLabelText('Corchea sobre el pulso').props.accessibilityState).toEqual({
+        selected: false,
+      });
+      expect(mockNoteOff).not.toHaveBeenCalled();
+      await act(() => jest.advanceTimersByTimeAsync(beat + 200));
+      expect(mockNoteOff).toHaveBeenCalledTimes(2);
+      mockPlayTimed.mockClear();
+      await act(() => metronome.loop.mock.calls[0][0].onBeat({ index: 0, accent: true }));
+      expect(mockPlayTimed).not.toHaveBeenCalled();
+
+      // Elegir otra en marcha la programa para el pulso que viene.
+      await user.press(screen.getByLabelText('Semicorchea sobre el pulso'));
+      expect(mockPlayTimed).toHaveBeenCalledTimes(4);
+
+      // Arrancar el otro reproductor detiene este.
+      const handle = metronome.loop.mock.results[0].value;
+      await user.press(screen.getByLabelText('Escuchar la negra sobre el pulso'));
+      expect(handle.stop).toHaveBeenCalled();
+    });
   });
 
   it('la barra se llena con figuras, no deja sobrepasarla y se vacía manteniéndolas', async () => {
@@ -264,8 +370,10 @@ describe('TheoryScreen (Módulo 3)', () => {
     await renderScreen();
     await user.press(screen.getByLabelText('Página siguiente'));
     await user.press(screen.getByLabelText('Página siguiente'));
+    await user.press(screen.getByLabelText('Página siguiente'));
     expect(screen.getByText('¡Experimenta un poco!')).toBeTruthy();
     expect(screen.getByText('Mantén presionadas')).toBeTruthy();
+    expect(screen.getByText('Llena por completo la barra para escuchar cómo suena.')).toBeTruthy();
 
     // Tocar una figura de abajo la pone al final; no se acaban.
     await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));
@@ -290,5 +398,50 @@ describe('TheoryScreen (Módulo 3)', () => {
 
     await user.press(screen.getByLabelText('Terminar teoría'));
     expect(useLessonProgressStore.getState().modules.figures?.theoryCompleted).toBe(true);
+  });
+});
+
+describe('TheoryScreen (Módulo 3) · reproducir la barra', () => {
+  const { metronome } = jest.requireMock<{
+    metronome: { play: jest.Mock };
+  }>('@/infrastructure/audio/metronome');
+
+  beforeEach(() => {
+    mockParams = { module: 'figures' };
+    metronome.play.mockClear();
+  });
+
+  it('se habilita al llenarla, suena sobre el pulso y se detiene con el mismo botón', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    for (let i = 0; i < 3; i += 1) await user.press(screen.getByLabelText('Página siguiente'));
+
+    const play = () => screen.getByLabelText('Escuchar la barra');
+    expect(play().props.accessibilityState).toMatchObject({ disabled: true });
+
+    await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));
+    await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));
+    expect(
+      screen.getByText('¡Escucha cómo suena! Recuerda que asumimos que un pulso es una negra.'),
+    ).toBeTruthy();
+    expect(play().props.accessibilityState).toMatchObject({ disabled: false });
+
+    mockPlayTimed.mockClear();
+    await user.press(play());
+    // Cuatro golpes (la barra dura una redonda) y las dos blancas encima.
+    expect(metronome.play).toHaveBeenCalledTimes(1);
+    expect(metronome.play.mock.calls[0][0]).toHaveLength(4);
+    expect(mockPlayTimed).toHaveBeenCalledTimes(2);
+
+    // Pausar la corta y vuelve a "reproducir".
+    await user.press(screen.getByLabelText('Detener'));
+    expect(play()).toBeTruthy();
+
+    // Al terminar, simplemente deja de sonar.
+    await user.press(play());
+    expect(screen.getByLabelText('Detener')).toBeTruthy();
+    await act(() => jest.advanceTimersByTimeAsync(4 * (60000 / 72) + 50));
+    expect(play()).toBeTruthy();
   });
 });

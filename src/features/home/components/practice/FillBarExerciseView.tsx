@@ -68,7 +68,7 @@ export function FillBarExerciseView({
           <ListenButton
             accessibilityLabel="El ritmo"
             disabled={!player.ready}
-            onPress={() => player.play(rhythmClip(dictation))}
+            onPress={() => player.play(rhythmClip(dictation, { pulse: true }))}
           />
         </View>
       )}
@@ -78,6 +78,7 @@ export function FillBarExerciseView({
         given={exercise.given}
         disabled={revealed}
         onChange={handleChange}
+        pulse
       />
 
       {!revealed && (
@@ -108,7 +109,10 @@ interface ExampleBarProps {
 function ExampleBar({ capacity, figures, player }: ExampleBarProps) {
   const [width, setWidth] = useState(0);
   const [bar] = useState(() => lockedBar(capacity, figures));
-  const play = useCallback((span: FigureSpan) => player.play(rhythmClip([span.figure])), [player]);
+  const play = useCallback(
+    (span: FigureSpan) => player.play(rhythmClip([span.figure], { pulse: true })),
+    [player],
+  );
   return (
     <View onLayout={(event) => setWidth(event.nativeEvent.layout.width)}>
       <RhythmBarView bar={bar} width={width} onPress={play} />

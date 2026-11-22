@@ -24,19 +24,46 @@ import { controls, motion, radii, spacing, typography, useTheme } from '@/shared
 /** Ícono con el que puede cerrar una definición ("¡Esa referencia es el pulso! ♥"). */
 export type TipIcon = 'heart';
 
+/**
+ * El texto de un globo: una frase, o trozos de los que alguno va en el rojo
+ * del corazón ("El pulso es nuestro sistema de tiempo…").
+ */
+export type TipText =
+  string | readonly (string | { readonly text: string; readonly tone: 'heart' })[];
+
+/** El texto del globo en una sola frase (para el lector de pantalla). */
+function plainTip(text: TipText): string {
+  return typeof text === 'string'
+    ? text
+    : text.map((span) => (typeof span === 'string' ? span : span.text)).join('');
+}
+
+interface TipOptions {
+  /** Ocupa todo el ancho del contenido (una respuesta que se revela, no una definición). */
+  wide?: boolean;
+  /**
+   * El globo NO flota sobre el contenido: lo pinta quien lo abre, dentro de
+   * la hoja (`InlineTip`), y empuja hacia abajo lo que hay debajo. El host
+   * solo lleva la cuenta de cuál está abierto, para cerrarlo igual que los
+   * demás (tocar fuera, o el mismo término otra vez).
+   */
+  inline?: boolean;
+}
+
 interface TooltipApi {
   /**
    * Abre la definición `text` bajo `anchor`. Tocar el mismo término otra vez
-   * la cierra; tocar otro la cambia. `wide`: ocupa todo el ancho del
-   * contenido (una respuesta que se revela, no la definición de una palabra).
+   * la cierra; tocar otro la cambia.
    */
   toggle: (
     key: string,
     anchor: View | null,
-    text: string,
+    text: TipText,
     icon?: TipIcon,
-    options?: { wide?: boolean },
+    options?: TipOptions,
   ) => void;
+  /** La clave del globo abierto, o `null`. */
+  openKey: string | null;
   /**
    * Trae `target` a la vista con un scroll suave, solo si quedó (en parte)
    * por debajo de lo visible; si ya se ve, no se mueve nada.
@@ -54,9 +81,10 @@ export function useTooltip(): TooltipApi {
 
 interface Tip {
   key: string;
-  text: string;
+  text: TipText;
   icon?: TipIcon;
   wide: boolean;
+  inline: boolean;
   /** Centro del término y su borde inferior, relativos al host; null hasta medir. */
   anchor: { x: number; y: number } | null;
   /** Tamaño natural de la tarjeta (lo que pide su texto); null hasta medir. */
@@ -84,7 +112,6 @@ interface TooltipHostProps {
  * la animación de entrada (Reanimated pisaría su `opacity`).
  */
 export function TooltipHost({ children, onReveal }: TooltipHostProps) {
-  const { colors } = useTheme();
   const host = useRef<View>(null);
   const [tip, setTip] = useState<Tip | null>(null);
   const [hostWidth, setHostWidth] = useState(0);
@@ -94,22 +121,17 @@ export function TooltipHost({ children, onReveal }: TooltipHostProps) {
   const closedByTouch = useRef<string | null>(null);
 
   const toggle = useCallback(
-    (
-      key: string,
-      anchor: View | null,
-      text: string,
-      icon?: TipIcon,
-      options: { wide?: boolean } = {},
-    ) => {
+    (key: string, anchor: View | null, text: TipText, icon?: TipIcon, options: TipOptions = {}) => {
       const justClosed = closedByTouch.current === key;
       closedByTouch.current = null;
       if (justClosed) return;
+      const inline = options.inline ?? false;
       setTip((current) =>
         current?.key === key
           ? null
-          : { key, text, icon, wide: options.wide ?? false, anchor: null, size: null },
+          : { key, text, icon, wide: options.wide ?? false, inline, anchor: null, size: null },
       );
-      if (anchor === null || host.current === null) return;
+      if (inline || anchor === null || host.current === null) return;
       anchor.measureLayout(host.current, (x, y, width, height) =>
         setTip((current) =>
           current?.key === key
@@ -131,7 +153,8 @@ export function TooltipHost({ children, onReveal }: TooltipHostProps) {
     [onReveal],
   );
 
-  const api = useMemo(() => ({ toggle, reveal }), [toggle, reveal]);
+  const openKey = tip?.key ?? null;
+  const api = useMemo(() => ({ toggle, reveal, openKey }), [toggle, reveal, openKey]);
   const arrow = controls.tooltipArrowSize;
   // La tarjeta, centrada bajo el término pero dentro del contenido.
   const cardLeft =
@@ -146,7 +169,7 @@ export function TooltipHost({ children, onReveal }: TooltipHostProps) {
   // llegaría a él: se reserva debajo el alto que le falta.
   // Mientras se mide un globo nuevo, el hueco se queda como está (undefined).
   const overflow =
-    tip === null
+    tip === null || tip.inline
       ? 0
       : bubbleBottom === null
         ? undefined
@@ -194,66 +217,107 @@ export function TooltipHost({ children, onReveal }: TooltipHostProps) {
             style={[styles.bubble, { top: bubbleTop }]}
           >
             <View style={{ opacity: tip.size === null ? 0 : 1 }}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${tip.text} Cerrar`}
-                onPress={() => setTip(null)}
-                onLayout={(event) => {
-                  const { width, height } = event.nativeEvent.layout;
+              <TipCard
+                text={tip.text}
+                icon={tip.icon}
+                wide={tip.wide}
+                left={cardLeft}
+                arrowLeft={Math.min(
+                  Math.max(tip.anchor.x - arrow / 2, cardLeft + radii.lg),
+                  cardLeft + (tip.size?.width ?? hostWidth) - radii.lg - arrow,
+                )}
+                onClose={() => setTip(null)}
+                onLayout={(width, height) =>
                   setTip((current) =>
                     current?.key === tip.key && current.size === null
                       ? { ...current, size: { width, height } }
                       : current,
-                  );
-                }}
-                style={[
-                  styles.card,
-                  tip.wide && styles.wide,
-                  {
-                    marginLeft: cardLeft,
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
-              >
-                <Text style={[styles.text, { color: colors.textPrimary }]}>
-                  {tip.text}
-                  {tip.icon === 'heart' && (
-                    <>
-                      {' '}
-                      <MaterialCommunityIcons
-                        name="heart"
-                        size={typography.tooltip.fontSize}
-                        color={colors.heart}
-                      />
-                    </>
-                  )}
-                </Text>
-              </Pressable>
-              {/* La punta va DESPUÉS de la tarjeta: su mitad de abajo tapa el
-                borde de la tarjeta y la punta queda unida a ella. */}
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.arrow,
-                  {
-                    width: arrow,
-                    height: arrow,
-                    top: -arrow / 2,
-                    left: Math.min(
-                      Math.max(tip.anchor.x - arrow / 2, cardLeft + radii.lg),
-                      cardLeft + (tip.size?.width ?? hostWidth) - radii.lg - arrow,
-                    ),
-                    backgroundColor: colors.surface,
-                    borderColor: colors.border,
-                  },
-                ]}
+                  )
+                }
               />
             </View>
           </Animated.View>
         )}
       </View>
     </TooltipContext.Provider>
+  );
+}
+
+interface TipCardProps {
+  text: TipText;
+  icon?: TipIcon;
+  wide: boolean;
+  /** Borde izquierdo de la tarjeta. */
+  left: number;
+  /** Dónde va la punta (su borde izquierdo), para que señale al término. */
+  arrowLeft: number;
+  onClose?: () => void;
+  onLayout?: (width: number, height: number) => void;
+}
+
+/**
+ * La tarjeta del globo con su punta arriba: la misma para los que flotan y
+ * para los que van dentro de la hoja (`InlineTip`).
+ */
+export function TipCard({ text, icon, wide, left, arrowLeft, onClose, onLayout }: TipCardProps) {
+  const { colors } = useTheme();
+  const arrow = controls.tooltipArrowSize;
+  return (
+    <View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${plainTip(text)} Cerrar`}
+        onPress={onClose}
+        onLayout={(event) =>
+          onLayout?.(event.nativeEvent.layout.width, event.nativeEvent.layout.height)
+        }
+        style={[
+          styles.card,
+          wide && styles.wide,
+          { marginLeft: left, backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
+        <Text style={[styles.text, { color: colors.textPrimary }]}>
+          {typeof text === 'string'
+            ? text
+            : text.map((span, index) =>
+                typeof span === 'string' ? (
+                  span
+                ) : (
+                  <Text key={index} style={[styles.strong, { color: colors.heart }]}>
+                    {span.text}
+                  </Text>
+                ),
+              )}
+          {icon === 'heart' && (
+            <>
+              {' '}
+              <MaterialCommunityIcons
+                name="heart"
+                size={typography.tooltip.fontSize}
+                color={colors.heart}
+              />
+            </>
+          )}
+        </Text>
+      </Pressable>
+      {/* La punta va DESPUÉS de la tarjeta: su mitad de abajo tapa el
+        borde de la tarjeta y la punta queda unida a ella. */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.arrow,
+          {
+            width: arrow,
+            height: arrow,
+            top: -arrow / 2,
+            left: arrowLeft,
+            backgroundColor: colors.surface,
+            borderColor: colors.border,
+          },
+        ]}
+      />
+    </View>
   );
 }
 
@@ -286,5 +350,8 @@ const styles = StyleSheet.create({
   text: {
     ...typography.tooltip,
     flexShrink: 0,
+  },
+  strong: {
+    fontFamily: typography.question.fontFamily,
   },
 });

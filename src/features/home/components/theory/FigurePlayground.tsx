@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
+  cancelAnimation,
+  Easing,
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
+  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 
 import { PLAYGROUND_BAR_UNITS } from '@/domain/lessons';
 import { figureById, FigureId, FIGURES, FigureSpan, RhythmBar } from '@/domain/rhythm';
-import { controls, motion, spacing } from '@/shared/theme';
+import { controls, motion, radii, spacing, useTheme } from '@/shared/theme';
 
+import { Playhead } from '../../hooks/useBarPlayback';
 import { DragSource, useBarPlayground } from '../../hooks/useBarPlayground';
 import { useFigureSound } from '../../hooks/useFigureSound';
 import { FigureDrag, FingerPoint } from '../../hooks/useFigureGesture';
@@ -41,6 +45,12 @@ interface FigurePlaygroundProps {
   disabled?: boolean;
   /** Cada vez que la barra cambia. */
   onChange?: (bar: RhythmBar) => void;
+  /** Las figuras suenan sobre el pulso (la práctica). */
+  pulse?: boolean;
+  /** Justo antes de que suene una figura tocada (corta otra reproducción). */
+  onSound?: () => void;
+  /** Mientras la barra entera se reproduce, una línea roja la recorre. */
+  playhead?: Playhead | null;
 }
 
 /**
@@ -67,6 +77,9 @@ export function FigurePlayground({
   given = NONE,
   disabled = false,
   onChange,
+  pulse = false,
+  onSound,
+  playhead = null,
 }: FigurePlaygroundProps) {
   const playground = useBarPlayground(PLAYGROUND_BAR_UNITS, given);
   const { bar, shown, previewing, hover, drop, add, remove, figureOf } = playground;
@@ -74,7 +87,14 @@ export function FigurePlayground({
   useEffect(() => {
     onChange?.(bar);
   }, [bar, onChange]);
-  const { play: playSound } = useFigureSound();
+  const { play: playFigure } = useFigureSound(pulse);
+  const playSound = useCallback(
+    (figure: FigureId) => {
+      onSound?.();
+      playFigure(figure);
+    },
+    [onSound, playFigure],
+  );
   const [width, setWidth] = useState(0);
   const [dragging, setDragging] = useState<DragSource | null>(null);
 
@@ -165,6 +185,7 @@ export function FigurePlayground({
           onRemove={disabled ? undefined : remove}
           dragFor={disabled ? undefined : barDragFor}
         />
+        {playhead !== null && width > 0 && <PlayheadLine playhead={playhead} width={width} />}
       </Animated.View>
 
       {!disabled && (
@@ -200,6 +221,36 @@ export function FigurePlayground({
         />
       )}
     </View>
+  );
+}
+
+/**
+ * La línea roja que recorre la barra mientras suena entera: lineal, llega al
+ * final justo cuando acaba la última figura.
+ */
+function PlayheadLine({ playhead, width }: { playhead: Playhead; width: number }) {
+  const { colors } = useTheme();
+  const progress = useSharedValue(0);
+  const { take, delayMs, durationMs } = playhead;
+
+  useEffect(() => {
+    cancelAnimation(progress);
+    progress.value = 0;
+    progress.value = withDelay(
+      delayMs,
+      withTiming(1, { duration: durationMs, easing: Easing.linear }),
+    );
+  }, [take, delayMs, durationMs, progress]);
+
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: progress.value * (width - controls.durationCursorWidth) }],
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[styles.playhead, { backgroundColor: colors.heart }, style]}
+    />
   );
 }
 
@@ -248,6 +299,14 @@ const styles = StyleSheet.create({
   paletteFew: {
     justifyContent: 'center',
     gap: spacing.lg,
+  },
+  playhead: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width: controls.durationCursorWidth,
+    height: BAR_HEIGHT,
+    borderRadius: radii.pill,
   },
   ghost: {
     position: 'absolute',

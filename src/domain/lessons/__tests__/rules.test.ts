@@ -1,7 +1,14 @@
 import { RandomSource } from '../../ear-training';
-import { figureById, FIGURES } from '../../rhythm';
+import { figureById, figureDurationMs, FigureId, FIGURES } from '../../rhythm';
 import { clipDurationMs } from '../clip';
-import { FIGURE_DEMO_BPM, FIGURE_DEMO_MIDI, figureClip, rhythmClip } from '../figureTheory';
+import {
+  FIGURE_DEMO_BPM,
+  FIGURE_DEMO_MIDI,
+  figureClip,
+  figureNotesInBeat,
+  pulseOnsetsWithin,
+  rhythmClip,
+} from '../figureTheory';
 import { firstSequenceError, isAnswerCorrect } from '../exercise';
 import { generatePractice, generateRetry } from '../practice';
 import {
@@ -31,7 +38,6 @@ import {
   irregularOnsets,
   isAccent,
   isRegular,
-  PULSE_DEMO_BPM,
   metronomeWeightPosition,
   regularOnsets,
   tempoMarking,
@@ -308,24 +314,31 @@ describe('pesa del metrónomo', () => {
 });
 
 describe('sonido de las figuras (Módulo 3)', () => {
-  it('cada figura suena una sola nota de duración exacta: su parte del pulso', () => {
+  const beat = 60000 / FIGURE_DEMO_BPM;
+
+  it('cada figura suena una sola nota de duración exacta: la negra, un pulso', () => {
     const quarter = figureClip(figureById('quarter'));
     if (quarter.kind !== 'rhythm') throw new Error('clip de ritmo');
-    expect(quarter.notes).toEqual([{ midi: FIGURE_DEMO_MIDI, atMs: 0, durationMs: 750 }]);
-    expect(FIGURE_DEMO_BPM).toBe(PULSE_DEMO_BPM);
+    expect(quarter.notes).toEqual([{ midi: FIGURE_DEMO_MIDI, atMs: 0, durationMs: beat }]);
+    expect(quarter.pulseOnsetsMs).toBeUndefined();
   });
 
-  it('cada figura dura justo la mitad de la anterior (redonda 3 s … semicorchea 187,5 ms)', () => {
+  it('cada figura dura justo la mitad de la anterior (redonda 4 pulsos … semicorchea 1/4)', () => {
     const durations = FIGURES.map((figure) => {
       const clip = figureClip(figure);
       if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
       return clip.notes[0].durationMs;
     });
-    expect(durations).toEqual([3000, 1500, 750, 375, 187.5]);
+    expect(durations).toEqual([4, 2, 1, 0.5, 0.25].map((beats) => beats * beat));
+  });
+
+  it('el tempo deja la semicorchea sobre 200 ms y la redonda bajo 3,5 s', () => {
+    expect(figureDurationMs(figureById('sixteenth'), FIGURE_DEMO_BPM)).toBeGreaterThan(200);
+    expect(figureDurationMs(figureById('whole'), FIGURE_DEMO_BPM)).toBeLessThan(3500);
   });
 
   it('un ritmo pone cada figura justo donde acaba la anterior, sin huecos', () => {
-    const clip = rhythmClip(['half', 'eighth', 'eighth', 'quarter']);
+    const clip = rhythmClip(['half', 'eighth', 'eighth', 'quarter'], { bpm: 80 });
     if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
     expect(clip.notes.map((note) => [note.atMs, note.durationMs])).toEqual([
       [0, 1500],
@@ -334,5 +347,40 @@ describe('sonido de las figuras (Módulo 3)', () => {
       [2250, 750],
     ]);
     expect(clipDurationMs(clip)).toBe(3000);
+  });
+
+  it('con pulso, un golpe por negra mientras suena algo, desde la primera nota', () => {
+    const whole = rhythmClip(['whole'], { bpm: 60, pulse: true });
+    if (whole.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(whole.pulseOnsetsMs).toEqual([0, 1000, 2000, 3000]);
+
+    const eighth = rhythmClip(['eighth'], { bpm: 60, pulse: true });
+    if (eighth.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(eighth.pulseOnsetsMs).toEqual([0]);
+
+    const mixed = rhythmClip(['quarter', 'eighth', 'eighth', 'half'], { bpm: 60, pulse: true });
+    if (mixed.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(mixed.pulseOnsetsMs).toEqual([0, 1000, 2000, 3000]);
+  });
+
+  it('a un tempo con pulsos no enteros no se cuela un golpe de más al final', () => {
+    expect(pulseOnsetsWithin(figureDurationMs(figureById('whole'), 72), 72)).toHaveLength(4);
+  });
+
+  it('sobre un pulso continuo: las cortas llenan cada pulso y las largas empiezan donde caben', () => {
+    const at = (figure: FigureId, n: number) =>
+      figureNotesInBeat(figure, n, 60).map((note) => [note.atMs, note.durationMs]);
+    expect(at('quarter', 3)).toEqual([[0, 1000]]);
+    expect(at('eighth', 1)).toEqual([
+      [0, 500],
+      [500, 500],
+    ]);
+    expect(at('sixteenth', 0)).toHaveLength(4);
+    expect(at('half', 0)).toEqual([[0, 2000]]);
+    expect(at('half', 1)).toEqual([]);
+    expect(at('half', 2)).toEqual([[0, 2000]]);
+    expect(at('whole', 0)).toEqual([[0, 4000]]);
+    expect([1, 2, 3].map((n) => at('whole', n))).toEqual([[], [], []]);
+    expect(at('whole', 4)).toEqual([[0, 4000]]);
   });
 });

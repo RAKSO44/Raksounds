@@ -19,12 +19,6 @@ interface StimulusViewProps {
   revealed: boolean;
 }
 
-/**
- * Lo que suena al tocar la ficha es UNA de sus duraciones posibles: una
- * figura no dura un tiempo fijo.
- */
-const DURATION_HINT = 'Recuerda que la duración es referencial';
-
 /** Una figura sola, escrita. */
 const one = (figure: FigureId): Notation => ({ kind: 'figures', figures: [figure] });
 
@@ -125,14 +119,11 @@ export function StimulusView({ stimulus, player, solution, revealed }: StimulusV
             notation={stimulus.notation}
             space={controls.figureSpaceHero}
             onPressIn={
-              silent ? undefined : () => player.play(rhythmClip(notationFigures(stimulus.notation)))
+              silent
+                ? undefined
+                : () => player.play(rhythmClip(notationFigures(stimulus.notation), { pulse: true }))
             }
           />
-          {!silent && (
-            <Text style={[styles.hint, { color: colors.textSecondary }]}>
-              {DURATION_HINT}
-            </Text>
-          )}
         </View>
       );
     }
@@ -145,7 +136,7 @@ export function StimulusView({ stimulus, player, solution, revealed }: StimulusV
             <ListenButton
               accessibilityLabel="Las dos notas"
               disabled={!player.ready}
-              onPress={() => player.play(rhythmClip([known, hidden]))}
+              onPress={() => player.play(rhythmClip([known, hidden], { pulse: true }))}
             />
           </View>
           <View style={styles.pair}>
@@ -153,14 +144,14 @@ export function StimulusView({ stimulus, player, solution, revealed }: StimulusV
               notation={one(known)}
               space={controls.figureSpaceHero}
               accessibilityLabel={`Primera nota: ${figureById(known).name.toLowerCase()}`}
-              onPressIn={() => player.play(rhythmClip([known]))}
+              onPressIn={() => player.play(rhythmClip([known], { pulse: true }))}
             />
             {revealed ? (
               <NotationTile
                 notation={one(hidden)}
                 space={controls.figureSpaceHero}
                 highlighted
-                onPressIn={() => player.play(rhythmClip([hidden]))}
+                onPressIn={() => player.play(rhythmClip([hidden], { pulse: true }))}
               />
             ) : (
               <NotationSlot accessibilityLabel="Segunda nota: la que hay que adivinar" />
@@ -186,10 +177,6 @@ const styles = StyleSheet.create({
   listenLabel: {
     ...typography.question,
     flexShrink: 0,
-  },
-  hint: {
-    ...typography.caption,
-    textAlign: 'center',
   },
   pair: {
     flexDirection: 'row',
