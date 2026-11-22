@@ -30,7 +30,7 @@ partida y decisiones en `docs/roadmap/etapa-1/` (las decisiones de
   práctica completada (≥ 80 %: 12/15, 9/11, 14/17) → cara dorada; en la tarjeta, cada botón se
   vuelve dorado. El cambio se anima al volver al Home (color + un destello
   que cruza el nodo, `useStatusTransition`), nunca a escondidas.
-- Teoría: hasta 3 hojas que se pasan con ← n → (el ✓ final la marca como
+- Teoría: una o más hojas (el Módulo 3 tiene 4) que se pasan con ← n → (el ✓ final la marca como
   leída); nada obliga a interactuar para avanzar. Los términos destacados
   (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`):
   globo sin color (superficie + borde, como Duolingo) con UNA frase corta,

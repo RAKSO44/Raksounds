@@ -24,7 +24,10 @@ dinámicos que las usen.
   `FigureTile`, `RhythmBarView`). Si otra feature (Ejercicios) las necesita,
   se mueven a `shared/`.
 
-## Teoría — tres hojas
+## Teoría — cuatro hojas
+
+(Eran tres; el 2026-11-22 el usuario separó la pregunta del pulso en una
+hoja propia, la 3, y "¡Experimenta un poco!" pasó a ser la 4.)
 
 1. **¿Qué son?** (rehecha con un boceto del 2026-11-21) "Son símbolos que
    *representan la duración* de las notas." Separadores discontinuos entre
@@ -39,14 +42,11 @@ dinámicos que las usen.
      figura suena y un cursor rojo recorre su línea como el oxímetro del
      pulso, llegando al final justo cuando acaba la nota. Volver a tocarla
      antes de que acabe reinicia nota y cursor.
-   - "¡Genial! Pero, ¿respecto a qué cuentan? 🤔 (emoji, pedido por el
-     usuario) ¿Segundos? ¿Minutos? Necesitamos una *referencia* para
-     "contar" con estas figuras…". "referencia" va resaltada pero SIN
-     definición: la respuesta se descubre al tocar el corazón del pulso
-     (`PulseHeart`, el del Módulo 2, centrado), que da un latido y abre
-     debajo un globo a TODO el ancho (`wide` en `TooltipHost`, con scroll
-     automático, sin ícono): "¡Exacto! El pulso es nuestra referencia, y lo
-     estudiaremos en el módulo de "Compases y métrica"".
+   - (2026-11-22) Tras el separador, solo: "Vemos que, según las barritas
+     al costado de esas 2 figuras musicales, la de arriba (𝅗𝅥) dura el doble
+     que la de abajo (♩)", con las figuras en su ficha en línea. La pregunta
+     "¿respecto a qué cuentan?" y el corazón pasaron a la hoja 3. El texto
+     dice "las figuras **musicales** nos ayudan a representar…".
 2. **¿Qué figuras musicales existen?** Las cinco, de la que dura más a la
    que dura menos, en una tabla Nombre / Figura / Valor relativo (redonda =
    1 unidad, blanca 1/2 unidad… semicorchea 1/16), con el MISMO estilo
@@ -66,18 +66,59 @@ dinámicos que las usen.
    mismo que escribirlas sueltas (`beamedGlyph` en `domain/rhythm/glyph.ts`).
    Las figuras dentro de un texto van en una ficha morada tenue; las
    seguidas comparten ficha y apoyan la cabeza a la misma altura.
-   "Para recordar:" ✓ las figuras necesitan una *referencia* para saber qué
-   tanto duran (abre "¡Esa referencia es el pulso! ♥") y ✓ son "las letras"
-   que usaremos para aprender a leer y escribir música. Se quitaron los
-   ejemplos falsos con ✗.
-3. **¡Experimenta un poco!** Una barra que admite **una redonda** (el boceto
+   "Para recordar:" pasó a la hoja 4 (2026-11-22).
+3. **¿Respecto a qué cuentan?** (título puesto por Claude; el usuario no
+   dio uno). "¡Genial! Ya aprendimos cuánto duran las figuras musicales…",
+   "Los números cuentan manzanas 🍎 (la manzana SVG en línea). Las figuras
+   musicales, ¿qué cuentan?", "¿Qué es esa "unidad"? ¿Segundos? ¿Minutos?",
+   "…necesitamos un sistema de tiempo. Algo que: • Sea constante • Podamos
+   decidir su velocidad" y el corazón centrado. Tocarlo despliega debajo,
+   DENTRO de la hoja (`InlineTip`), "Exacto 😊. **El pulso** es nuestro
+   sistema de tiempo totalmente personalizable. / No los segundos, ni los
+   minutos, ni las manzanas. / **¡Es el pulso!**" (en rojo lo resaltado, con
+   saltos de línea tras "personalizable." y "manzanas."). Pedido del usuario
+   (2026-11-22): el globo flotante tapaba lo de abajo; ahora empuja con
+   suavidad todo lo que sigue, la hoja baja lo justo para leerlo entero, y
+   al cerrarse (tocar fuera, el globo o el corazón) todo vuelve a su sitio.
+   Tras un separador:
+   - "Aprenderemos a fondo cómo usar este sistema en el módulo "Compases y
+     métrica"" (el usuario escribió "Etapa 2: Compases y métricas", pero la
+     Etapa 2 se llama "Ritmo" y "Compases y métrica" es su Módulo 5).
+   - Reproducir/pausar + oxímetro con una **negra** en cada pulso. Luego un
+     recuadro discontinuo "Un pulso = una negra ♩".
+   - "Con eso, ¡ya podemos deducir los pulsos que valdrían las demás
+     figuras musicales!": otro reproducir/pausar + oxímetro y las cinco
+     figuras en fichas que se eligen y se quitan (sin ninguna, suena solo
+     el pulso).
+   - (2026-11-22) Estos dos eran corazones con "Presiona el ♥…": el usuario
+     pidió botones de reproducir/pausar, sin ese texto, alineados con el
+     trazo del oxímetro. Pausar detiene del todo: al reproducir de nuevo
+     arranca desde el pulso fuerte. Suena sin fin hasta pausar. Arrancar
+     uno detiene el otro (el metrónomo es uno solo).
+   - La figura elegida se repite encajada en los pulsos
+     (`figureNotesInBeat`): 2 corcheas o 4 semicorcheas por pulso, una
+     negra en cada uno, la blanca cada dos y la redonda cada cuatro, con el
+     fuerte. Cambiar de figura no corta lo que suena en ese pulso: lo
+     programado para los siguientes se anula, una nota larga se apaga en el
+     próximo golpe y desde ahí entra la nueva.
+   - **Las figuras viajan DENTRO de la marca de su golpe** (`HeardBeat.figures`):
+     la que suena con el golpe va justo sobre la marca roja, con la cabeza
+     en el trazo, y las de en medio (segunda corchea, semicorcheas) detrás, a
+     la distancia que la línea recorre hasta que suenan; la línea se recorta
+     por la izquierda, así cada una asoma cuando suena. Antes cada figura
+     tenía su propio temporizador y animación y a veces quedaba corrida de
+     su marca (reportado por el usuario). Con figuras, las marcas son más
+     bajas (14/24 px en vez de 20/44) y las figuras más grandes (8 px por
+     espacio en vez de 6): las protagonistas son ellas.
+4. **¡Experimenta un poco!** Una barra que admite **una redonda** (el boceto
    decía 2, pero en un teléfono la semicorchea quedaría en ~10 px; decidido
    con el usuario). Debajo, las cinco figuras.
 
-## Hoja 3 — reglas de la barra
+## Hoja 4 — reglas de la barra
 
-- Texto: "La siguiente barra puede contener una redonda:" (en palabras; se
-  probó con la figura dibujada en línea y se prefirió el texto). Debajo de las figuras, un recuadro
+- Texto (2026-11-22): "Esta barrita puede contener el tamaño de una
+  redonda. ¡Llénala de la forma que quieras y escucha cómo suena!" (antes
+  "La siguiente barra puede contener una redonda:"). Debajo de las figuras, un recuadro
   punteado con dos viñetas: "**Toca** o **arrastra** las figuras para llenar
   la barra." y "**Mantén presionadas** las figuras en la barra para
   quitarlas." (en morado).
@@ -121,10 +162,25 @@ dinámicos que las usen.
 
 ## Sonido
 
-Piano, DO central, negra = un pulso a 80 BPM (el pulso del Módulo 2):
-redonda 3 s, blanca 1,5 s, negra 0,75 s… (`figureClip`,
-`domain/lessons/figureTheory.ts`). La barra no tiene botón para
-reproducirse entera.
+Piano, DO central, negra = un pulso a **72 BPM** (`FIGURE_DEMO_BPM`,
+`domain/lessons/figureTheory.ts`; antes 80, el pulso del Módulo 2). Pedido
+del usuario: que la semicorchea no suene "ultra rápido" y la redonda no dure
+una eternidad. A 72: semicorchea ~208 ms, redonda ~3,3 s, sonando entera.
+Vale para todo el módulo (teoría y práctica).
+
+**Reproducir la barra** (2026-11-22). Donde antes iban dos ✓ ("Puedes
+llenarla de muchas formas" / "No puedes sobrepasar…"), un botón de
+reproducir con el texto al costado "Llena por completo la barra para
+escuchar cómo suena." Se habilita al llenarla y el texto pasa a "¡Escucha
+cómo suena! Recuerda que asumimos que un pulso es una negra." Al tocarlo
+suena el pulso de fondo (4 golpes) con las figuras encima y una línea roja
+vertical recorre la barra; al acabar, simplemente deja de sonar. Mientras
+suena el ícono es "pausa" (no se deshabilita): tocarlo la corta y vuelve a
+"reproducir". Cambiar la barra o tocar una figura también la corta.
+
+Al final, separador y "Para recordar:" ✓ las figuras necesitan una
+*referencia* (abre "¡Esa referencia es el pulso! ♥") sobre la cual contar,
+y ✓ son "las letras" que usaremos para aprender a leer y escribir música.
 
 ## Otros cambios del mismo pedido
 
@@ -145,7 +201,7 @@ Diecisiete ejercicios (`domain/lessons/module3Practice.ts`); se completa con
 | 5 | ¿Qué figura dura la mitad de 𝅗𝅥? | choice con figuras |
 | 6 | Ordena de la que más dura a la que menos (4 figuras) | sequence |
 | 7 | Si 𝅝 vale 1 unidad, ¿cuánto vale ♪? (tres valores seguidos: 1/2, 1/4, 1/8…) | choice |
-| 8 | ¿Qué vale lo mismo que esta figura? (filas de una figura más corta) | choice con figuras |
+| 8 | ¿Qué opción tiene la misma duración que esta figura? (filas de una figura más corta) | choice con figuras |
 | 9 | Completa la barra (trae figuras fijas; lo que falta no cabe en UNA figura) | fill-bar |
 | 10 | La primera nota es una negra. ¿Qué figura es la segunda? | choice, de oído |
 | 11 | ¿Qué figuras son estas? (corcheas o semicorcheas unidas por barras) | choice |
@@ -158,9 +214,20 @@ Diecisiete ejercicios (`domain/lessons/module3Practice.ts`); se completa con
 
 Decisiones:
 
-- **Límites de lo enseñado.** Nada de "la negra dura un pulso" (se ve en
-  Compases y métrica), ni silencios, ni compases. Las correcciones comparan
-  con "la mitad de", como la tabla de la teoría.
+- **Límites de lo enseñado.** Ni silencios ni compases. Las correcciones
+  comparan con "la mitad de", como la tabla de la teoría. (Antes tampoco
+  "la negra dura un pulso"; desde el 2026-11-22 la teoría lo fija y la
+  práctica lo asume: ver "Pulso de fondo".)
+- **Pulso de fondo** (2026-11-22, pedido del usuario). Antes del primer
+  ejercicio una pantalla dice "Para todos los ejercicios, asumiremos que una
+  negra ♩ siempre vale un pulso." con "Continuar" (`practiceIntro`; también
+  en "Reintentar fallos"). Todo sonido de figuras de la práctica suena sobre
+  el pulso, un golpe por negra desde la primera nota (`rhythmClip(…,
+  { pulse: true })`): la figura grande, las opciones, "Escucha", la
+  referencia del 10, los dictados y las figuras de la barra. Excepción:
+  "Ordena de la que más dura…" (6 y 17), donde las fichas ya **no suenan**.
+  Se quitó "Recuerda que la duración es referencial" bajo la ficha grande:
+  la referencia ahora es el pulso.
 - **De oído siempre hay referencia**: una figura sola no dura un tiempo
   fijo. El 10 da la negra; el 12 y el 15 comparan las figuras del mismo
   ritmo entre sí; en los dictados la referencia es la barra (dura una
@@ -176,16 +243,12 @@ Decisiones:
 - **Las opciones con figura suenan al tocarlas**, salvo en los de oído y en
   el 11 (`mutedOptions`), donde se resolverían comparando sonidos sin leer.
   Tras corregir suenan todas y conservan los colores de la corrección.
-- **Bajo la ficha grande**: "Recuerda que la duración es referencial"
-  (texto del usuario, en vez de "Toca la figura para escucharla"): lo que
-  suena es una duración posible, no la única.
 - **Duraciones exactas** (pedido del usuario: "que suene bien"). Antes cada
   nota duraba al menos 1,5 s (`noteOff` garantiza un mínimo para las teclas)
   y la corchea y la semicorchea sonaban igual. Ahora una figura es un clip
   `rhythm` y cada nota se programa en el reloj de audio con
-  `IAudioPlayer.playTimed`: suena justo lo que vale a 80 BPM (redonda 3 s,
-  blanca 1,5 s, negra 0,75 s, corchea 375 ms, semicorchea 187,5 ms) y se
-  apaga con un apagador de 60 ms. Las notas de un ritmo van pegadas, sin
+  `IAudioPlayer.playTimed`: suena justo lo que vale al tempo del módulo
+  (hoy 72 BPM) y se apaga con un apagador de 60 ms. Las notas de un ritmo van pegadas, sin
   huecos. Vale también para la teoría.
 - El 14 pide 3, 5, 6 o 7 figuras (2, 4 u 8 saldrían solas) o combinar
   blanca+negra, blanca+corchea o negra+corchea.
