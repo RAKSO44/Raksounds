@@ -5,7 +5,11 @@ Implementación real del contrato `IAudioPlayer` (definido en `src/domain/audio/
 - `PianoSamplerPlayer.ts` — motor de muestras sobre **react-native-audio-api**
   (Web Audio API nativa). Cada pulsación crea un `AudioBufferSourceNode` nuevo,
   así que la polifonía es ilimitada y no hay estado que rebobinar entre notas.
-- `pianoSampleMap.ts` — banco **cromático** C4–C6, un archivo por semitono.
+- `pianoSampleMap.ts` — banco **cromático** C4–C6, un archivo FLAC por
+  semitono. Cada archivo empieza en su ataque (el aire inicial se recorta al
+  generarlo), así que una nota programada en un instante SUENA en ese
+  instante. Es FLAC y no MP3 porque un MP3 siempre trae 25–50 ms de silencio
+  de códec al principio, que retrasaba cada nota respecto del metrónomo.
 - `SoundEffectsPlayer.ts` — efectos de los ejercicios (`assets/audio/effects/`),
   con su propio contexto para no pasar por el limitador del piano, pero con la
   misma ganancia de bus (`MASTER_GAIN`). Los archivos están nivelados a la
@@ -25,11 +29,6 @@ Implementación real del contrato `IAudioPlayer` (definido en `src/domain/audio/
   desalineaban de oído (dos flujos de salida, dos relojes que derivan). Los
   motores reciben el contexto por parámetro (`createPianoSamplerPlayer(
   sharedAudioContext)`), y en los tests, uno simulado.
-- `sampleOnset.ts` — dónde empieza a sonar una muestra decodificada. Un MP3
-  trae 25–50 ms de silencio al principio (retardo del codificador y del
-  decodificador, y el marco "Info" de LAME, que el decodificador nativo no
-  reconoce): el piano lo mide al cargar cada muestra y la lee desde su
-  ataque, así una nota programada en un instante SUENA en ese instante.
 
 Esta es la única capa que conoce react-native-audio-api. Si cambiamos de motor,
 solo se toca esta carpeta.
@@ -45,9 +44,9 @@ asíncrono—, así que se resolvieron cambiando el modelo, no parcheando la car
 
 ## Envolvente
 
-- Ataque: 4 ms, solo para evitar un click. La muestra ya trae su propio golpe.
-  La rampa va sobre el silencio previo al ataque (la lectura arranca 4 ms
-  antes), así que no lo suaviza ni lo retrasa.
+- Ataque: ninguno en código. Cada archivo ya empieza con un fundido de 2 ms
+  justo antes del martillo, así que no hay click ni hace falta una rampa (que
+  solo apagaría el golpe).
 - Toque instantáneo: la nota dura 1.5 s en total.
 - Nota mantenida: suena mientras el dedo siga puesto (hasta 8 s, el largo
   de cada muestra del banco).

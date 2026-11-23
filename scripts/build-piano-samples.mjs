@@ -7,7 +7,7 @@
  *     node scripts/build-piano-samples.mjs
  *
  * Entrada:  assets/audio/piano/*.mp3          (muestras originales, CC BY)
- * Salida:   assets/audio/piano-chromatic/*.mp3 (25 archivos, un semitono cada uno)
+ * Salida:   assets/audio/piano-chromatic/*.flac (25 archivos, un semitono cada uno)
  *
  * Por qué se generan aquí y no en tiempo real:
  * transponer en el dispositivo (`setPlaybackRate`) no se aplica desde la muestra
@@ -19,6 +19,19 @@
  * Cada nota se resamplea como máximo ±1 semitono desde su muestra más cercana,
  * que es la práctica normal de un sampler: a esa distancia el formante apenas se
  * desplaza y el resultado es indistinguible de una grabación real.
+ *
+ * Cada archivo EMPIEZA EN SU ATAQUE (ver `ATTACK_PRE_ROLL_S`): un nodo de audio
+ * nuevo lee desde la muestra 0, así que todo lo que haya antes del martillo es
+ * retraso puro respecto del metrónomo. Las grabaciones traen 10–15 ms de aire
+ * y se recortan aquí, una vez, en vez de medirlo en el teléfono al arrancar.
+ *
+ * Por qué FLAC y no MP3: un MP3 no puede empezar en su primera muestra. El
+ * codificador antepone ~1100 muestras de silencio por diseño del formato, y el
+ * decodificador nativo de react-native-audio-api (dr_mp3) no lee la cabecera
+ * de LAME que dice cuánto saltar: cada nota sonaba 25–50 ms tarde aunque el
+ * original se hubiera recortado. FLAC es sin pérdida y sin ese retardo (se
+ * decodifica exactamente lo que se escribió), pesa un tercio de un WAV y lo
+ * decodifican miniaudio (nativo, más rápido que el MP3) y los navegadores.
  */
 import { execFileSync } from 'node:child_process';
 import { mkdirSync, readFileSync } from 'node:fs';
@@ -57,6 +70,18 @@ const GAIN_DB = 7;
 const DURATION_S = 8;
 /** Fundido final largo: a los 7 s la nota ya es casi silencio y debe extinguirse, no cortarse. */
 const TAIL_FADE_S = 1;
+
+/**
+ * Lo que se conserva antes del ataque, con un fundido de entrada de ese mismo
+ * largo: el arranque del golpe (sube en ~1 ms) queda entero y el archivo
+ * empieza en silencio exacto, sin click. 2 ms está muy por debajo de lo que el
+ * oído percibe como "a destiempo" (~10 ms).
+ */
+const ATTACK_PRE_ROLL_S = 0.002;
+/** El ataque empieza donde la señal llega a esta fracción de su pico (−20 dB). */
+const ATTACK_THRESHOLD = 0.1;
+/** Tramo inicial donde se busca el ataque: cubre de sobra el aire y el pico del martillo. */
+const ATTACK_SCAN_S = 0.5;
 
 const NOTE_NAMES = ['C', 'Cs', 'D', 'Ds', 'E', 'F', 'Fs', 'G', 'Gs', 'A', 'As', 'B'];
 
@@ -97,6 +122,41 @@ function ffmpegPath() {
 const ffmpeg = process.env.FFMPEG_PATH ?? ffmpegPath();
 mkdirSync(OUT_DIR, { recursive: true });
 
+/**
+ * Primera muestra (a 44.1 kHz, ya transpuesta) que se conserva: el ataque —el
+ * primer punto donde cualquiera de los dos canales llega a `ATTACK_THRESHOLD`
+ * del pico— menos `ATTACK_PRE_ROLL_S`. Se mide sobre la misma cadena de
+ * filtros que el archivo final, así que el corte cae donde se midió.
+ */
+function attackStart(inFile, pitch) {
+  const pcm = execFileSync(
+    ffmpeg,
+    [
+      '-hide_banner',
+      '-loglevel',
+      'error',
+      '-i',
+      inFile,
+      '-af',
+      [...pitch, `atrim=0:${ATTACK_SCAN_S}`].join(','),
+      '-ac',
+      '2',
+      '-f',
+      'f32le',
+      '-',
+    ],
+    { maxBuffer: 16 * 1024 * 1024 },
+  );
+  const samples = new Float32Array(pcm.buffer, pcm.byteOffset, pcm.length / 4);
+  let peak = 0;
+  for (const sample of samples) peak = Math.max(peak, Math.abs(sample));
+  const firstLoud = samples.findIndex((sample) => Math.abs(sample) >= peak * ATTACK_THRESHOLD);
+  if (peak === 0 || firstLoud < 0) throw new Error(`Sin ataque en ${inFile}`);
+  // Intercalado estéreo: dos valores por instante.
+  const onset = Math.floor(firstLoud / 2);
+  return Math.max(0, onset - Math.round(ATTACK_PRE_ROLL_S * SAMPLE_RATE));
+}
+
 for (let midi = FIRST_MIDI; midi <= LAST_MIDI; midi += 1) {
   const source = nearestSource(midi);
   const semitones = midi - source;
@@ -104,18 +164,26 @@ for (let midi = FIRST_MIDI; midi <= LAST_MIDI; midi += 1) {
   // altura n semitonos (y la duración, imperceptible a ±1). Luego se vuelve a
   // 44.1 kHz para que todos los archivos compartan formato.
   const ratio = Math.pow(2, semitones / 12);
-
-  const filters = [
+  const pitch = [
     `asetrate=${Math.round(SAMPLE_RATE * ratio)}`,
     `aresample=${SAMPLE_RATE}`,
     `volume=${GAIN_DB}dB`,
+  ];
+
+  const inFile = join(SRC_DIR, `${fileNameFor(source)}.mp3`);
+  const outFile = join(OUT_DIR, `${fileNameFor(midi)}.flac`);
+  const start = attackStart(inFile, pitch);
+
+  const filters = [
+    ...pitch,
+    // El archivo arranca en su ataque: se descarta el aire previo.
+    `atrim=start_sample=${start}`,
+    'asetpts=PTS-STARTPTS',
+    `afade=t=in:d=${ATTACK_PRE_ROLL_S}`,
     `atrim=0:${DURATION_S}`,
     // Fundido final para que el recorte no produzca un click audible.
     `afade=t=out:st=${DURATION_S - TAIL_FADE_S}:d=${TAIL_FADE_S}`,
   ].join(',');
-
-  const inFile = join(SRC_DIR, `${fileNameFor(source)}.mp3`);
-  const outFile = join(OUT_DIR, `${fileNameFor(midi)}.mp3`);
 
   execFileSync(
     ffmpeg,
@@ -129,17 +197,20 @@ for (let midi = FIRST_MIDI; midi <= LAST_MIDI; midi += 1) {
       '-af',
       filters,
       '-c:a',
-      'libmp3lame',
-      '-b:a',
-      '96k',
+      'flac',
+      '-sample_fmt',
+      's16',
+      '-compression_level',
+      '12',
       outFile,
     ],
     { stdio: 'inherit' },
   );
 
   const shift = semitones === 0 ? 'exacta' : `${semitones > 0 ? '+' : ''}${semitones} st`;
+  const trimmed = ((start / SAMPLE_RATE) * 1000).toFixed(1);
   console.log(
-    `${fileNameFor(midi).padEnd(4)} (MIDI ${midi})  ←  ${fileNameFor(source).padEnd(4)} [${shift}]`,
+    `${fileNameFor(midi).padEnd(4)} (MIDI ${midi})  ←  ${fileNameFor(source).padEnd(4)} [${shift}]  −${trimmed} ms de aire`,
   );
 }
 

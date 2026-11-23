@@ -3,7 +3,6 @@ import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 import { AudioTimeMs, IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio';
 
 import { PIANO_SAMPLES, sampleFor } from './pianoSampleMap';
-import { sampleOnset } from './sampleOnset';
 
 /**
  * Motor de piano por muestras, construido sobre react-native-audio-api
@@ -35,13 +34,6 @@ import { sampleOnset } from './sampleOnset';
  * nodos sin despeinarse—, así que se pueden pulsar todas las notas de la
  * escala a la vez.
  */
-
-/**
- * Rampa de entrada mínima. Las muestras ya traen su propio ataque percusivo, así
- * que aquí NO se modela un ataque: 4 ms solo evitan el "click" de arrancar en
- * mitad de una onda. Alargarlo apagaría el golpe del martillo.
- */
-const ATTACK_S = 0.004;
 
 /**
  * Al soltar, la nota baja gradualmente durante este tiempo en vez de cortarse
@@ -132,27 +124,6 @@ const PANIC_RELEASE_S = 0.08;
  */
 const DAMPER_S = 0.06;
 
-/**
- * Tramo inicial de cada muestra donde se busca su ataque (`sampleOnset`):
- * cubre de sobra el silencio del MP3 (≤ 50 ms) y el pico del martillo.
- */
-const ONSET_SCAN_S = 0.3;
-/** El ataque empieza donde la señal llega a esta fracción de su pico (−20 dB). */
-const ONSET_THRESHOLD = 0.1;
-
-/**
- * Una muestra lista para sonar. No se lee desde 0 sino desde `cue`: lo de
- * antes es el silencio que deja el MP3 (ver `sampleOnset`), y con él toda
- * nota sonaba decenas de ms tarde respecto del metrónomo.
- */
-interface Sample {
-  readonly buffer: AudioBuffer;
-  /** Desde dónde se lee (s): `ATTACK_S` antes del ataque, para que la rampa de entrada no lo toque. */
-  readonly cue: number;
-  /** Lo que tarda en llegar el ataque desde `cue` (s). */
-  readonly lead: number;
-}
-
 interface Voice {
   readonly source: { stop(when?: number): void; disconnect(): void };
   readonly envelope: GainNode;
@@ -174,7 +145,7 @@ export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudio
   let context: AudioContext | undefined;
   let master: GainNode | undefined;
   let limiter: { disconnect(): void } | undefined;
-  const samples = new Map<number, Sample>();
+  const samples = new Map<number, AudioBuffer>();
   const voices = new Map<VoiceHandle, Voice>();
   let nextHandle = 0;
   let loading: Promise<void> | undefined;
@@ -204,7 +175,7 @@ export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudio
       try {
         voice.envelope.gain.cancelScheduledValues(now);
         voice.envelope.gain.setValueAtTime(0, now);
-        voice.source.stop(voice.startedAt + ATTACK_S);
+        voice.source.stop(voice.startedAt);
       } catch {
         /* ya parada */
       }
@@ -245,34 +216,25 @@ export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudio
     const sample = samples.get(midi);
     if (!ctx || !bus || !sample || !sampleFor(midi)) return null;
 
-    // La lectura arranca `lead` antes, para que el ATAQUE caiga en `atSeconds`.
-    const startAt = Math.max(ctx.currentTime, atSeconds - sample.lead);
-    const at = startAt + sample.lead;
+    // Cada archivo del banco empieza en su ataque (lo recorta
+    // `scripts/build-piano-samples.mjs`), así que arrancar en `at` ES sonar en
+    // `at`: no hay nada que medir ni compensar aquí.
+    const at = Math.max(ctx.currentTime, atSeconds);
 
-    // Nodo NUEVO por pulsación: nace en su `cue` y se descarta al acabar.
+    // Nodo NUEVO por pulsación: nace en la muestra 0 y se descarta al acabar.
     // Es lo que hace innecesario cualquier seek/rewind y, con él, las carreras.
+    // El archivo ya empieza con un fundido de 2 ms: no hace falta rampa de
+    // entrada (solo apagaría el golpe del martillo).
     const source = ctx.createBufferSource();
-    source.buffer = sample.buffer;
+    source.buffer = sample;
 
     const envelope = ctx.createGain();
-    envelope.gain.setValueAtTime(0, startAt);
-    envelope.gain.linearRampToValueAtTime(1, startAt + ATTACK_S);
-
-    let endsAt = Infinity;
-    if (durationSeconds !== undefined) {
-      // Todo queda programado de una vez: el apagador baja justo al acabar la
-      // duración y el nodo se detiene cuando ya no suena.
-      endsAt = at + Math.max(0, durationSeconds);
-      envelope.gain.setValueAtTime(1, endsAt);
-      envelope.gain.exponentialRampToValueAtTime(SILENCE, endsAt + DAMPER_S);
-      source.stop(endsAt + DAMPER_S);
-    }
-
     source.connect(envelope);
     envelope.connect(bus);
 
     const handle = nextHandle;
     nextHandle += 1;
+    const endsAt = durationSeconds === undefined ? Infinity : at + Math.max(0, durationSeconds);
     const voice: Voice = {
       source,
       envelope,
@@ -294,19 +256,18 @@ export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudio
       }
     };
 
-    source.start(startAt, sample.cue);
+    // `start` SIEMPRE antes de cualquier `stop`: el motor nativo lanza
+    // InvalidStateError ("Cannot call stop without calling start first") y,
+    // como esto corre dentro de un gesto, la app se cerraba.
+    source.start(at);
+    if (endsAt !== Infinity) {
+      // Todo queda programado de una vez: el apagador baja justo al acabar la
+      // duración y el nodo se detiene cuando ya no suena.
+      envelope.gain.setValueAtTime(1, endsAt);
+      envelope.gain.exponentialRampToValueAtTime(SILENCE, endsAt + DAMPER_S);
+      source.stop(endsAt + DAMPER_S);
+    }
     return { handle, voice };
-  }
-
-  /** Dónde empieza a sonar la muestra (ver `Sample`). Se mide una vez, al cargar. */
-  function prepare(buffer: AudioBuffer): Sample {
-    const head = new Float32Array(
-      Math.min(buffer.length, Math.ceil(ONSET_SCAN_S * buffer.sampleRate)),
-    );
-    buffer.copyFromChannel(head, 0);
-    const onset = sampleOnset(head, ONSET_THRESHOLD) / buffer.sampleRate;
-    const cue = Math.max(0, onset - ATTACK_S);
-    return { buffer, cue, lead: onset - cue };
   }
 
   return {
@@ -331,7 +292,7 @@ export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudio
         // En paralelo: 25 muestras cortas decodifican en cientos de ms.
         await Promise.all(
           PIANO_SAMPLES.map(async (sample) => {
-            samples.set(sample.midi, prepare(await ctx.decodeAudioData(sample.source)));
+            samples.set(sample.midi, await ctx.decodeAudioData(sample.source));
           }),
         );
 
