@@ -33,6 +33,16 @@
   curva acabando en 1, cualquier exceso era recorte duro. No reintroducir un
   slider que amplifique.
 
+- **Lo que suena junto, en UN reloj.** Piano y metrónomo comparten el
+  `AudioContext` (`infrastructure/audio/audioEngine.ts`) y las notas se
+  programan en el instante de audio del golpe (`PulseBeat.atMs`,
+  `PulseStart.atMs`). Con un contexto cada uno y conversiones vía
+  `performance.now()`, figura y pulso se oían desalineados. No crear otro
+  contexto para algo que deba sonar en tiempo con el piano.
+- **Los MP3 empiezan con silencio** (25–50 ms: retardo del códec y el marco
+  "Info" de LAME, que dr_mp3 0.6 en nativo decodifica como audio). El piano
+  mide el ataque de cada muestra al cargar (`sampleOnset`) y la lee desde
+  ahí. No compensar con un retraso fijo: cambia según archivo y decodificador.
 - **Duraciones que importan (figuras): `playTimed`, nunca `noteOn`/`noteOff`.**
   `noteOff` garantiza 1,5 s por nota (una tecla tocada no debe sonar a
   chasquido) más 0,7 s de release: con él la negra, la corchea y la

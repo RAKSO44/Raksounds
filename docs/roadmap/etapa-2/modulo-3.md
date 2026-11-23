@@ -99,8 +99,8 @@ hoja propia, la 3, y "¡Experimenta un poco!" pasó a ser la 4.)
      (`figureNotesInBeat`): 2 corcheas o 4 semicorcheas por pulso, una
      negra en cada uno, la blanca cada dos y la redonda cada cuatro, con el
      fuerte. Cambiar de figura no corta lo que suena en ese pulso: lo
-     programado para los siguientes se anula, una nota larga se apaga en el
-     próximo golpe y desde ahí entra la nueva.
+     programado para los siguientes se reprograma con la nueva, en su mismo
+     instante, y una nota larga se apaga justo en el próximo golpe.
    - **Las figuras viajan DENTRO de la marca de su golpe** (`HeardBeat.figures`):
      la que suena con el golpe va justo sobre la marca roja, con la cabeza
      en el trazo, y las de en medio (segunda corchea, semicorcheas) detrás, a
@@ -167,6 +167,27 @@ Piano, DO central, negra = un pulso a **72 BPM** (`FIGURE_DEMO_BPM`,
 del usuario: que la semicorchea no suene "ultra rápido" y la redonda no dure
 una eternidad. A 72: semicorchea ~208 ms, redonda ~3,3 s, sonando entera.
 Vale para todo el módulo (teoría y práctica).
+
+**Figura y pulso suenan juntos** (2026-11-22, reportado por el usuario: "el
+pulso no está alineado del todo con el sonido de las figuras"). Había dos
+causas, y las dos se arreglaron de raíz, no con un retraso a ojo:
+
+- **El silencio inicial de cada MP3.** El codificador antepone ~576
+  muestras, el decodificador suma ~529 y el de react-native-audio-api en
+  nativo (dr_mp3 0.6) además decodifica el marco "Info" de LAME como 1152
+  más: cada nota arrancaba 25–50 ms después de lo programado (el golpe del
+  metrónomo es sintético y suena en el acto). Ahora el piano mide al cargar
+  dónde empieza el ataque de CADA muestra ya decodificada (`sampleOnset`) y
+  la lee desde ahí, programando el ataque en el instante pedido. No hay
+  ningún número fijo: vale para cualquier archivo, formato o decodificador.
+- **Dos relojes.** Piano y metrónomo tenían cada uno su `AudioContext` (dos
+  flujos de salida con su latencia y dos relojes que avanzan a saltos y
+  derivan entre sí), y las notas se casaban con los golpes pasando por
+  `performance.now()`, con un error distinto en cada nota y que crecía con
+  los minutos. Ahora comparten UN contexto (`audioEngine.ts`), y las notas
+  se programan en el instante de audio del golpe (`PulseBeat.atMs`,
+  `PulseStart.atMs`): en el pulso sin fin, cada golpe avisa al programarse
+  (`onSchedule`) y en ese momento se programan sus notas, a la vez.
 
 **Reproducir la barra** (2026-11-22). Donde antes iban dos ✓ ("Puedes
 llenarla de muchas formas" / "No puedes sobrepasar…"), un botón de
