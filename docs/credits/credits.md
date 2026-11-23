@@ -56,6 +56,12 @@ generan con `scripts/build-piano-samples.mjs` a partir de los de
 3. **Recorte a 8 s** con fundido final de 1 s. Solo una nota mantenida llega
    tan lejos (a esa altura ya casi se apagó), y los originales duraban entre
    6 y 16 s.
+4. **Recorte del silencio inicial** (10–15 ms de aire antes del martillo):
+   cada archivo empieza 2 ms antes de su ataque, con un fundido de entrada
+   de ese largo.
+5. **Formato FLAC** (sin pérdida, 44,1 kHz, 16 bits, estéreo) en vez de MP3:
+   el MP3 siempre antepone silencio de códec, y con él las notas sonaban
+   tarde respecto del metrónomo.
 
 Resultado: **cromático C4–C6** (MIDI 60–84), 25 archivos, uno por semitono.
 

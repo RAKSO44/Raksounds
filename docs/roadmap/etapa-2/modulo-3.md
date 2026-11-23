@@ -176,10 +176,13 @@ causas, y las dos se arreglaron de raíz, no con un retraso a ojo:
   muestras, el decodificador suma ~529 y el de react-native-audio-api en
   nativo (dr_mp3 0.6) además decodifica el marco "Info" de LAME como 1152
   más: cada nota arrancaba 25–50 ms después de lo programado (el golpe del
-  metrónomo es sintético y suena en el acto). Ahora el piano mide al cargar
-  dónde empieza el ataque de CADA muestra ya decodificada (`sampleOnset`) y
-  la lee desde ahí, programando el ataque en el instante pedido. No hay
-  ningún número fijo: vale para cualquier archivo, formato o decodificador.
+  metrónomo es sintético y suena en el acto). Se corrigió en los propios
+  audios (2026-11-23): el banco se regeneró en FLAC, que no trae silencio de
+  códec, con el aire de la grabación recortado (cada archivo empieza en su
+  ataque). Un primer intento medía el ataque en el teléfono al cargar
+  (`sampleOnset`); se descartó por ser trabajo en tiempo de ejecución para
+  algo que se resuelve una vez en el archivo, y porque esa versión cerraba
+  la app (llamaba a `stop()` antes de `start()`).
 - **Dos relojes.** Piano y metrónomo tenían cada uno su `AudioContext` (dos
   flujos de salida con su latencia y dos relojes que avanzan a saltos y
   derivan entre sí), y las notas se casaban con los golpes pasando por

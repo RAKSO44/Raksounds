@@ -39,10 +39,17 @@
   `PulseStart.atMs`). Con un contexto cada uno y conversiones vía
   `performance.now()`, figura y pulso se oían desalineados. No crear otro
   contexto para algo que deba sonar en tiempo con el piano.
-- **Los MP3 empiezan con silencio** (25–50 ms: retardo del códec y el marco
-  "Info" de LAME, que dr_mp3 0.6 en nativo decodifica como audio). El piano
-  mide el ataque de cada muestra al cargar (`sampleOnset`) y la lee desde
-  ahí. No compensar con un retraso fijo: cambia según archivo y decodificador.
+- **Muestras que deben sonar a tiempo: FLAC recortado, nunca MP3.** Un MP3
+  siempre empieza con silencio (retardo del códec y el marco "Info" de LAME,
+  que dr_mp3 en nativo decodifica como audio: 25–50 ms). Recortar el
+  original no sirve, porque al volver a codificar en MP3 el silencio vuelve.
+  El banco de piano se genera en FLAC con el aire inicial recortado
+  (`scripts/build-piano-samples.mjs`): cada archivo empieza en su ataque y el
+  motor lo reproduce desde 0, sin medir ni compensar nada en el teléfono.
+  `.flac` está registrado en `metro.config.js` y en `jest.transform`.
+- **`start()` antes de cualquier `stop()`** en un `AudioBufferSourceNode`:
+  el motor nativo lanza `InvalidStateError` y, dentro de un gesto, cierra la
+  app (pasó con `playTimed`). El doble de los tests lanza igual.
 - **Duraciones que importan (figuras): `playTimed`, nunca `noteOn`/`noteOff`.**
   `noteOff` garantiza 1,5 s por nota (una tecla tocada no debe sonar a
   chasquido) más 0,7 s de release: con él la negra, la corchea y la
