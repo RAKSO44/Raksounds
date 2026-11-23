@@ -16,8 +16,20 @@ Implementación real del contrato `IAudioPlayer` (definido en `src/domain/audio/
   "toc" se sintetiza una vez al cargar y cada golpe se programa con
   `start(when)` en el reloj del contexto: un `setTimeout` por golpe tiembla y
   no serviría para calificar un toque. `play` devuelve el instante del primer
-  golpe en el reloj de `performance.now()`, el mismo con el que se miden los
-  toques.
+  golpe en los dos relojes: el de `performance.now()` (con el que se miden
+  los toques) y el de audio (sobre el que se programan las notas).
+- `audioEngine.ts` — el `AudioContext` que **comparten el piano y el
+  metrónomo**, y su reloj (`audioClock`). Lo que deba sonar junto (una figura
+  sobre su pulso) se programa en este reloj, nunca convirtiendo desde
+  `performance.now()`: con un contexto cada uno, la figura y el golpe se
+  desalineaban de oído (dos flujos de salida, dos relojes que derivan). Los
+  motores reciben el contexto por parámetro (`createPianoSamplerPlayer(
+  sharedAudioContext)`), y en los tests, uno simulado.
+- `sampleOnset.ts` — dónde empieza a sonar una muestra decodificada. Un MP3
+  trae 25–50 ms de silencio al principio (retardo del codificador y del
+  decodificador, y el marco "Info" de LAME, que el decodificador nativo no
+  reconoce): el piano lo mide al cargar cada muestra y la lee desde su
+  ataque, así una nota programada en un instante SUENA en ese instante.
 
 Esta es la única capa que conoce react-native-audio-api. Si cambiamos de motor,
 solo se toca esta carpeta.
@@ -34,6 +46,8 @@ asíncrono—, así que se resolvieron cambiando el modelo, no parcheando la car
 ## Envolvente
 
 - Ataque: 4 ms, solo para evitar un click. La muestra ya trae su propio golpe.
+  La rampa va sobre el silencio previo al ataque (la lectura arranca 4 ms
+  antes), así que no lo suaviza ni lo retrasa.
 - Toque instantáneo: la nota dura 1.5 s en total.
 - Nota mantenida: suena mientras el dedo siga puesto (hasta 8 s, el largo
   de cada muestra del banco).

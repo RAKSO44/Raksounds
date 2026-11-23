@@ -1,6 +1,6 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
-import { IMetronome, PulseLoop, PulseLoopOptions } from '@/domain/audio';
+import { IMetronome, PulseLoop, PulseLoopOptions, PulseStart } from '@/domain/audio';
 
 import { MASTER_GAIN } from './PianoSamplerPlayer';
 
@@ -69,7 +69,12 @@ function nowMs(): number {
 
 type Source = ReturnType<AudioContext['createBufferSource']>;
 
-export function createMetronomePlayer(): IMetronome {
+/**
+ * El metrónomo suena en el contexto que comparte con el piano
+ * (`audioEngine.ts`): así lo que se programe encima de un golpe (`atMs`) cae
+ * en su mismo reloj y sale por el mismo flujo.
+ */
+export function createMetronomePlayer(getContext: () => AudioContext): IMetronome {
   let context: AudioContext | undefined;
   let output: GainNode | undefined;
   let buffers: { click: AudioBuffer; accent: AudioBuffer; weak: AudioBuffer } | undefined;
@@ -112,7 +117,7 @@ export function createMetronomePlayer(): IMetronome {
   return {
     load() {
       loading ??= (async () => {
-        const ctx = new AudioContext();
+        const ctx = getContext();
         const gain = ctx.createGain();
         gain.gain.value = MASTER_GAIN;
         gain.connect(ctx.destination);
@@ -138,7 +143,7 @@ export function createMetronomePlayer(): IMetronome {
       return loading;
     },
 
-    play(onsetsMs: readonly number[]) {
+    play(onsetsMs: readonly number[]): PulseStart | null {
       stop();
       const ctx = context;
       const gain = output;
@@ -146,10 +151,10 @@ export function createMetronomePlayer(): IMetronome {
 
       const startAt = ctx.currentTime + LEAD_S;
       for (const onset of onsetsMs) hit(ctx, gain, buffers.click, startAt + onset / 1000);
-      return nowMs() + LEAD_S * 1000;
+      return { startMs: nowMs() + LEAD_S * 1000, atMs: startAt * 1000 };
     },
 
-    loop({ bpm, isAccent, onBeat }: PulseLoopOptions): PulseLoop | null {
+    loop({ bpm, isAccent, onSchedule, onBeat }: PulseLoopOptions): PulseLoop | null {
       stop();
       const ctx = context;
       const gain = output;
@@ -164,8 +169,10 @@ export function createMetronomePlayer(): IMetronome {
 
       const schedule = () => {
         while (next < ctx.currentTime + LOOP_LOOKAHEAD_S) {
-          const beat = { index, accent: isAccent(index) };
+          const beat = { index, accent: isAccent(index), atMs: next * 1000 };
           hit(ctx, gain, beat.accent ? voices.accent : voices.weak, next);
+          // Lo que suene con este golpe se programa YA, en su mismo instante.
+          onSchedule?.(beat);
           // La UI se entera cuando el golpe SUENA, no cuando se programa.
           const timer = setTimeout(
             () => {

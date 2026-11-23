@@ -66,14 +66,22 @@ jest.mock('react-native-mmkv', () => {
 // doble de react-native-audio-api) para que las pantallas puedan afirmar qué
 // efecto sonó con `jest.requireMock('@/infrastructure/audio/soundEffects')`.
 // El metrónomo de las lecciones, por el mismo motivo (su motor tiene su propio
-// test). `play` devuelve la referencia de reloj como lo haría el real.
+// test). `play` devuelve las referencias de reloj como lo haría el real.
 jest.mock('@/infrastructure/audio/metronome', () => ({
   metronome: {
     load: jest.fn().mockResolvedValue(undefined),
-    play: jest.fn(() => 0),
+    play: jest.fn(() => ({ startMs: 0, atMs: 0 })),
     loop: jest.fn(() => ({ startMs: 0, setBpm: jest.fn(), stop: jest.fn() })),
     stop: jest.fn(),
   },
+}));
+
+// El contexto de audio compartido por el piano y el metrónomo es nativo: los
+// motores se prueban con uno simulado inyectado, y las pantallas, con el reloj
+// detenido en 0.
+jest.mock('@/infrastructure/audio/audioEngine', () => ({
+  sharedAudioContext: jest.fn(),
+  audioClock: { now: () => 0 },
 }));
 
 jest.mock('@/infrastructure/audio/soundEffects', () => ({

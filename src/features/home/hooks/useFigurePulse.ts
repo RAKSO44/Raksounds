@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { NO_VOICE, VoiceHandle } from '@/domain/audio';
-import { FIGURE_DEMO_BPM, figureNotesInBeat } from '@/domain/lessons';
+import { AudioTimeMs, NO_VOICE, VoiceHandle } from '@/domain/audio';
+import { beatIntervalMs, FIGURE_DEMO_BPM, figureNotesInBeat } from '@/domain/lessons';
 import { figureBeats, figureById, FigureId } from '@/domain/rhythm';
 // Punto de composición con el piano real (el pulso lo pone usePulseLoop).
 import { pianoPlayer } from '@/infrastructure/audio/pianoPlayer';
@@ -15,8 +15,9 @@ export interface FigurePulse extends PulseLoopControls {
   choose: (figure: FigureId | null) => void;
 }
 
-/** Lo programado para un golpe: sus voces (para poder cortarlas) y lo que se dibuja. */
+/** Un golpe ya programado: cuándo suena, sus voces (para poder cortarlas) y lo que se dibuja. */
 interface ScheduledBeat {
+  atMs: AudioTimeMs;
   voices: VoiceHandle[];
   figures: BeatFigure[];
 }
@@ -25,75 +26,61 @@ interface ScheduledBeat {
 const LONGEST_BEATS = figureBeats(figureById('whole'));
 
 /**
- * El pulso con una figura sonando encima, en el MISMO reloj: "un pulso = una
- * negra". Cada golpe programa las notas del siguiente (`figureNotesInBeat`):
- * 2 corcheas o 4 semicorcheas por pulso, una negra en cada uno, la blanca
- * cada dos y la redonda cada cuatro (con el fuerte). Las figuras se entregan
- * con su golpe (`HeardBeat.figures`) para dibujarse pegadas a su marca.
+ * El pulso con una figura sonando encima: "un pulso = una negra". Cada vez
+ * que el metrónomo programa un golpe, se programan en el piano las notas de
+ * ese golpe (`figureNotesInBeat`: 2 corcheas o 4 semicorcheas por pulso, una
+ * negra en cada uno, la blanca cada dos y la redonda cada cuatro, con el
+ * fuerte) en el instante EXACTO del golpe, en el reloj de audio que comparten.
+ * Nada pasa por `performance.now()`: por eso la figura suena con su golpe y
+ * no unos ms antes o después, ni se va corriendo con los minutos.
+ *
+ * Las figuras se entregan con su golpe (`HeardBeat.figures`) para dibujarse
+ * pegadas a su marca.
  *
  * Cambiar de figura no corta en seco lo que suena en este pulso: lo
- * programado para los siguientes se anula, una nota larga que siga sonando se
- * apaga justo en el próximo golpe, y desde ahí entra la nueva.
+ * programado para los siguientes se reprograma con la nueva, y una nota larga
+ * que siga sonando se apaga justo en el próximo golpe.
  */
 export function useFigurePulse(initial: FigureId | null = null): FigurePulse {
   const [figure, setFigure] = useState<FigureId | null>(initial);
   const figureRef = useRef(figure);
-  const clock = useRef<{ startMs: number; intervalMs: number } | null>(null);
   const beats = useRef(new Map<number, ScheduledBeat>());
-  const cutTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /** El último golpe que sonó (-1: el pulso está parado o aún no sonó ninguno). */
+  const heard = useRef(-1);
 
   useEffect(() => {
     pianoPlayer.load();
   }, []);
 
-  const cut = useCallback((which: (beat: number) => boolean) => {
-    for (const [beat, scheduled] of beats.current) {
-      if (!which(beat)) continue;
-      scheduled.voices.forEach((voice) => pianoPlayer.noteOff(voice));
-      beats.current.delete(beat);
-    }
-  }, []);
-
-  const silence = useCallback(() => {
-    if (cutTimer.current !== null) clearTimeout(cutTimer.current);
-    cutTimer.current = null;
-    cut(() => true);
-  }, [cut]);
-
-  /** Programa en el piano las notas de la figura en el golpe `beat`. */
-  const schedule = useCallback((beat: number) => {
-    const time = clock.current;
+  /** Programa en el piano las notas de la figura actual en el golpe `index`. */
+  const fill = useCallback((index: number, beat: ScheduledBeat) => {
     const current = figureRef.current;
-    if (time === null || current === null) return;
-    const beatAt = time.startMs + beat * time.intervalMs;
-    const scheduled: ScheduledBeat = { voices: [], figures: [] };
-    for (const note of figureNotesInBeat(current, beat, FIGURE_DEMO_BPM)) {
-      const delay = beatAt + note.atMs - performance.now();
-      if (delay < 0) continue;
-      const voice = pianoPlayer.playTimed(note.midi, delay, note.durationMs);
-      if (voice !== NO_VOICE) scheduled.voices.push(voice);
-      scheduled.figures.push({ figure: current, offsetMs: note.atMs });
+    if (current === null) return;
+    for (const note of figureNotesInBeat(current, index, FIGURE_DEMO_BPM)) {
+      const voice = pianoPlayer.playTimed(note.midi, beat.atMs + note.atMs, note.durationMs);
+      if (voice !== NO_VOICE) beat.voices.push(voice);
+      beat.figures.push({ figure: current, offsetMs: note.atMs });
     }
-    beats.current.set(beat, scheduled);
   }, []);
 
   const pulse = usePulseLoop(FIGURE_DEMO_BPM, {
-    onStart: (startMs, intervalMs) => {
-      clock.current = { startMs, intervalMs };
-      schedule(0);
+    onSchedule: (index, atMs) => {
+      const beat: ScheduledBeat = { atMs, voices: [], figures: [] };
+      fill(index, beat);
+      beats.current.set(index, beat);
     },
     onBeat: (index) => {
-      const figures = beats.current.get(index)?.figures ?? [];
+      heard.current = index;
       // Lo que ya terminó de sonar no hace falta guardarlo.
       beats.current.forEach((_, beat) => {
         if (beat <= index - LONGEST_BEATS) beats.current.delete(beat);
       });
-      schedule(index + 1);
-      return figures;
+      return beats.current.get(index)?.figures ?? [];
     },
     onStop: () => {
-      clock.current = null;
-      silence();
+      beats.current.forEach((beat) => beat.voices.forEach((voice) => pianoPlayer.noteOff(voice)));
+      beats.current.clear();
+      heard.current = -1;
     },
   });
 
@@ -101,23 +88,25 @@ export function useFigurePulse(initial: FigureId | null = null): FigurePulse {
     (next: FigureId | null) => {
       figureRef.current = next;
       setFigure(next);
-      const time = clock.current;
-      if (time === null) return;
-      const nextBeat = Math.floor((performance.now() - time.startMs) / time.intervalMs) + 1;
-      // Lo de los próximos golpes aún no suena: se anula.
-      cut((beat) => beat >= nextBeat);
-      // Lo que suena ahora termina su pulso; una nota larga se apaga en el próximo golpe.
-      if (cutTimer.current !== null) clearTimeout(cutTimer.current);
-      cutTimer.current = setTimeout(
-        () => {
-          cutTimer.current = null;
-          cut((beat) => beat < nextBeat);
-        },
-        Math.max(0, time.startMs + nextBeat * time.intervalMs - performance.now()),
-      );
-      schedule(nextBeat);
+      // El próximo golpe, en su instante exacto si ya está programado.
+      const last = beats.current.get(heard.current);
+      const boundary =
+        beats.current.get(heard.current + 1)?.atMs ??
+        (last === undefined ? undefined : last.atMs + beatIntervalMs(FIGURE_DEMO_BPM));
+      beats.current.forEach((beat, index) => {
+        if (index > heard.current) {
+          // Aún no suena: se reprograma, en el mismo instante, con la nueva figura.
+          beat.voices.forEach((voice) => pianoPlayer.noteOff(voice));
+          beat.voices = [];
+          beat.figures = [];
+          fill(index, beat);
+        } else if (boundary !== undefined) {
+          // Ya sonó: termina su pulso y una nota larga calla en el próximo golpe.
+          beat.voices.forEach((voice) => pianoPlayer.noteOff(voice, boundary));
+        }
+      });
     },
-    [cut, schedule],
+    [fill],
   );
 
   return { ...pulse, figure, choose };

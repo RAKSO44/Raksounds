@@ -1,22 +1,41 @@
+import { AudioTimeMs } from './IAudioClock';
+
 /**
  * Contrato del metrónomo de las lecciones de ritmo. A diferencia del piano (un
  * gesto = una nota), aquí la temporización lo es todo: los golpes se programan
  * por adelantado en el reloj de audio, con precisión de muestra, porque un
  * `setTimeout` por golpe tiembla decenas de ms y eso se oye en un pulso.
  */
-/** Un golpe de un pulso continuo, avisado cuando SUENA (no cuando se programa). */
+/** Un golpe de un pulso continuo. */
 export interface PulseBeat {
   /** Número de golpe desde que arrancó el pulso, desde 0. */
   readonly index: number;
   /** Golpe fuerte: suena más marcado. */
   readonly accent: boolean;
+  /** Cuándo suena, en el reloj de audio que comparte con el piano. */
+  readonly atMs: AudioTimeMs;
 }
 
 export interface PulseLoopOptions {
   bpm: number;
   /** Decide qué golpes son fuertes (la regla vive en `domain/lessons`). */
   isAccent: (index: number) => boolean;
+  /**
+   * El golpe acaba de PROGRAMARSE (suena en `beat.atMs`, unas décimas de
+   * segundo después). Es el momento de programar lo que deba sonar con él:
+   * en el mismo reloj, cae exactamente encima.
+   */
+  onSchedule?: (beat: PulseBeat) => void;
+  /** El golpe SUENA ahora (para la UI). */
   onBeat: (beat: PulseBeat) => void;
+}
+
+/** Cuándo suena el instante 0 de lo programado. */
+export interface PulseStart {
+  /** En el reloj de `performance.now()`: la referencia de los toques y de la UI. */
+  readonly startMs: number;
+  /** En el reloj de audio: la referencia de lo que deba sonar encima. */
+  readonly atMs: AudioTimeMs;
 }
 
 /** Un pulso que suena sin fin hasta detenerlo. */
@@ -40,11 +59,10 @@ export interface IMetronome {
    * Programa un golpe en cada instante de `onsetsMs` (ms desde el inicio) y
    * cancela lo que hubiera programado antes.
    *
-   * Devuelve cuándo sonará el instante 0, en el reloj de `performance.now()`:
-   * es la referencia con la que se comparan los toques del usuario. `null` si
-   * el motor no está listo (no suena nada).
+   * Devuelve cuándo sonará el instante 0 en los dos relojes, o `null` si el
+   * motor no está listo (no suena nada).
    */
-  play(onsetsMs: readonly number[]): number | null;
+  play(onsetsMs: readonly number[]): PulseStart | null;
 
   /**
    * Arranca un pulso continuo (el corazón de la teoría, los metrónomos de la

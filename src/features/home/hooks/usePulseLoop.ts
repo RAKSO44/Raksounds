@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { PulseLoop } from '@/domain/audio';
+import { AudioTimeMs, PulseLoop } from '@/domain/audio';
 import { isAccent } from '@/domain/lessons';
 import { FigureId } from '@/domain/rhythm';
 // Punto de composición con el motor real del metrónomo.
@@ -40,9 +40,13 @@ export interface PulseLoopControls {
 
 /** Para sonar algo encima del pulso, en su mismo reloj. */
 export interface PulseLoopListener {
-  /** Arrancó: el golpe `n` suena en `startMs + n × intervalMs` (reloj de `performance.now()`). */
-  onStart?: (startMs: number, intervalMs: number) => void;
-  /** Sonó el golpe `index` (desde 0). Devuelve las figuras que suenan en él, si las hay. */
+  /**
+   * Se acaba de programar el golpe `index` (desde 0): suena en `atMs`, del
+   * reloj de audio que comparten el metrónomo y el piano. Lo que se programe
+   * aquí en ese reloj suena exactamente con él.
+   */
+  onSchedule?: (index: number, atMs: AudioTimeMs) => void;
+  /** Sonó el golpe `index`. Devuelve las figuras que suenan en él, si las hay. */
   onBeat?: (index: number) => readonly BeatFigure[] | void;
   onStop?: () => void;
 }
@@ -94,6 +98,7 @@ export function usePulseLoop(bpm: number, listener?: PulseLoopListener): PulseLo
     loop.current = metronome.loop({
       bpm: bpmRef.current,
       isAccent: (index) => isAccent(index),
+      onSchedule: ({ index, atMs }) => listenerRef.current?.onSchedule?.(index, atMs),
       onBeat: ({ index, accent }) => {
         hapticPressIn();
         const figures = listenerRef.current?.onBeat?.(index) ?? undefined;
@@ -102,9 +107,6 @@ export function usePulseLoop(bpm: number, listener?: PulseLoopListener): PulseLo
       },
     });
     setRunning(loop.current !== null);
-    if (loop.current !== null) {
-      listenerRef.current?.onStart?.(loop.current.startMs, 60_000 / bpmRef.current);
-    }
   }, [stop]);
 
   // Al salir de la página no queda un pulso sonando de fondo.

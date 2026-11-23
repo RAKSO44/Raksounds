@@ -10,6 +10,8 @@
  * distintas que se solapan, y cada una debe poder soltarse por separado.
  */
 
+import { AudioTimeMs } from './IAudioClock';
+
 /**
  * Identificador opaco de una voz sonando. Se obtiene en `noteOn` y es lo único
  * que `noteOff` acepta.
@@ -40,19 +42,27 @@ export interface IAudioPlayer {
    * completo en vez de quedar en un chasquido.
    *
    * Es idempotente y tolera voces ya terminadas o desconocidas.
+   *
+   * Con `atMs` (reloj de audio) se suelta en ese instante y no ahora: una
+   * figura larga que debe callar justo en el próximo pulso. Si para entonces
+   * ya había terminado sola, no cambia nada.
    */
-  noteOff(handle: VoiceHandle): void;
+  noteOff(handle: VoiceHandle, atMs?: AudioTimeMs): void;
 
   /**
    * Una nota de duración EXACTA, programada en el reloj de audio (sin el
-   * temblor de un temporizador): empieza dentro de `delayMs` y se apaga a los
+   * temblor de un temporizador): su sonido arranca justo en `atMs` (el ataque
+   * de la muestra cae ahí, no su silencio inicial) y se apaga a los
    * `durationMs` con un apagado breve, como el apagador de un piano. Es lo que
    * hace que una figura suene lo que vale: con la duración mínima de
    * `noteOff`, una corchea y una semicorchea sonaban igual de largas.
    *
+   * `atMs` es del reloj que comparte con el metrónomo (`IAudioClock`): así
+   * una nota programada en el instante de un golpe suena CON el golpe.
+   *
    * `noteOff` la corta antes de tiempo; si aún no había empezado, ya no suena.
    */
-  playTimed(midi: number, delayMs: number, durationMs: number): VoiceHandle;
+  playTimed(midi: number, atMs: AudioTimeMs, durationMs: number): VoiceHandle;
 
   /** Libera todas las voces en curso. */
   stopAll(): void;

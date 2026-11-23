@@ -34,9 +34,9 @@ jest.mock('@/infrastructure/audio/PianoSamplerPlayer', () => ({
   createPianoSamplerPlayer: () => ({
     load: jest.fn().mockResolvedValue(undefined),
     noteOn: (midi: number) => mockNoteOn(midi),
-    playTimed: (midi: number, delayMs: number, durationMs: number) =>
-      mockPlayTimed(midi, delayMs, durationMs),
-    noteOff: (handle: number) => mockNoteOff(handle),
+    playTimed: (midi: number, atMs: number, durationMs: number) =>
+      mockPlayTimed(midi, atMs, durationMs),
+    noteOff: (handle: number, atMs?: number) => mockNoteOff(handle, atMs),
     stopAll: jest.fn(),
     unload: jest.fn().mockResolvedValue(undefined),
   }),
@@ -274,6 +274,7 @@ describe('TheoryScreen (Módulo 3)', () => {
 
     afterEach(() => {
       metronome.loop.mockImplementation(() => ({ startMs: 0, setBpm: jest.fn(), stop: jest.fn() }));
+      mockPlayTimed.mockImplementation(() => 1);
     });
 
     const openPage = async () => {
@@ -306,18 +307,42 @@ describe('TheoryScreen (Módulo 3)', () => {
       expect(screen.queryByText(/^Exacto 😊/)).toBeNull();
     });
 
-    it('el primer reproductor toca una negra en cada pulso, dibujada con su golpe', async () => {
+    /** Lo que el metrónomo avisa al programar y al sonar cada golpe. */
+    const loopOptions = (call = 0) => metronome.loop.mock.calls[call][0];
+    /** Golpe `index` del pulso, que el metrónomo programa en `FIRST_AT + index × beat`. */
+    const FIRST_AT = 5000;
+    const scheduleBeat = (index: number, call = 0) =>
+      act(() =>
+        loopOptions(call).onSchedule({
+          index,
+          accent: index % 4 === 0,
+          atMs: FIRST_AT + index * beat,
+        }),
+      );
+    const hearBeat = (index: number, call = 0) =>
+      act(() =>
+        loopOptions(call).onBeat({ index, accent: index % 4 === 0, atMs: FIRST_AT + index * beat }),
+      );
+
+    it('el primer reproductor toca una negra en cada pulso, en el instante exacto de su golpe', async () => {
       const user = await openPage();
       mockPlayTimed.mockClear();
       await user.press(screen.getByLabelText('Escuchar la negra sobre el pulso'));
       expect(metronome.loop).toHaveBeenCalledTimes(1);
-      expect(metronome.loop.mock.calls[0][0].bpm).toBe(72);
-      expect(mockPlayTimed).toHaveBeenCalledTimes(1);
-      expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(beat);
+      expect(loopOptions().bpm).toBe(72);
+      // Nada suena hasta que el metrónomo programa el golpe.
+      expect(mockPlayTimed).not.toHaveBeenCalled();
 
-      // Cada golpe programa la negra del siguiente.
-      await act(() => metronome.loop.mock.calls[0][0].onBeat({ index: 0, accent: true }));
+      // Cada golpe programado programa su negra en el MISMO instante del reloj
+      // de audio: sin conversiones, la figura cae exactamente sobre el golpe.
+      await scheduleBeat(0);
+      expect(mockPlayTimed).toHaveBeenCalledTimes(1);
+      expect(mockPlayTimed.mock.calls[0][1]).toBe(FIRST_AT);
+      expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(beat);
+      await hearBeat(0);
+      await scheduleBeat(1);
       expect(mockPlayTimed).toHaveBeenCalledTimes(2);
+      expect(mockPlayTimed.mock.calls[1][1]).toBe(FIRST_AT + beat);
 
       // Pausar lo detiene y vuelve a "reproducir".
       const handle = metronome.loop.mock.results[0].value;
@@ -335,28 +360,42 @@ describe('TheoryScreen (Módulo 3)', () => {
       });
 
       await user.press(screen.getByLabelText('Escuchar la figura elegida sobre el pulso'));
-      // Dos corcheas en el primer pulso, una pegada a la otra.
-      expect(mockPlayTimed).toHaveBeenCalledTimes(2);
+      // Dos corcheas en el primer pulso: la primera con el golpe, la otra a medio pulso.
+      let voice = 0;
+      mockPlayTimed.mockImplementation(() => (voice += 1));
+      await scheduleBeat(0);
+      expect(mockPlayTimed.mock.calls.map((call) => call[1])).toEqual([
+        FIRST_AT,
+        FIRST_AT + beat / 2,
+      ]);
       expect(mockPlayTimed.mock.calls.map((call) => call[2])).toEqual([beat / 2, beat / 2]);
-      expect(mockPlayTimed.mock.calls[1][1] - mockPlayTimed.mock.calls[0][1]).toBeCloseTo(beat / 2);
+      await hearBeat(0);
+      await scheduleBeat(1);
+      expect(mockPlayTimed).toHaveBeenCalledTimes(4);
 
-      // Sin figura elegida, el siguiente pulso suena solo. Las corcheas de este
-      // pulso terminan: lo que sonaba se apaga recién en el siguiente golpe.
+      // Quitar la figura: el pulso ya programado (aún sin sonar) se queda sin
+      // notas, y las de este terminan su pulso: callan justo en el próximo golpe.
       mockNoteOff.mockClear();
+      mockPlayTimed.mockClear();
       await user.press(screen.getByLabelText('Corchea sobre el pulso'));
       expect(screen.getByLabelText('Corchea sobre el pulso').props.accessibilityState).toEqual({
         selected: false,
       });
-      expect(mockNoteOff).not.toHaveBeenCalled();
-      await act(() => jest.advanceTimersByTimeAsync(beat + 200));
-      expect(mockNoteOff).toHaveBeenCalledTimes(2);
-      mockPlayTimed.mockClear();
-      await act(() => metronome.loop.mock.calls[0][0].onBeat({ index: 0, accent: true }));
+      expect(mockNoteOff.mock.calls).toEqual([
+        [1, FIRST_AT + beat],
+        [2, FIRST_AT + beat],
+        [3, undefined],
+        [4, undefined],
+      ]);
+      expect(mockPlayTimed).not.toHaveBeenCalled();
+      await hearBeat(1);
+      await scheduleBeat(2);
       expect(mockPlayTimed).not.toHaveBeenCalled();
 
-      // Elegir otra en marcha la programa para el pulso que viene.
+      // Elegir otra en marcha reprograma el pulso que viene, en su mismo instante.
       await user.press(screen.getByLabelText('Semicorchea sobre el pulso'));
       expect(mockPlayTimed).toHaveBeenCalledTimes(4);
+      expect(mockPlayTimed.mock.calls[0][1]).toBe(FIRST_AT + 2 * beat);
 
       // Arrancar el otro reproductor detiene este.
       const handle = metronome.loop.mock.results[0].value;

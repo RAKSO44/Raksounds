@@ -18,3 +18,8 @@ note off.
 `IMetronome.ts` es el contrato del metrónomo de las lecciones del Home: programa
 golpes por adelantado en el reloj de audio y devuelve cuándo suena el primero,
 que es la referencia para calificar los toques del usuario.
+
+`IAudioClock.ts` es el reloj de audio que comparten el piano y el metrónomo
+(`AudioTimeMs`). `playTimed`, `noteOff(…, atMs)` y los golpes (`PulseBeat.atMs`,
+`PulseStart.atMs`) hablan en ese reloj: lo que deba sonar junto se programa en
+él, nunca convirtiendo desde `performance.now()`.

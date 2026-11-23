@@ -1,5 +1,6 @@
 import { IAudioPlayer } from '@/domain/audio';
 
+import { sharedAudioContext } from './audioEngine';
 import { createPianoSamplerPlayer } from './PianoSamplerPlayer';
 
 /**
@@ -11,4 +12,4 @@ import { createPianoSamplerPlayer } from './PianoSamplerPlayer';
  * motor, de modo que cada pantalla puede llamarlo al montar sin coordinarse con
  * las demás.
  */
-export const pianoPlayer: IAudioPlayer = createPianoSamplerPlayer();
+export const pianoPlayer: IAudioPlayer = createPianoSamplerPlayer(sharedAudioContext);

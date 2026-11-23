@@ -3,7 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { NO_VOICE, VoiceHandle } from '@/domain/audio';
 import { Clip, CLIP_NOTE_MS, clipDurationMs, clipEventTimes } from '@/domain/lessons';
 // Punto de composición con los motores reales: el piano (notas) y el
-// metrónomo (golpes con precisión de muestra).
+// metrónomo (golpes con precisión de muestra), que comparten reloj de audio.
+import { audioClock } from '@/infrastructure/audio/audioEngine';
 import { metronome } from '@/infrastructure/audio/metronome';
 import { pianoPlayer } from '@/infrastructure/audio/pianoPlayer';
 
@@ -77,17 +78,17 @@ export function useClipPlayer(): ClipPlayer {
 
       let start: number | null;
       if (clip.kind === 'pulse') {
-        start = metronome.play(clip.onsetsMs);
+        start = metronome.play(clip.onsetsMs)?.startMs ?? null;
       } else if (clip.kind === 'rhythm') {
         // La duración es el contenido: todo se programa de una vez en el reloj
         // de audio, cada nota con su duración exacta. Con pulso de fondo, las
-        // notas arrancan con el primer golpe (el metrónomo fija el instante).
-        const pulseStart =
-          clip.pulseOnsetsMs === undefined ? null : metronome.play(clip.pulseOnsetsMs);
-        start = pulseStart ?? performance.now();
-        const lead = Math.max(0, start - performance.now());
+        // notas se programan en el instante del primer golpe y en el MISMO
+        // reloj que él: así cada nota cae justo encima de su golpe.
+        const pulse = clip.pulseOnsetsMs === undefined ? null : metronome.play(clip.pulseOnsetsMs);
+        start = pulse?.startMs ?? performance.now();
+        const startAt = pulse?.atMs ?? audioClock.now();
         for (const note of clip.notes) {
-          const voice = pianoPlayer.playTimed(note.midi, lead + note.atMs, note.durationMs);
+          const voice = pianoPlayer.playTimed(note.midi, startAt + note.atMs, note.durationMs);
           if (voice !== NO_VOICE) voices.current.push(voice);
         }
       } else {

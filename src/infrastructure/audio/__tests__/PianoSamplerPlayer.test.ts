@@ -1,3 +1,5 @@
+import { AudioContext } from 'react-native-audio-api';
+
 import { NO_VOICE } from '@/domain/audio';
 import { PIANO_SAMPLES } from '../pianoSampleMap';
 import { createPianoSamplerPlayer } from '../PianoSamplerPlayer';
@@ -16,9 +18,11 @@ interface RampCall {
 interface FakeSource {
   buffer: unknown;
   startedAt?: number;
+  /** Desde dónde de la muestra se empezó a leer (s). */
+  offset?: number;
   stoppedAt?: number;
   onEnded?: () => void;
-  start(when: number): void;
+  start(when: number, offset?: number): void;
   stop(when: number): void;
   connect(): void;
   disconnect(): void;
@@ -34,6 +38,24 @@ const mockDecodedIds: number[] = [];
 const mockCurves: (Float32Array | null)[] = [];
 
 let mockNow = 0;
+
+const SAMPLE_RATE = 48000;
+/** Silencio con que empieza cada muestra simulada, como el que deja un MP3. */
+const LEADING_SILENCE_S = 0.05;
+
+/** Una muestra decodificada: silencio y luego el ataque. */
+function mockDecodedBuffer(id: number) {
+  const length = SAMPLE_RATE;
+  const silence = LEADING_SILENCE_S * SAMPLE_RATE;
+  return {
+    id,
+    length,
+    sampleRate: SAMPLE_RATE,
+    copyFromChannel(destination: Float32Array) {
+      for (let i = 0; i < destination.length; i += 1) destination[i] = i < silence ? 0 : 0.8;
+    },
+  };
+}
 
 function mockCreateGain() {
   const record = { ramps: [] as RampCall[], setValues: [] as RampCall[] };
@@ -77,8 +99,9 @@ jest.mock('react-native-audio-api', () => ({
     createBufferSource = () => {
       const source: FakeSource = {
         buffer: undefined,
-        start(when: number) {
+        start(when: number, offset?: number) {
           this.startedAt = when;
+          this.offset = offset;
         },
         stop(when: number) {
           this.stoppedAt = when;
@@ -91,7 +114,7 @@ jest.mock('react-native-audio-api', () => ({
     };
     decodeAudioData = async (id: number) => {
       mockDecodedIds.push(id);
-      return { id };
+      return mockDecodedBuffer(id);
     };
     close = jest.fn().mockResolvedValue(undefined);
   },
@@ -100,6 +123,10 @@ jest.mock('react-native-audio-api', () => ({
 /** Constantes del motor; deben coincidir con PianoSamplerPlayer.ts. */
 const RELEASE_S = 0.7;
 const MIN_SOUNDING_S = 1.5;
+const ATTACK_S = 0.004;
+const DAMPER_S = 0.06;
+
+const newContext = () => new AudioContext();
 
 beforeEach(() => {
   mockSources.length = 0;
@@ -111,7 +138,7 @@ beforeEach(() => {
 });
 
 async function loadedPlayer() {
-  const player = createPianoSamplerPlayer();
+  const player = createPianoSamplerPlayer(newContext);
   await player.load();
   mockSources.length = 0;
   mockGains.length = 0;
@@ -154,9 +181,10 @@ describe('createPianoSamplerPlayer', () => {
 
     // La caída arranca en 0.8 s y termina en 1.5 s: el tap se oye completo en
     // vez de quedar en un chasquido de 50 ms.
-    expect(mockSources[0].stoppedAt).toBeCloseTo(MIN_SOUNDING_S, 5);
+    // (Contado desde el ataque, que llega tras la rampa de entrada.)
+    expect(mockSources[0].stoppedAt).toBeCloseTo(ATTACK_S + MIN_SOUNDING_S, 5);
     const fadeTo = mockGains[0].ramps.at(-1)!;
-    expect(fadeTo.time).toBeCloseTo(MIN_SOUNDING_S, 5);
+    expect(fadeTo.time).toBeCloseTo(ATTACK_S + MIN_SOUNDING_S, 5);
     expect(fadeTo.value).toBeLessThan(0.001);
   });
 
@@ -204,12 +232,12 @@ describe('createPianoSamplerPlayer', () => {
   });
 
   it('sin load() no suena pero tampoco lanza', () => {
-    const player = createPianoSamplerPlayer();
+    const player = createPianoSamplerPlayer(newContext);
     expect(player.noteOn(60)).toBe(NO_VOICE);
   });
 
   it('load() concurrente decodifica el banco una sola vez', async () => {
-    const player = createPianoSamplerPlayer();
+    const player = createPianoSamplerPlayer(newContext);
 
     await Promise.all([player.load(), player.load()]);
 
@@ -250,6 +278,49 @@ describe('createPianoSamplerPlayer', () => {
     expect(Math.min(...values)).toBeGreaterThanOrEqual(-1);
     // Monótona: más entrada nunca da menos salida (sin pliegues que suenen raro).
     expect(values.every((value, i) => i === 0 || value >= values[i - 1])).toBe(true);
+  });
+
+  it('cada nota se lee desde su ataque, no desde el silencio inicial del archivo', async () => {
+    const player = await loadedPlayer();
+
+    player.noteOn(60);
+
+    // Con el silencio del MP3, toda nota sonaba ~50 ms después de lo pedido.
+    // Se lee desde justo antes del ataque, lo que dura la rampa de entrada.
+    expect(mockSources[0].offset).toBeCloseTo(LEADING_SILENCE_S - ATTACK_S, 6);
+  });
+
+  it('una nota de duración exacta suena con su ataque en el instante pedido', async () => {
+    const player = await loadedPlayer();
+
+    player.playTimed(60, 1000, 500);
+
+    // La lectura arranca lo que dura la rampa antes: el ataque cae en 1 s
+    // (el instante del golpe con el que se programó), no 4 ms después.
+    expect(mockSources[0].startedAt).toBeCloseTo(1 - ATTACK_S, 6);
+    expect(mockSources[0].stoppedAt).toBeCloseTo(1.5 + DAMPER_S, 6);
+  });
+
+  it('noteOff con un instante suelta la nota justo ahí', async () => {
+    const player = await loadedPlayer();
+
+    const handle = player.playTimed(60, 0, 4000);
+    mockNow = 0.5;
+    player.noteOff(handle, 1000);
+
+    // Una redonda que debe callar en el próximo golpe (1 s), ni antes ni después.
+    expect(mockSources[0].stoppedAt).toBeCloseTo(1 + DAMPER_S, 6);
+  });
+
+  it('noteOff con un instante posterior a su final no la alarga', async () => {
+    const player = await loadedPlayer();
+
+    const handle = player.playTimed(60, 0, 500);
+    const stoppedAt = mockSources[0].stoppedAt;
+    player.noteOff(handle, 1000);
+
+    // Ya habrá callado sola: volver a programar su apagado la haría sonar de más.
+    expect(mockSources[0].stoppedAt).toBe(stoppedAt);
   });
 
   it('stopAll libera todas las voces en curso', async () => {

@@ -1,3 +1,5 @@
+import { AudioContext } from 'react-native-audio-api';
+
 import { createMetronomePlayer } from '../MetronomePlayer';
 
 interface FakeSource {
@@ -46,6 +48,8 @@ jest.mock('react-native-audio-api', () => ({
   },
 }));
 
+const newContext = () => new AudioContext();
+
 beforeEach(() => {
   mockStartMs = Date.now();
   mockSources.length = 0;
@@ -54,12 +58,12 @@ beforeEach(() => {
 
 describe('createMetronomePlayer', () => {
   it('antes de cargar no suena y devuelve null', () => {
-    expect(createMetronomePlayer().play([0, 500])).toBeNull();
+    expect(createMetronomePlayer(newContext).play([0, 500])).toBeNull();
     expect(mockSources).toHaveLength(0);
   });
 
   it('sintetiza un golpe corto que no satura', async () => {
-    await createMetronomePlayer().load();
+    await createMetronomePlayer(newContext).load();
     expect(mockCopied).toBeDefined();
     const peak = Math.max(...Array.from(mockCopied!, Math.abs));
     expect(peak).toBeGreaterThan(0.1);
@@ -67,12 +71,15 @@ describe('createMetronomePlayer', () => {
   });
 
   it('programa cada golpe en el reloj de audio, separados exactamente', async () => {
-    const player = createMetronomePlayer();
+    const player = createMetronomePlayer(newContext);
     await player.load();
     const start = player.play([0, 500, 1000]);
 
     expect(start).not.toBeNull();
     const times = mockSources.map((source) => source.startedAt!);
+    // El instante 0 en el reloj de audio es el del primer golpe: lo que se
+    // programe encima (las notas de una figura) cae exactamente con él.
+    expect(start!.atMs / 1000).toBeCloseTo(times[0], 6);
     expect(times[1] - times[0]).toBeCloseTo(0.5, 6);
     expect(times[2] - times[0]).toBeCloseTo(1, 6);
     // El primero sale con margen, nunca en el pasado.
@@ -80,7 +87,7 @@ describe('createMetronomePlayer', () => {
   });
 
   it('volver a programar corta lo pendiente', async () => {
-    const player = createMetronomePlayer();
+    const player = createMetronomePlayer(newContext);
     await player.load();
     player.play([0, 500]);
     const first = [...mockSources];
@@ -98,17 +105,28 @@ describe('createMetronomePlayer', () => {
     });
 
     const startLoop = async (bpm: number) => {
-      const player = createMetronomePlayer();
+      const player = createMetronomePlayer(newContext);
       await player.load();
       mockStartMs = Date.now();
       const beats: { index: number; accent: boolean }[] = [];
+      const scheduled: { index: number; atMs: number }[] = [];
       const loop = player.loop({
         bpm,
         isAccent: (index) => index % 4 === 0,
+        onSchedule: (beat) => scheduled.push(beat),
         onBeat: (beat) => beats.push(beat),
       });
-      return { player, loop, beats };
+      return { player, loop, beats, scheduled };
     };
+
+    it('avisa de cada golpe al programarlo, con su instante exacto en el reloj de audio', async () => {
+      const { scheduled } = await startLoop(120);
+      jest.advanceTimersByTime(2600);
+
+      const times = mockSources.map((source) => source.startedAt!);
+      expect(scheduled.map((beat) => beat.index)).toEqual(times.map((_, index) => index));
+      scheduled.forEach((beat, index) => expect(beat.atMs / 1000).toBeCloseTo(times[index], 6));
+    });
 
     it('sigue programando golpes regulares y avisa de cada uno, con sus acentos', async () => {
       const { loop, beats } = await startLoop(120);
@@ -119,6 +137,8 @@ describe('createMetronomePlayer', () => {
       expect(times.length).toBeGreaterThanOrEqual(5);
       times.slice(1).forEach((time, index) => expect(time - times[index]).toBeCloseTo(0.5, 6));
       expect(beats.length).toBeGreaterThanOrEqual(5);
+      // Avisa CUANDO suena: después de programarlo, no antes.
+      expect(beats.length).toBeLessThan(times.length);
       expect(beats.slice(0, 5).map((beat) => beat.accent)).toEqual([
         true,
         false,

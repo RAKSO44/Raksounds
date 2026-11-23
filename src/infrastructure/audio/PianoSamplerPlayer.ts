@@ -1,7 +1,9 @@
 import { AudioBuffer, AudioContext, GainNode } from 'react-native-audio-api';
 
-import { IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio';
+import { AudioTimeMs, IAudioPlayer, NO_VOICE, VoiceHandle } from '@/domain/audio';
+
 import { PIANO_SAMPLES, sampleFor } from './pianoSampleMap';
+import { sampleOnset } from './sampleOnset';
 
 /**
  * Motor de piano por muestras, construido sobre react-native-audio-api
@@ -130,26 +132,64 @@ const PANIC_RELEASE_S = 0.08;
  */
 const DAMPER_S = 0.06;
 
+/**
+ * Tramo inicial de cada muestra donde se busca su ataque (`sampleOnset`):
+ * cubre de sobra el silencio del MP3 (≤ 50 ms) y el pico del martillo.
+ */
+const ONSET_SCAN_S = 0.3;
+/** El ataque empieza donde la señal llega a esta fracción de su pico (−20 dB). */
+const ONSET_THRESHOLD = 0.1;
+
+/**
+ * Una muestra lista para sonar. No se lee desde 0 sino desde `cue`: lo de
+ * antes es el silencio que deja el MP3 (ver `sampleOnset`), y con él toda
+ * nota sonaba decenas de ms tarde respecto del metrónomo.
+ */
+interface Sample {
+  readonly buffer: AudioBuffer;
+  /** Desde dónde se lee (s): `ATTACK_S` antes del ataque, para que la rampa de entrada no lo toque. */
+  readonly cue: number;
+  /** Lo que tarda en llegar el ataque desde `cue` (s). */
+  readonly lead: number;
+}
+
 interface Voice {
   readonly source: { stop(when?: number): void; disconnect(): void };
   readonly envelope: GainNode;
-  /** `currentTime` del contexto en el que empieza a sonar (puede ser futuro). */
+  /** `currentTime` del contexto en el que SUENA su ataque (puede ser futuro). */
   readonly startedAt: number;
+  /** Cuándo empieza a callar sola (`Infinity` si espera a que la suelten). */
+  readonly endsAt: number;
   /** De duración exacta (`playTimed`): cortarla no respeta la duración mínima. */
   readonly timed: boolean;
   released: boolean;
 }
 
-export function createPianoSamplerPlayer(): IAudioPlayer {
+/**
+ * El piano suena en el contexto que comparte con el metrónomo
+ * (`audioEngine.ts`): se recibe en vez de crearlo para que una figura y su
+ * pulso se programen en el MISMO reloj.
+ */
+export function createPianoSamplerPlayer(getContext: () => AudioContext): IAudioPlayer {
   let context: AudioContext | undefined;
   let master: GainNode | undefined;
-  const buffers = new Map<number, AudioBuffer>();
+  let limiter: { disconnect(): void } | undefined;
+  const samples = new Map<number, Sample>();
   const voices = new Map<VoiceHandle, Voice>();
   let nextHandle = 0;
   let loading: Promise<void> | undefined;
 
-  /** Programa el release de una voz y la retira del registro. */
-  function release(handle: VoiceHandle, voice: Voice, fadeSeconds: number, floor: number) {
+  /**
+   * Programa el release de una voz (ahora, o en `atSeconds` del reloj de
+   * audio) y la retira del registro.
+   */
+  function release(
+    handle: VoiceHandle,
+    voice: Voice,
+    fadeSeconds: number,
+    floor: number,
+    atSeconds?: number,
+  ) {
     if (voice.released) return;
     voice.released = true;
     voices.delete(handle);
@@ -158,8 +198,9 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    if (now < voice.startedAt) {
-      // Programada y aún sin empezar: se silencia y no llega a sonar.
+    const when = Math.max(now, atSeconds ?? now);
+    if (when < voice.startedAt) {
+      // Se corta antes de que suene: se silencia y no llega a sonar.
       try {
         voice.envelope.gain.cancelScheduledValues(now);
         voice.envelope.gain.setValueAtTime(0, now);
@@ -169,9 +210,11 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       }
       return;
     }
+    // Para entonces ya calla sola (una figura que termina antes del corte).
+    if (when >= voice.endsAt) return;
     // Un toque instantáneo debe durar MIN_SOUNDING_S en total; uno mantenido,
     // lo que dure el gesto más el release. Ambos casos son este único max().
-    const releaseAt = Math.max(now, voice.startedAt + floor);
+    const releaseAt = Math.max(when, voice.startedAt + floor);
     const endAt = releaseAt + fadeSeconds;
 
     try {
@@ -186,37 +229,58 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
   }
 
   /**
-   * Crea la voz de una nota que empieza dentro de `delaySeconds`, o `null` si
-   * no puede sonar. Sin excepciones: se llama desde un gesto, y si la nota no
-   * está en el banco o el motor no terminó de cargar, simplemente no suena.
+   * Crea la voz de una nota cuyo ataque suena en `atSeconds` (reloj de audio;
+   * ahora mismo si ya pasó), o `null` si no puede sonar. Con `durationSeconds`
+   * se apaga sola a esa distancia; sin él, espera a `noteOff`. Sin
+   * excepciones: se llama desde un gesto, y si la nota no está en el banco o
+   * el motor no terminó de cargar, simplemente no suena.
    */
   function startVoice(
     midi: number,
-    delaySeconds: number,
-    timed: boolean,
+    atSeconds: number,
+    durationSeconds?: number,
   ): { handle: VoiceHandle; voice: Voice } | null {
     const ctx = context;
     const bus = master;
-    const buffer = buffers.get(midi);
-    if (!ctx || !bus || !buffer || !sampleFor(midi)) return null;
+    const sample = samples.get(midi);
+    if (!ctx || !bus || !sample || !sampleFor(midi)) return null;
 
-    const at = ctx.currentTime + delaySeconds;
+    // La lectura arranca `lead` antes, para que el ATAQUE caiga en `atSeconds`.
+    const startAt = Math.max(ctx.currentTime, atSeconds - sample.lead);
+    const at = startAt + sample.lead;
 
-    // Nodo NUEVO por pulsación: nace en la muestra 0 y se descarta al acabar.
+    // Nodo NUEVO por pulsación: nace en su `cue` y se descarta al acabar.
     // Es lo que hace innecesario cualquier seek/rewind y, con él, las carreras.
     const source = ctx.createBufferSource();
-    source.buffer = buffer;
+    source.buffer = sample.buffer;
 
     const envelope = ctx.createGain();
-    envelope.gain.setValueAtTime(0, at);
-    envelope.gain.linearRampToValueAtTime(1, at + ATTACK_S);
+    envelope.gain.setValueAtTime(0, startAt);
+    envelope.gain.linearRampToValueAtTime(1, startAt + ATTACK_S);
+
+    let endsAt = Infinity;
+    if (durationSeconds !== undefined) {
+      // Todo queda programado de una vez: el apagador baja justo al acabar la
+      // duración y el nodo se detiene cuando ya no suena.
+      endsAt = at + Math.max(0, durationSeconds);
+      envelope.gain.setValueAtTime(1, endsAt);
+      envelope.gain.exponentialRampToValueAtTime(SILENCE, endsAt + DAMPER_S);
+      source.stop(endsAt + DAMPER_S);
+    }
 
     source.connect(envelope);
     envelope.connect(bus);
 
     const handle = nextHandle;
     nextHandle += 1;
-    const voice: Voice = { source, envelope, startedAt: at, timed, released: false };
+    const voice: Voice = {
+      source,
+      envelope,
+      startedAt: at,
+      endsAt,
+      timed: durationSeconds !== undefined,
+      released: false,
+    };
     voices.set(handle, voice);
 
     // Si el dedo se queda pulsado más de lo que dura la muestra, la voz se
@@ -230,8 +294,19 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       }
     };
 
-    source.start(at);
+    source.start(startAt, sample.cue);
     return { handle, voice };
+  }
+
+  /** Dónde empieza a sonar la muestra (ver `Sample`). Se mide una vez, al cargar. */
+  function prepare(buffer: AudioBuffer): Sample {
+    const head = new Float32Array(
+      Math.min(buffer.length, Math.ceil(ONSET_SCAN_S * buffer.sampleRate)),
+    );
+    buffer.copyFromChannel(head, 0);
+    const onset = sampleOnset(head, ONSET_THRESHOLD) / buffer.sampleRate;
+    const cue = Math.max(0, onset - ATTACK_S);
+    return { buffer, cue, lead: onset - cue };
   }
 
   return {
@@ -239,57 +314,50 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
       // Se memoiza la promesa: la Librería es la tab inicial y `load()` puede
       // dispararse dos veces en un remount antes de que la primera resuelva.
       loading ??= (async () => {
-        const ctx = new AudioContext();
+        const ctx = getContext();
 
         // Cadena del bus maestro:
         //   voces → ganancia fija → ÷ LIMIT_RANGE → limitador → salida.
         // La división se aplica en la misma ganancia del bus (es lineal), y la
         // curva del limitador devuelve la señal a su escala real.
-        const limiter = ctx.createWaveShaper();
-        limiter.curve = softClipCurve();
-        limiter.connect(ctx.destination);
+        const shaper = ctx.createWaveShaper();
+        shaper.curve = softClipCurve();
+        shaper.connect(ctx.destination);
 
         const bus = ctx.createGain();
         bus.gain.value = MASTER_GAIN / LIMIT_RANGE;
-        bus.connect(limiter);
+        bus.connect(shaper);
 
         // En paralelo: 25 muestras cortas decodifican en cientos de ms.
         await Promise.all(
           PIANO_SAMPLES.map(async (sample) => {
-            buffers.set(sample.midi, await ctx.decodeAudioData(sample.source));
+            samples.set(sample.midi, prepare(await ctx.decodeAudioData(sample.source)));
           }),
         );
 
         context = ctx;
         master = bus;
+        limiter = shaper;
       })();
       return loading;
     },
 
     noteOn(midi: number): VoiceHandle {
-      return startVoice(midi, 0, false)?.handle ?? NO_VOICE;
+      return startVoice(midi, 0)?.handle ?? NO_VOICE;
     },
 
-    noteOff(handle: VoiceHandle) {
+    noteOff(handle: VoiceHandle, atMs?: AudioTimeMs) {
       const voice = voices.get(handle);
       // Voz desconocida o ya liberada: idempotente por contrato, porque el
       // gesto puede finalizar dos veces (cancelación + soltado).
       if (!voice) return;
-      if (voice.timed) release(handle, voice, DAMPER_S, 0);
-      else release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S);
+      const at = atMs === undefined ? undefined : atMs / 1000;
+      if (voice.timed) release(handle, voice, DAMPER_S, 0, at);
+      else release(handle, voice, RELEASE_S, SUSTAIN_FLOOR_S, at);
     },
 
-    playTimed(midi: number, delayMs: number, durationMs: number): VoiceHandle {
-      const started = startVoice(midi, Math.max(0, delayMs) / 1000, true);
-      if (started === null) return NO_VOICE;
-      const { voice } = started;
-      // Todo queda programado de una vez: el apagador baja justo al acabar la
-      // duración y el nodo se detiene cuando ya no suena.
-      const gateAt = voice.startedAt + Math.max(0, durationMs) / 1000;
-      voice.envelope.gain.setValueAtTime(1, gateAt);
-      voice.envelope.gain.exponentialRampToValueAtTime(SILENCE, gateAt + DAMPER_S);
-      voice.source.stop(gateAt + DAMPER_S);
-      return started.handle;
+    playTimed(midi: number, atMs: AudioTimeMs, durationMs: number): VoiceHandle {
+      return startVoice(midi, atMs / 1000, durationMs / 1000)?.handle ?? NO_VOICE;
     },
 
     stopAll() {
@@ -302,12 +370,15 @@ export function createPianoSamplerPlayer(): IAudioPlayer {
     async unload() {
       this.stopAll();
       voices.clear();
-      buffers.clear();
-      const ctx = context;
+      samples.clear();
+      // El contexto es compartido (el metrónomo sigue en él): se suelta solo
+      // la cadena del piano.
+      master?.disconnect();
+      limiter?.disconnect();
       context = undefined;
       master = undefined;
+      limiter = undefined;
       loading = undefined;
-      await ctx?.close();
     },
   };
 }
