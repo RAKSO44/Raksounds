@@ -1,10 +1,11 @@
 # Home — ruta de aprendizaje
 
 **Módulo 1 (Las notas musicales)** y **Módulo 2 (Pulso y tempo)** de la
-Etapa 1, y **Módulo 3 (Figuras musicales)** de la Etapa 2. Documento de
+Etapa 1, y **Módulo 3 (Figuras musicales)** y la teoría del **Módulo 4 (Silencios y
+prolongaciones)** de la Etapa 2. Documento de
 partida y decisiones en `docs/roadmap/etapa-1/` (las decisiones de
 `modulos-1-2.md` prevalecen sobre la especificación) y
-`docs/roadmap/etapa-2/modulo-3.md`.
+`docs/roadmap/etapa-2/modulo-3.md` y `modulo-4.md`.
 
 - Las etapas y módulos de la ruta viven en `domain/lessons/stages.ts`. Arriba
   hay UNA sola tarjeta fija (`StageBanner`) con la etapa en curso; entre etapas,
@@ -30,7 +31,7 @@ partida y decisiones en `docs/roadmap/etapa-1/` (las decisiones de
   práctica completada (≥ 80 %: 12/15, 9/11, 14/17) → cara dorada; en la tarjeta, cada botón se
   vuelve dorado. El cambio se anima al volver al Home (color + un destello
   que cruza el nodo, `useStatusTransition`), nunca a escondidas.
-- Teoría: una o más hojas (el Módulo 3 tiene 4) que se pasan con ← n → (el ✓ final la marca como
+- Teoría: una o más hojas (el Módulo 3 tiene 4, el 4 tiene 5) que se pasan con ← n/total → (el ✓ final la marca como
   leída); nada obliga a interactuar para avanzar. Los términos destacados
   (`RichText`) y los títulos de tabla abren una definición (`TooltipHost`):
   globo sin color (superficie + borde, como Duolingo) con UNA frase corta,

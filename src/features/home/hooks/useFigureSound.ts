@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 
-import { rhythmClip } from '@/domain/lessons';
-import { FigureId } from '@/domain/rhythm';
+import { itemsClip } from '@/domain/lessons';
+import { FigureId, noteItem, RhythmItem } from '@/domain/rhythm';
 
 import { useClipPlayer } from './useClipPlayer';
 
@@ -14,6 +14,11 @@ export interface FigureSound {
    */
   take: number;
   play: (figure: FigureId) => void;
+  /**
+   * Hace sonar algo escrito: con puntillo dura la mitad más, y un silencio
+   * no suena (con `pulse`, se oye su tiempo en el pulso).
+   */
+  playItem: (item: RhythmItem) => void;
 }
 
 /**
@@ -28,16 +33,18 @@ export function useFigureSound(pulse = false): FigureSound {
   const [take, setTake] = useState(0);
   const { play: playClip } = player;
 
-  const play = useCallback(
-    (figure: FigureId) => {
-      const start = playClip(rhythmClip([figure], { pulse }), {
+  const playItem = useCallback(
+    (item: RhythmItem) => {
+      const start = playClip(itemsClip([item], { pulse }), {
         onEnd: () => setSounding(null),
       });
-      setSounding(start === null ? null : figure);
+      setSounding(start === null ? null : item.figure);
       setTake((current) => current + 1);
     },
     [playClip, pulse],
   );
 
-  return { sounding, take, play };
+  const play = useCallback((figure: FigureId) => playItem(noteItem(figure)), [playItem]);
+
+  return { sounding, take, play, playItem };
 }

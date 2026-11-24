@@ -11,16 +11,28 @@ import {
   removeFigure,
   RhythmBar,
   stickyInsertionIndex,
+  toggleDot,
+  toggleTie,
 } from '@/domain/rhythm';
 import { hapticError, hapticSuccess, hapticTap, hapticTick } from '@/shared/haptics';
 import { controls, motion } from '@/shared/theme';
 
 const NONE: readonly FigureId[] = [];
 
-/** De dónde sale lo que se arrastra: la paleta (no se acaba) o la propia barra. */
+/**
+ * De dónde sale lo que se arrastra: la paleta (no se acaba; una figura o su
+ * silencio) o la propia barra.
+ */
 export type DragSource =
-  | { readonly kind: 'palette'; readonly figure: FigureId }
+  | { readonly kind: 'palette'; readonly figure: FigureId; readonly rest?: boolean }
   | { readonly kind: 'bar'; readonly key: number };
+
+/** Cómo se ve lo arrastrado: qué figura, si es silencio y si lleva puntillo. */
+export interface DraggedLook {
+  readonly figure: FigureId;
+  readonly rest: boolean;
+  readonly dotted: boolean;
+}
 
 /**
  * Lo que el dedo tiene que pasar la mitad de una figura (en semicorcheas)
@@ -43,7 +55,7 @@ function baseOf(bar: RhythmBar, source: DragSource): RhythmBar {
 /** La barra si lo arrastrado se suelta en `index`; `null` si no cabe. */
 function placeAt(bar: RhythmBar, source: DragSource, index: number): RhythmBar | null {
   return source.kind === 'palette'
-    ? insertFigure(bar, source.figure, index)
+    ? insertFigure(bar, source.figure, index, { rest: source.rest === true })
     : moveFigure(bar, source.key, index);
 }
 
@@ -99,10 +111,36 @@ export function useBarPlayground(capacity: number, given: readonly FigureId[] = 
     );
   }, [shake]);
 
-  /** Pone una figura en `index` (al final si se omite), o tiembla si no cabe. */
+  /**
+   * Pone una figura (o su silencio, con `rest`) en `index` (al final si se
+   * omite), o tiembla si no cabe.
+   */
   const add = useCallback(
-    (figure: FigureId, index: number = current.current.figures.length) => {
-      const next = insertFigure(current.current, figure, index);
+    (figure: FigureId, index: number = current.current.figures.length, rest = false) => {
+      const next = insertFigure(current.current, figure, index, { rest });
+      if (next === null) reject();
+      else commit(next);
+    },
+    [commit, reject],
+  );
+
+  /** Pone o quita el puntillo de una figura colocada; tiembla si ya no cabe. */
+  const dot = useCallback(
+    (key: number) => {
+      const next = toggleDot(current.current, key);
+      if (next === null) reject();
+      else commit(next);
+    },
+    [commit, reject],
+  );
+
+  /**
+   * Liga una figura colocada con la siguiente (o la desliga); tiembla si no
+   * se puede: un silencio no se liga y hace falta una nota después.
+   */
+  const tie = useCallback(
+    (key: number) => {
+      const next = toggleTie(current.current, key);
       if (next === null) reject();
       else commit(next);
     },
@@ -166,14 +204,16 @@ export function useBarPlayground(capacity: number, given: readonly FigureId[] = 
     [commit, reject, setPreview],
   );
 
-  /** Qué figura es lo arrastrado (una colocada puede no existir ya). */
-  const figureOf = useCallback(
-    (source: DragSource): FigureId | null =>
-      source.kind === 'palette'
-        ? source.figure
-        : (current.current.figures.find((placed) => placed.key === source.key)?.figure ?? null),
-    [],
-  );
+  /** Cómo es lo arrastrado (una colocada puede no existir ya). */
+  const lookOf = useCallback((source: DragSource): DraggedLook | null => {
+    if (source.kind === 'palette') {
+      return { figure: source.figure, rest: source.rest === true, dotted: false };
+    }
+    const placed = current.current.figures.find((candidate) => candidate.key === source.key);
+    return placed === undefined
+      ? null
+      : { figure: placed.figure, rest: placed.rest === true, dotted: placed.dotted === true };
+  }, []);
 
   return {
     bar,
@@ -183,8 +223,10 @@ export function useBarPlayground(capacity: number, given: readonly FigureId[] = 
     shake,
     add,
     remove,
+    dot,
+    tie,
     hover,
     drop,
-    figureOf,
+    lookOf,
   };
 }

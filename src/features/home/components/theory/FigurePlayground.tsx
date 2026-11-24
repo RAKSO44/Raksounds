@@ -1,25 +1,36 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
-  cancelAnimation,
-  Easing,
   SharedValue,
   useAnimatedStyle,
   useSharedValue,
-  withDelay,
   withTiming,
 } from 'react-native-reanimated';
 
 import { PLAYGROUND_BAR_UNITS } from '@/domain/lessons';
-import { figureById, FigureId, FIGURES, FigureSpan, RhythmBar } from '@/domain/rhythm';
-import { controls, motion, radii, spacing, useTheme } from '@/shared/theme';
+import {
+  FigureGlyph as Glyph,
+  figureById,
+  FigureId,
+  FIGURES,
+  FigureSpan,
+  itemUnits,
+  noteItem,
+  phraseGlyph,
+  restItem,
+  RhythmBar,
+  RhythmItem,
+} from '@/domain/rhythm';
+import { controls, motion, spacing } from '@/shared/theme';
 
 import { Playhead } from '../../hooks/useBarPlayback';
-import { DragSource, useBarPlayground } from '../../hooks/useBarPlayground';
+import { DraggedLook, DragSource, useBarPlayground } from '../../hooks/useBarPlayground';
 import { useFigureSound } from '../../hooks/useFigureSound';
 import { FigureDrag, FingerPoint } from '../../hooks/useFigureGesture';
 import { BAR_HEIGHT, FigureBox } from '../notation/FigureBox';
 import { FigureTile } from '../notation/FigureTile';
+import { GlyphToggle } from '../notation/GlyphToggle';
+import { PlayheadLine } from '../notation/PlayheadLine';
 import { RhythmBarView } from '../notation/RhythmBarView';
 
 interface Rect {
@@ -29,12 +40,27 @@ interface Rect {
   height: number;
 }
 
-/** Ancho que ocupa una figura en una barra de `barWidth` píxeles. */
-const widthOf = (figure: FigureId, barWidth: number) =>
-  (figureById(figure).units / PLAYGROUND_BAR_UNITS) * barWidth;
+/** Ancho que ocupa algo escrito en una barra de `barWidth` píxeles. */
+const widthOf = (look: DraggedLook, barWidth: number) =>
+  (itemUnits(look) / PLAYGROUND_BAR_UNITS) * barWidth;
 
 const ALL_FIGURES: readonly FigureId[] = FIGURES.map((figure) => figure.id);
 const NONE: readonly FigureId[] = [];
+
+/** Lo que hace tocar una figura de la barra: ponerle o quitarle algo (sin herramienta, suena). */
+type Tool = 'dot' | 'tie';
+const TOOLS: readonly Tool[] = ['dot', 'tie'];
+
+/** Los dibujos de las herramientas: una negra con puntillo y dos negras ligadas. */
+const QUARTER = { figure: figureById('quarter'), rest: false, dotted: false };
+const TOOL_GLYPHS: Record<Tool, Glyph> = {
+  dot: phraseGlyph([{ ...QUARTER, dotted: true }], []),
+  tie: phraseGlyph([QUARTER, QUARTER], [true]),
+};
+const TOOL_LABELS: Record<Tool, string> = {
+  dot: 'Puntillo: toca una figura de la barra para ponérselo o quitárselo',
+  tie: 'Ligadura: toca una nota de la barra para ligarla con la siguiente',
+};
 
 interface FigurePlaygroundProps {
   /** Las figuras de abajo (todas, por defecto). No se acaban. */
@@ -51,6 +77,10 @@ interface FigurePlaygroundProps {
   onSound?: () => void;
   /** Mientras la barra entera se reproduce, una línea roja la recorre. */
   playhead?: Playhead | null;
+  /** Debajo de las figuras, sus silencios (Módulo 4). */
+  rests?: boolean;
+  /** El puntillo y la ligadura como herramientas (Módulo 4). */
+  modifiers?: boolean;
 }
 
 /**
@@ -65,12 +95,14 @@ function ghostLeft(fingerX: number, originX: number, ghostWidth: number, barWidt
 
 /**
  * "¡Experimenta un poco!": una barra que admite una redonda y, debajo, las
- * cinco figuras. Se arrastran (o se tocan) para llenarla; las de la paleta
- * no se acaban. La copia que viaja ya mide lo que la figura ocupará; al
- * acercarla a la barra, la figura se muestra en el sitio donde caería y las
- * demás se corren, y al alejarla todo vuelve a como estaba. Soltar aplica lo
- * que se ve. Dentro de la barra se reordenan igual y se quitan
- * manteniéndolas pulsadas. Si algo no cabe, la barra tiembla.
+ * cinco figuras (y, en el Módulo 4, sus silencios). Se arrastran (o se tocan)
+ * para llenarla; las de la paleta no se acaban. La copia que viaja ya mide lo
+ * que la figura ocupará; al acercarla a la barra, la figura se muestra en el
+ * sitio donde caería y las demás se corren, y al alejarla todo vuelve a como
+ * estaba. Soltar aplica lo que se ve. Dentro de la barra se reordenan igual y
+ * se quitan manteniéndolas pulsadas. Con el puntillo o la ligadura
+ * encendidos, tocar una figura de la barra se lo pone o se lo quita. Si algo
+ * no cabe (o no se puede), la barra tiembla.
  */
 export function FigurePlayground({
   palette = ALL_FIGURES,
@@ -80,20 +112,23 @@ export function FigurePlayground({
   pulse = false,
   onSound,
   playhead = null,
+  rests = false,
+  modifiers = false,
 }: FigurePlaygroundProps) {
   const playground = useBarPlayground(PLAYGROUND_BAR_UNITS, given);
-  const { bar, shown, previewing, hover, drop, add, remove, figureOf } = playground;
+  const { bar, shown, previewing, hover, drop, add, remove, dot, tie, lookOf } = playground;
+  const [tool, setTool] = useState<Tool | null>(null);
 
   useEffect(() => {
     onChange?.(bar);
   }, [bar, onChange]);
-  const { play: playFigure } = useFigureSound(pulse);
+  const { playItem } = useFigureSound(pulse);
   const playSound = useCallback(
-    (figure: FigureId) => {
+    (item: RhythmItem) => {
       onSound?.();
-      playFigure(figure);
+      playItem(item);
     },
-    [onSound, playFigure],
+    [onSound, playItem],
   );
   const [width, setWidth] = useState(0);
   const [dragging, setDragging] = useState<DragSource | null>(null);
@@ -125,11 +160,11 @@ export function FigurePlayground({
       },
       onMove: (x, y) => {
         const rect = barRect.current;
-        const figure = figureOf(source);
+        const look = lookOf(source);
         const barWidth = widthRef.current;
-        if (rect === null || figure === null || barWidth === 0) return;
+        if (rect === null || look === null || barWidth === 0) return;
         // Cuenta el centro de la copia, que flota por encima del dedo.
-        const ghostWidth = widthOf(figure, barWidth);
+        const ghostWidth = widthOf(look, barWidth);
         const centerX =
           origin.value.x + ghostLeft(x, origin.value.x, ghostWidth, barWidth) + ghostWidth / 2;
         const centerY = y - controls.dragGhostLift - BAR_HEIGHT / 2;
@@ -147,21 +182,36 @@ export function FigurePlayground({
         drop(source);
       },
     }),
-    [drop, figureOf, finger, hover, origin],
+    [drop, lookOf, finger, hover, origin],
   );
 
   const paletteDrags = useMemo(
     () => new Map(palette.map((figure) => [figure, dragFrom({ kind: 'palette', figure })])),
     [dragFrom, palette],
   );
+  const restDrags = useMemo(
+    () =>
+      new Map(palette.map((figure) => [figure, dragFrom({ kind: 'palette', figure, rest: true })])),
+    [dragFrom, palette],
+  );
   const barDragFor = useCallback((key: number) => dragFrom({ kind: 'bar', key }), [dragFrom]);
 
-  const playPlaced = useCallback((span: FigureSpan) => playSound(span.figure), [playSound]);
+  // Con una herramienta encendida, tocar una figura de la barra la aplica en vez de sonar.
+  const pressPlaced = useCallback(
+    (span: FigureSpan) => {
+      if (disabled || tool === null) playSound(span);
+      else if (tool === 'dot') dot(span.key);
+      else tie(span.key);
+    },
+    [disabled, dot, playSound, tie, tool],
+  );
 
   const shakeStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: playground.shake.value }],
   }));
-  const ghostFigure = dragging === null ? null : figureOf(dragging);
+  const ghostLook = dragging === null ? null : lookOf(dragging);
+  // Con pocas figuras, juntas al centro; las cinco, de borde a borde.
+  const paletteStyle = [styles.palette, palette.length < ALL_FIGURES.length && styles.paletteFew];
 
   return (
     <View
@@ -181,28 +231,24 @@ export function FigurePlayground({
           // Lejos de la barra, una colocada se atenúa en su sitio; cerca, ya
           // se ve entera donde va a caer.
           draggingKey={dragging?.kind === 'bar' && !previewing ? dragging.key : null}
-          onPress={playPlaced}
+          onPress={pressPlaced}
           onRemove={disabled ? undefined : remove}
           dragFor={disabled ? undefined : barDragFor}
         />
-        {playhead !== null && width > 0 && <PlayheadLine playhead={playhead} width={width} />}
+        {playhead !== null && width > 0 && (
+          <PlayheadLine playhead={playhead} width={width} height={BAR_HEIGHT} />
+        )}
       </Animated.View>
 
       {!disabled && (
-        <View
-          style={[
-            styles.palette,
-            // Con pocas figuras, juntas al centro; las cinco, de borde a borde.
-            palette.length < ALL_FIGURES.length && styles.paletteFew,
-          ]}
-        >
+        <View style={paletteStyle}>
           {palette.map((figure) => (
             <FigureTile
               key={figure}
               figure={figure}
               space={controls.figureSpaceTile}
               accessibilityLabel={`${figureById(figure).name}. Toca para ponerla en la barra`}
-              onPressIn={() => playSound(figure)}
+              onPressIn={() => playSound(noteItem(figure))}
               onPress={() => add(figure)}
               drag={paletteDrags.get(figure)}
             />
@@ -210,10 +256,43 @@ export function FigurePlayground({
         </View>
       )}
 
-      {ghostFigure !== null && (
+      {!disabled && rests && (
+        <View style={paletteStyle}>
+          {palette.map((figure) => (
+            <FigureTile
+              key={figure}
+              figure={figure}
+              rest
+              space={controls.figureSpaceTile}
+              accessibilityLabel={`Silencio de ${figureById(figure).name.toLowerCase()}. Toca para ponerlo en la barra`}
+              onPressIn={() => playSound(restItem(figure))}
+              onPress={() => add(figure, undefined, true)}
+              drag={restDrags.get(figure)}
+            />
+          ))}
+        </View>
+      )}
+
+      {!disabled && modifiers && (
+        <View style={styles.tools}>
+          {TOOLS.map((option) => (
+            <GlyphToggle
+              key={option}
+              glyph={TOOL_GLYPHS[option]}
+              space={controls.figureSpaceTile}
+              on={tool === option}
+              accessibilityLabel={TOOL_LABELS[option]}
+              // Una a la vez: encender una apaga la otra.
+              onToggle={() => setTool((current) => (current === option ? null : option))}
+            />
+          ))}
+        </View>
+      )}
+
+      {ghostLook !== null && (
         <Ghost
-          figure={ghostFigure}
-          width={widthOf(ghostFigure, width)}
+          look={ghostLook}
+          width={widthOf(ghostLook, width)}
           barWidth={width}
           finger={finger}
           origin={origin}
@@ -224,38 +303,8 @@ export function FigurePlayground({
   );
 }
 
-/**
- * La línea roja que recorre la barra mientras suena entera: lineal, llega al
- * final justo cuando acaba la última figura.
- */
-function PlayheadLine({ playhead, width }: { playhead: Playhead; width: number }) {
-  const { colors } = useTheme();
-  const progress = useSharedValue(0);
-  const { take, delayMs, durationMs } = playhead;
-
-  useEffect(() => {
-    cancelAnimation(progress);
-    progress.value = 0;
-    progress.value = withDelay(
-      delayMs,
-      withTiming(1, { duration: durationMs, easing: Easing.linear }),
-    );
-  }, [take, delayMs, durationMs, progress]);
-
-  const style = useAnimatedStyle(() => ({
-    transform: [{ translateX: progress.value * (width - controls.durationCursorWidth) }],
-  }));
-
-  return (
-    <Animated.View
-      pointerEvents="none"
-      style={[styles.playhead, { backgroundColor: colors.heart }, style]}
-    />
-  );
-}
-
 interface GhostProps {
-  figure: FigureId;
+  look: DraggedLook;
   /** Lo que ocupará en la barra, en píxeles. */
   width: number;
   barWidth: number;
@@ -266,7 +315,7 @@ interface GhostProps {
 }
 
 /** La figura que viaja, con su recuadro a tamaño real, justo encima del dedo. */
-function Ghost({ figure, width, barWidth, finger, origin, hidden }: GhostProps) {
+function Ghost({ look, width, barWidth, finger, origin, hidden }: GhostProps) {
   const opacity = useSharedValue(1);
 
   useEffect(() => {
@@ -283,7 +332,7 @@ function Ghost({ figure, width, barWidth, finger, origin, hidden }: GhostProps) 
 
   return (
     <Animated.View pointerEvents="none" style={[styles.ghost, style]}>
-      <FigureBox figure={figure} width={width} />
+      <FigureBox figure={look.figure} rest={look.rest} dotted={look.dotted} width={width} />
     </Animated.View>
   );
 }
@@ -300,13 +349,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.lg,
   },
-  playhead: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: controls.durationCursorWidth,
-    height: BAR_HEIGHT,
-    borderRadius: radii.pill,
+  tools: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.lg,
   },
   ghost: {
     position: 'absolute',

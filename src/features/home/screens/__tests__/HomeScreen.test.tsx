@@ -115,7 +115,7 @@ describe('HomeScreen', () => {
   it('un módulo sin lección avisa de que llega pronto', async () => {
     const user = userEvent.setup();
     await renderScreen();
-    await user.press(screen.getByLabelText(/^Módulo 4: Silencios y prolongaciones/));
+    await user.press(screen.getByLabelText(/^Módulo 5: Compases y métrica/));
     expect(screen.getByText('Próximamente')).toBeTruthy();
     expect(mockPush).not.toHaveBeenCalled();
     await user.press(screen.getByText('Entendido'));

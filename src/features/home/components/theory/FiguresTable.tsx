@@ -8,6 +8,11 @@ import { FigureTile } from '../notation/FigureTile';
 interface FiguresTableProps {
   selected: FigureId | null;
   onSelect: (figure: FigureId) => void;
+  /**
+   * La última columna muestra el silencio de cada figura (Módulo 4) en vez
+   * de su valor relativo. Tocar la figura o su silencio elige la fila.
+   */
+  rests?: boolean;
 }
 
 /**
@@ -16,7 +21,7 @@ interface FiguresTableProps {
  * tomando la redonda como la unidad. Mismo estilo que la tabla de las notas
  * (Módulo 1): columnas separadas, filas sin divisiones y todo centrado.
  */
-export function FiguresTable({ selected, onSelect }: FiguresTableProps) {
+export function FiguresTable({ selected, onSelect, rests = false }: FiguresTableProps) {
   const { colors } = useTheme();
   const columnEdge = { borderRightColor: colors.border };
 
@@ -25,7 +30,10 @@ export function FiguresTable({ selected, onSelect }: FiguresTableProps) {
       <View style={[styles.row, styles.headerRow, { borderBottomColor: colors.border }]}>
         <HeaderCell title="Nombre" style={[styles.nameColumn, columnEdge]} />
         <HeaderCell title="Figura" style={[styles.figureColumn, columnEdge]} />
-        <HeaderCell title="Valor relativo" style={[styles.valueColumn, styles.lastCell]} />
+        <HeaderCell
+          title={rests ? 'Silencio' : 'Valor relativo'}
+          style={[rests ? styles.figureColumn : styles.valueColumn, styles.lastCell]}
+        />
       </View>
 
       {FIGURES.map((figure) => (
@@ -42,11 +50,24 @@ export function FiguresTable({ selected, onSelect }: FiguresTableProps) {
               onPressIn={() => onSelect(figure.id)}
             />
           </View>
-          <View style={[styles.cell, styles.valueColumn, styles.lastCell]}>
-            <Text style={[styles.text, { color: colors.brandText }]}>
-              {relativeValue(wholeDivisions(figure))}
-            </Text>
-          </View>
+          {rests ? (
+            <View style={[styles.cell, styles.figureColumn, styles.lastCell]}>
+              <FigureTile
+                figure={figure.id}
+                rest
+                space={controls.figureSpaceTile}
+                active={selected === figure.id}
+                accessibilityLabel={`Ver silencio de ${figure.name.toLowerCase()}`}
+                onPressIn={() => onSelect(figure.id)}
+              />
+            </View>
+          ) : (
+            <View style={[styles.cell, styles.valueColumn, styles.lastCell]}>
+              <Text style={[styles.text, { color: colors.brandText }]}>
+                {relativeValue(wholeDivisions(figure))}
+              </Text>
+            </View>
+          )}
         </View>
       ))}
     </View>

@@ -6,7 +6,7 @@ import { figureById, FigureId } from '@/domain/rhythm';
 import { motion, radii, spacing, typography, useTheme } from '@/shared/theme';
 
 import { FIGURE_DETAILS } from './figureDetails';
-import { RichText } from './RichText';
+import { RichText, Segment } from './RichText';
 import { useTooltip } from './TooltipHost';
 
 /**
@@ -14,7 +14,24 @@ import { useTooltip } from './TooltipHost';
  * elegida, cuenta lo esencial de ella. Al elegir una, si el recuadro queda
  * por debajo de lo visible, la hoja baja suave hasta mostrarlo.
  */
-export function FigureDetailBox({ figure }: { figure: FigureId | null }) {
+interface FigureDetailBoxProps {
+  figure: FigureId | null;
+  /** Lo que se cuenta de cada una (las figuras, por defecto; o sus silencios). */
+  details?: Record<FigureId, readonly (readonly Segment[])[]>;
+  /** El título del detalle ("Blanca", "Silencio de blanca"). */
+  titleOf?: (figure: FigureId) => string;
+  /** La invitación mientras no hay ninguna elegida. */
+  prompt?: string;
+}
+
+const figureName = (figure: FigureId) => figureById(figure).name;
+
+export function FigureDetailBox({
+  figure,
+  details = FIGURE_DETAILS,
+  titleOf = figureName,
+  prompt = 'Selecciona una figura musical para ver su detalle',
+}: FigureDetailBoxProps) {
   const { colors } = useTheme();
   const { reveal } = useTooltip();
   const box = useRef<View>(null);
@@ -41,9 +58,7 @@ export function FigureDetailBox({ figure }: { figure: FigureId | null }) {
     >
       {figure === null ? (
         <View style={styles.empty}>
-          <Text style={[styles.prompt, { color: colors.textSecondary }]}>
-            Selecciona una figura musical para ver su detalle
-          </Text>
+          <Text style={[styles.prompt, { color: colors.textSecondary }]}>{prompt}</Text>
         </View>
       ) : (
         <Animated.View
@@ -52,10 +67,8 @@ export function FigureDetailBox({ figure }: { figure: FigureId | null }) {
           accessibilityLiveRegion="polite"
           style={styles.detail}
         >
-          <Text style={[styles.title, { color: colors.brandText }]}>
-            {figureById(figure).name}
-          </Text>
-          {FIGURE_DETAILS[figure].map((segments, index) => (
+          <Text style={[styles.title, { color: colors.brandText }]}>{titleOf(figure)}</Text>
+          {details[figure].map((segments, index) => (
             <RichText key={index} segments={segments} />
           ))}
         </Animated.View>

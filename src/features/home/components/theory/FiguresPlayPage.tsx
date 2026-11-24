@@ -1,7 +1,7 @@
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { isFull, RhythmBar } from '@/domain/rhythm';
+import { barItems, isFull, RhythmBar } from '@/domain/rhythm';
 import { PushButton } from '@/shared/design-system';
 import { spacing, typography, useTheme } from '@/shared/theme';
 
@@ -86,7 +86,7 @@ export function FiguresPlayPage() {
           disabled={!full || !playback.ready}
           onPress={() => {
             if (playing) stop();
-            else if (bar !== null) playback.play(bar.figures.map((placed) => placed.figure));
+            else if (bar !== null) playback.play(barItems(bar));
           }}
         />
         <Text style={[styles.playerText, { color: colors.textSecondary }]}>

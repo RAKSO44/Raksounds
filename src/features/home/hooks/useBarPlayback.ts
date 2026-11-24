@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { clipDurationMs, rhythmClip } from '@/domain/lessons';
-import { FigureId } from '@/domain/rhythm';
+import { clipDurationMs, itemsClip } from '@/domain/lessons';
+import { RhythmItem } from '@/domain/rhythm';
 
 import { useClipPlayer } from './useClipPlayer';
 
@@ -11,22 +11,35 @@ export interface Playhead {
   take: number;
   delayMs: number;
   durationMs: number;
+  /** Qué línea suena, cuando la hoja tiene varias (solo esa muestra la línea roja). */
+  tag: string | null;
+}
+
+export interface PlayOptions {
+  /**
+   * Lo que dura la línea entera, en semicorcheas, si es más que lo escrito:
+   * lo que sobra suena como silencio y la línea roja la recorre hasta el final.
+   */
+  lengthUnits?: number;
+  /** Qué línea es (ver `Playhead.tag`). */
+  tag?: string;
 }
 
 export interface BarPlayback {
   ready: boolean;
   /** La pasada en curso de la línea roja; `null` si no suena. */
   playhead: Playhead | null;
-  /** Hace sonar la barra entera sobre el pulso, de principio a fin. */
-  play: (figures: readonly FigureId[]) => void;
+  /** Hace sonar lo escrito sobre el pulso, de principio a fin. */
+  play: (items: readonly RhythmItem[], options?: PlayOptions) => void;
   /** La corta y la deja en cero. */
   stop: () => void;
 }
 
 /**
- * Reproducir una barra llena: sus figuras seguidas con el pulso de fondo
- * (una negra = un pulso) y, a la vez, una línea roja que la recorre. Al
- * terminar, simplemente deja de sonar.
+ * Reproducir una línea rítmica: lo escrito (con silencios, puntillos y
+ * ligaduras) con el pulso de fondo (una negra = un pulso) y, a la vez, una
+ * línea roja que la recorre. Al terminar, simplemente deja de sonar. Suena
+ * una a la vez: reproducir otra corta la anterior.
  */
 export function useBarPlayback(): BarPlayback {
   const { ready, play: playClip, stop: stopClip } = useClipPlayer();
@@ -39,8 +52,8 @@ export function useBarPlayback(): BarPlayback {
   }, [stopClip]);
 
   const play = useCallback(
-    (figures: readonly FigureId[]) => {
-      const clip = rhythmClip(figures, { pulse: true });
+    (items: readonly RhythmItem[], { lengthUnits, tag }: PlayOptions = {}) => {
+      const clip = itemsClip(items, { pulse: true, lengthUnits });
       const start = playClip(clip, { onEnd: () => setPlayhead(null) });
       if (start === null) return;
       take.current += 1;
@@ -48,6 +61,7 @@ export function useBarPlayback(): BarPlayback {
         take: take.current,
         delayMs: Math.max(0, start - performance.now()),
         durationMs: clipDurationMs(clip),
+        tag: tag ?? null,
       });
     },
     [playClip],

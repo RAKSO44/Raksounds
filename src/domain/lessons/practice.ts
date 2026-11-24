@@ -18,6 +18,9 @@ export function generatePractice(id: ModuleId, seed: number): LessonExercise[] {
       return generateModule2Practice(random);
     case 'figures':
       return generateModule3Practice(random);
+    case 'rests':
+      // La teoría va primero; los ejercicios del Módulo 4 se diseñan después.
+      return [];
   }
 }
 
@@ -62,6 +65,7 @@ export function practiceIntro(id: ModuleId): readonly PromptPart[] | null {
       ];
     case 'notes':
     case 'pulse':
+    case 'rests':
       return null;
   }
 }

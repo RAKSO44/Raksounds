@@ -2,12 +2,17 @@ import { memo, useMemo } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOutDown, LinearTransition } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 
-import { FigureSpan, figureById, RhythmBar, figureSpans } from '@/domain/rhythm';
+import { FigureSpan, figureById, RhythmBar, figureSpans, TIE_DROP, tiePath } from '@/domain/rhythm';
 import { controls, motion, useTheme } from '@/shared/theme';
 
 import { FigureDrag, useFigureGesture } from '../../hooks/useFigureGesture';
-import { BAR_HEIGHT, BAR_LINE_Y, FigureBox } from './FigureBox';
+import { BAR_HEIGHT, BAR_LINE_Y, boxHeadX, FigureBox } from './FigureBox';
+
+const SPACE = controls.figureSpaceBar;
+/** De la cabeza a donde nace o muere la ligadura, en espacios. */
+const TIE_INSET = 0.45;
 
 const SHIFT = LinearTransition.duration(motion.figureShift).easing(Easing.out(Easing.cubic));
 
@@ -39,14 +44,18 @@ export function RhythmBarView({
 }: RhythmBarViewProps) {
   const { colors } = useTheme();
   const line = { backgroundColor: colors.textPrimary };
+  const spans = figureSpans(bar);
+  const boxWidth = (span: FigureSpan) => (span.units / bar.capacity) * width;
+  const headX = (span: FigureSpan) =>
+    (span.start / bar.capacity) * width + boxHeadX(span, boxWidth(span));
 
   return (
     <View style={[styles.bar, { width }]}>
-      {figureSpans(bar).map((span) => (
+      {spans.map((span) => (
         <PlacedFigure
           key={span.key}
           span={span}
-          width={(span.units / bar.capacity) * width}
+          width={boxWidth(span)}
           dimmed={draggingKey === span.key}
           onPress={onPress}
           onRemove={onRemove}
@@ -57,6 +66,29 @@ export function RhythmBarView({
       <View pointerEvents="none" style={[styles.line, line]} />
       <View pointerEvents="none" style={[styles.tick, styles.start, line]} />
       <View pointerEvents="none" style={[styles.tick, styles.end, line]} />
+      {width > 0 && spans.some((span) => span.tied) && (
+        <Svg
+          pointerEvents="none"
+          style={styles.ties}
+          width={width}
+          height={BAR_HEIGHT}
+          viewBox={`0 0 ${width / SPACE} ${BAR_HEIGHT / SPACE}`}
+        >
+          {spans.map((span, index) => {
+            const next = spans[index + 1];
+            if (!span.tied || next === undefined) return null;
+            const from = headX(span) / SPACE + TIE_INSET;
+            const to = headX(next) / SPACE - TIE_INSET;
+            return (
+              <Path
+                key={span.key}
+                d={tiePath(from, BAR_LINE_Y / SPACE + TIE_DROP, to - from)}
+                fill={colors.prolongation}
+              />
+            );
+          })}
+        </Svg>
+      )}
     </View>
   );
 }
@@ -94,7 +126,8 @@ const PlacedFigure = memo(function PlacedFigure({
     onLongPress: onRemove === undefined ? undefined : () => onRemove(key),
     drag,
   });
-  const name = figureById(span.figure).name;
+  const figureName = figureById(span.figure).name;
+  const name = `${span.rest ? `Silencio de ${figureName.toLowerCase()}` : figureName}${span.dotted ? ' con puntillo' : ''}`;
   const removable = onRemove !== undefined && !locked;
 
   return (
@@ -113,7 +146,7 @@ const PlacedFigure = memo(function PlacedFigure({
           onAccessibilityAction={() => onRemove?.(key)}
           onAccessibilityTap={() => onPress(span)}
         >
-          <FigureBox figure={span.figure} width={width} />
+          <FigureBox figure={span.figure} rest={span.rest} dotted={span.dotted} width={width} />
         </View>
       </GestureDetector>
     </Animated.View>
@@ -124,6 +157,11 @@ const styles = StyleSheet.create({
   bar: {
     height: BAR_HEIGHT,
     flexDirection: 'row',
+  },
+  ties: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
   },
   line: {
     position: 'absolute',

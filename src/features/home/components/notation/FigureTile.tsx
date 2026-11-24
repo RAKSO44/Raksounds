@@ -6,10 +6,12 @@ import { figureById, FigureId } from '@/domain/rhythm';
 import { elevation, radii, spacing, useTheme } from '@/shared/theme';
 
 import { FigureDrag, useFigureGesture } from '../../hooks/useFigureGesture';
-import { FigureGlyph, FramedFigureGlyph } from './FigureGlyph';
+import { FigureGlyph, FramedFigureGlyph, FramedItemGlyph } from './FigureGlyph';
 
 interface FigureTileProps {
   figure: FigureId;
+  /** Su silencio en vez de la figura (Módulo 4): se dibuja con su línea corta. */
+  rest?: boolean;
   /** Píxeles por espacio de pentagrama (tamaño de la figura). */
   space: number;
   /**
@@ -35,6 +37,7 @@ interface FigureTileProps {
  */
 export function FigureTile({
   figure,
+  rest = false,
   space,
   framed = true,
   active = false,
@@ -56,7 +59,10 @@ export function FigureTile({
       <View
         accessible
         accessibilityRole="button"
-        accessibilityLabel={accessibilityLabel ?? figureById(figure).name}
+        accessibilityLabel={
+          accessibilityLabel ??
+          (rest ? `Silencio de ${figureById(figure).name.toLowerCase()}` : figureById(figure).name)
+        }
         accessibilityState={{ selected: active }}
         onAccessibilityTap={() => {
           onPressIn?.();
@@ -80,7 +86,9 @@ export function FigureTile({
             faceStyle,
           ]}
         >
-          {framed ? (
+          {rest ? (
+            <FramedItemGlyph look={{ figure, rest }} space={space} color={glyphColor} />
+          ) : framed ? (
             <FramedFigureGlyph figure={figure} space={space} color={glyphColor} />
           ) : (
             <FigureGlyph figure={figure} space={space} color={glyphColor} />

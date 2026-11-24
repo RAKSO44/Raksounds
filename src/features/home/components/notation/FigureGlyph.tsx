@@ -8,6 +8,7 @@ import {
   FigureGlyph as Glyph,
   figureGlyph,
   FigureId,
+  itemGlyph,
 } from '@/domain/rhythm';
 
 /** La geometría no cambia: se arma una vez por figura. */
@@ -18,6 +19,31 @@ export function glyphOf(id: FigureId): Glyph {
   if (glyph === undefined) {
     glyph = figureGlyph(figureById(id));
     GLYPHS.set(id, glyph);
+  }
+  return glyph;
+}
+
+/** Lo que cambia el dibujo de algo escrito (Módulo 4). */
+export interface ItemLook {
+  readonly figure: FigureId;
+  readonly rest?: boolean;
+  readonly dotted?: boolean;
+}
+
+const ITEM_GLYPHS = new Map<string, Glyph>();
+
+/**
+ * El dibujo de una figura o de su silencio, con o sin puntillo. `ledger`
+ * agrega la línea corta a los silencios de redonda y blanca (donde no hay
+ * otra línea en la que apoyarlos).
+ */
+export function itemGlyphOf({ figure, rest = false, dotted = false }: ItemLook, ledger = false) {
+  if (!rest && !dotted) return glyphOf(figure);
+  const key = `${figure}-${rest}-${dotted}-${ledger}`;
+  let glyph = ITEM_GLYPHS.get(key);
+  if (glyph === undefined) {
+    glyph = itemGlyph({ figure: figureById(figure), rest, dotted }, { ledger });
+    ITEM_GLYPHS.set(key, glyph);
   }
   return glyph;
 }
@@ -58,18 +84,70 @@ export const FigureGlyph = memo(function FigureGlyph({ figure, space, color }: F
   return <GlyphSvg glyph={glyphOf(figure)} space={space} color={color} />;
 });
 
-/** Cualquier dibujo ya construido (una figura suelta o un grupo unido por barras). */
-export function GlyphSvg({ glyph, space, color }: { glyph: Glyph; space: number; color: string }) {
+interface GlyphSvgProps {
+  glyph: Glyph;
+  space: number;
+  color: string;
+  /** Color de lo agregado (puntillo, ligadura); el de la figura si se omite. */
+  markColor?: string;
+}
+
+/** Cualquier dibujo ya construido (una figura suelta, un grupo unido por barras…). */
+export function GlyphSvg({ glyph, space, color, markColor = color }: GlyphSvgProps) {
   return (
     <Svg
       width={glyph.width * space}
       height={glyph.height * space}
       viewBox={`0 0 ${glyph.width} ${glyph.height}`}
     >
-      {glyph.paths.map((d) => (
-        <Path key={d} d={d} fill={color} fillRule="evenodd" />
+      {glyph.paths.map((d, index) => (
+        <Path key={`p${index}`} d={d} fill={color} fillRule="evenodd" />
+      ))}
+      {glyph.marks.map((d, index) => (
+        <Path key={`m${index}`} d={d} fill={markColor} fillRule="evenodd" />
       ))}
     </Svg>
+  );
+}
+
+/**
+ * Una figura o un silencio, con o sin puntillo, dentro del marco común (como
+ * `FramedFigureGlyph`): en fila, todo apoya en la misma línea invisible.
+ */
+export function FramedItemGlyph({
+  look,
+  space,
+  color,
+  markColor,
+  ledger = true,
+}: {
+  look: ItemLook;
+  space: number;
+  color: string;
+  markColor?: string;
+  ledger?: boolean;
+}) {
+  const glyph = itemGlyphOf(look, ledger);
+  const width = Math.max(FIGURE_FRAME.width, glyph.width);
+  return (
+    <View
+      style={{
+        width: width * space,
+        height: (FIGURE_FRAME.above + FIGURE_FRAME.below) * space,
+      }}
+    >
+      <View
+        style={[
+          styles.placed,
+          {
+            top: (FIGURE_FRAME.above - glyph.head.y) * space,
+            left: ((width - glyph.width) / 2) * space,
+          },
+        ]}
+      >
+        <GlyphSvg glyph={glyph} space={space} color={color} markColor={markColor} />
+      </View>
+    </View>
   );
 }
 

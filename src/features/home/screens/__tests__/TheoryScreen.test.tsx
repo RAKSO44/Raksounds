@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { act, render, screen, userEvent } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, userEvent } from '@testing-library/react-native';
 
 import { ThemeProvider } from '@/shared/theme';
 
@@ -115,6 +115,7 @@ describe('TheoryScreen (Módulo 1)', () => {
       ['notes', 3],
       ['pulse', 2],
       ['figures', 4],
+      ['rests', 5],
     ] as const) {
       mockParams = { module };
       const { unmount } = await renderScreen();
@@ -482,5 +483,138 @@ describe('TheoryScreen (Módulo 3) · reproducir la barra', () => {
     expect(screen.getByLabelText('Detener')).toBeTruthy();
     await act(() => jest.advanceTimersByTimeAsync(4 * (60000 / 72) + 50));
     expect(play()).toBeTruthy();
+  });
+});
+
+describe('TheoryScreen (Módulo 4)', () => {
+  const { metronome } = jest.requireMock<{
+    metronome: { play: jest.Mock };
+  }>('@/infrastructure/audio/metronome');
+  const beat = 60000 / 72;
+
+  beforeEach(() => {
+    mockParams = { module: 'rests' };
+    metronome.play.mockClear();
+  });
+
+  /** Las líneas miden su ancho al pintarse; en los tests se les da uno. */
+  const layout = (tag: string) =>
+    fireEvent(screen.getByTestId(`score-${tag}`), 'layout', {
+      nativeEvent: { layout: { x: 0, y: 0, width: 320, height: 120 } },
+    });
+  const nextPage = async (user: ReturnType<typeof setupUser>, times: number) => {
+    for (let i = 0; i < times; i += 1) await user.press(screen.getByLabelText('Página siguiente'));
+  };
+
+  it('la hoja 1 cambia negras por silencios: dejan de sonar, pero el pulso sigue', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    expect(screen.getByText('¿Qué es un silencio?')).toBeTruthy();
+    await layout('rests');
+
+    await user.press(screen.getAllByLabelText(/^Negra\. Toca para cambiarla/)[1]);
+    expect(screen.getAllByLabelText(/^Silencio de negra/)).toHaveLength(1);
+
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar las negras y los silencios'));
+    expect(metronome.play.mock.calls[0][0]).toHaveLength(4);
+    expect(mockPlayTimed).toHaveBeenCalledTimes(3);
+
+    // Pausar lo corta en seco.
+    await user.press(screen.getByLabelText('Detener'));
+    expect(screen.getByLabelText('Escuchar las negras y los silencios')).toBeTruthy();
+  });
+
+  it('la hoja 2 muestra cada silencio y tres formas de ocupar lo mismo', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await nextPage(user, 1);
+
+    await user.press(screen.getByLabelText('Ver silencio de blanca'));
+    expect(screen.getByText('Silencio de blanca')).toBeTruthy();
+    expect(screen.getByText('sentado')).toBeTruthy();
+
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la negra y el silencio de negra'));
+    expect(mockPlayTimed).toHaveBeenCalledTimes(1);
+    expect(metronome.play.mock.calls[0][0]).toHaveLength(2);
+  });
+
+  it('la hoja 3 enciende el puntillo: la blanca suena la mitad más', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await nextPage(user, 2);
+    expect(screen.getByText('El puntillo')).toBeTruthy();
+
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la blanca'));
+    expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(2 * beat, 3);
+
+    await user.press(screen.getByLabelText('Puntillo'));
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la blanca con puntillo'));
+    expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(3 * beat, 3);
+    // La línea entera dura una redonda: el pulso sigue hasta el final.
+    expect(metronome.play.mock.calls.at(-1)?.[0]).toHaveLength(4);
+  });
+
+  it('la hoja 4 liga dos negras: la segunda no se vuelve a tocar', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await nextPage(user, 3);
+    expect(screen.getByText('La ligadura')).toBeTruthy();
+
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar las negras sin ligadura'));
+    expect(mockPlayTimed).toHaveBeenCalledTimes(4);
+
+    await user.press(screen.getByLabelText('Ligadura'));
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar las negras con la ligadura'));
+    expect(mockPlayTimed).toHaveBeenCalledTimes(3);
+    expect(mockPlayTimed.mock.calls[1][2]).toBeCloseTo(2 * beat, 3);
+
+    // Blanca con puntillo y blanca ligada a negra suenan igual.
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la blanca con puntillo'));
+    const dotted = mockPlayTimed.mock.calls.map((call) => call[2]);
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la blanca ligada a una negra'));
+    expect(mockPlayTimed.mock.calls.map((call) => call[2])).toEqual(dotted);
+  });
+
+  it('la hoja 5 llena la barra con silencios, puntillo y ligadura', async () => {
+    const user = setupUser();
+    await renderScreen();
+    await act(() => jest.advanceTimersByTimeAsync(0));
+    await nextPage(user, 4);
+    expect(screen.getByText('¡Experimenta un poco!')).toBeTruthy();
+
+    await user.press(screen.getByLabelText('Blanca. Toca para ponerla en la barra'));
+    await user.press(screen.getByLabelText('Negra. Toca para ponerla en la barra'));
+    await user.press(screen.getByLabelText(/^Silencio de negra\. Toca para ponerlo/));
+    expect(screen.getByLabelText(/^Silencio de negra\. Mantenla/)).toBeTruthy();
+
+    // Ligar la blanca con la negra.
+    await user.press(screen.getByLabelText(/^Ligadura:/));
+    await user.press(screen.getByLabelText(/^Blanca\. Mantenla/));
+
+    // Con la barra llena, el puntillo no cabe: la blanca sigue igual.
+    await user.press(screen.getByLabelText(/^Puntillo:/));
+    await user.press(screen.getByLabelText(/^Blanca\. Mantenla/));
+    expect(screen.queryByLabelText(/^Blanca con puntillo/)).toBeNull();
+
+    mockPlayTimed.mockClear();
+    await user.press(screen.getByLabelText('Escuchar la barra'));
+    // La blanca ligada a la negra es un solo sonido de tres pulsos; el silencio no suena.
+    expect(mockPlayTimed).toHaveBeenCalledTimes(1);
+    expect(mockPlayTimed.mock.calls[0][2]).toBeCloseTo(3 * beat, 3);
+
+    await user.press(screen.getByLabelText('Terminar teoría'));
+    expect(useLessonProgressStore.getState().modules.rests?.theoryCompleted).toBe(true);
   });
 });
