@@ -48,7 +48,6 @@ export function FiguresPulsePage() {
         <RichText segments={['Los números cuentan manzanas ', { apple: true }, '.']} />
         <RichText segments={['Las figuras musicales, ¿qué cuentan?']} />
       </View>
-      <RichText segments={['¿Qué es esa "unidad"? ¿Segundos? ¿Minutos?']} />
       <RichText
         segments={[
           'Para poder contar con estas figuras, necesitamos un sistema de tiempo. Algo que:',
