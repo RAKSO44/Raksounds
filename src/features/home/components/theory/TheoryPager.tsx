@@ -48,7 +48,7 @@ export function TheoryPager({ page, total, onPrevious, onNext, onFinish }: Theor
         accessibilityLabel={`Página ${page + 1} de ${total}`}
         style={[styles.number, { color: colors.textSecondary }]}
       >
-        {page + 1}
+        {page + 1}/{total}
       </Text>
       {/* Las flechas son neutras; solo el check final va a color entero. */}
       <PushButton
