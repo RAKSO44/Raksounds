@@ -54,6 +54,14 @@ export interface ThemeColors {
 
   /** Corazón del pulso (teoría del Módulo 2): sus "BUM" y su línea. */
   heart: string;
+  /**
+   * Lo que PROLONGA un sonido (teoría del Módulo 4): el puntillo, la
+   * ligadura, lo que suman en la barra de duración y su botón encendido.
+   */
+  prolongation: string;
+  prolongationShadow: string;
+  prolongationTint: string;
+  prolongationText: string;
   /** Manzanas que cuentan cantidades (teoría del Módulo 3): cuerpo, labio, hoja, rabo y brillo. */
   apple: string;
   appleShadow: string;
@@ -196,6 +204,10 @@ export const lightColors: ThemeColors = {
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintLight,
   dangerText: palette.redTextLight,
+  prolongation: palette.red,
+  prolongationShadow: palette.redShadow,
+  prolongationTint: palette.redTintLight,
+  prolongationText: palette.redTextLight,
 
   figureWholeEdge: palette.blueEdgeLight,
   figureWholeTint: palette.bluePanel,
@@ -299,6 +311,10 @@ export const darkColors: ThemeColors = {
   dangerShadow: palette.redShadow,
   dangerTint: palette.redTintDark,
   dangerText: palette.redTextDark,
+  prolongation: palette.red,
+  prolongationShadow: palette.redShadow,
+  prolongationTint: palette.redTintDark,
+  prolongationText: palette.redTextDark,
 
   figureWholeEdge: palette.blueEdgeDark,
   figureWholeTint: palette.blueTintDark,

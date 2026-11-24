@@ -207,6 +207,23 @@ export const controls = {
   figureCellWidth: 58,
   /** Lado mínimo de la ficha grande de una figura (la que se pregunta). */
   figureCardSize: 104,
+  /**
+   * Línea rítmica de la teoría del Módulo 4 (las figuras sobre una línea, a
+   * escala de su duración): píxeles por espacio, aire a los lados de la línea
+   * y aire de la primera figura tras el tope de inicio, en espacios.
+   */
+  scoreLineSpace: 9,
+  scoreLinePadding: 4,
+  scoreLineHeadInset: 1.4,
+  /** Lo que cubre la zona tocable de cada figura sobre la línea, hacia arriba y abajo. */
+  scoreLineTouchSlop: 8,
+  /** Barra de duración bajo la línea: alto, grosor del borde y separación del rayado. */
+  durationBarHeight: 22,
+  durationBarStroke: 2,
+  durationBarHatchGap: 7,
+  durationBarHatchStroke: 1.5,
+  /** Separación entre la línea rítmica y su barra de duración. */
+  durationBarGap: 10,
 } as const;
 
 /** Duraciones (ms) de las animaciones. Cortas y directas, nunca rebotes. */
