@@ -6,9 +6,10 @@ trabajo. **Léelo entero antes de tocar cualquier cosa del roadmap.**
 
 Estado: implementados **Módulo 1 y Módulo 2** (Etapa 1, Introducción) y el
 **Módulo 3** (Figuras musicales, teoría y práctica de 17 ejercicios,
-`docs/roadmap/etapa-2/modulo-3.md`)
+`docs/roadmap/etapa-2/modulo-3.md`) y la **teoría del Módulo 4** (Silencios y prolongaciones,
+5 hojas, sin práctica todavía: `docs/roadmap/etapa-2/modulo-4.md`)
 (`docs/roadmap/etapa-1/`: especificación de partida + `modulos-1-2.md` con
-las decisiones, que prevalecen). Los Módulos 4–16 (Etapas 2 a 4) aparecen en
+las decisiones, que prevalecen). Los Módulos 5–16 (Etapas 2 a 4) aparecen en
 la ruta como "Próximamente" con su título y el temario del roadmap (pedido
 por el usuario el 2026-11-17), pero SIN contenido: su teoría y práctica no se
 escriben hasta que el usuario pida trabajarlos. Nada en la ruta se bloquea.
