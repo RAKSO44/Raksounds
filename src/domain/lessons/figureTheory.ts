@@ -1,4 +1,14 @@
-import { figureBeats, figureById, figureDurationMs, FigureId, RhythmFigure } from '../rhythm';
+import {
+  figureBeats,
+  figureById,
+  FigureId,
+  noteItem,
+  QUARTER_UNITS,
+  RhythmFigure,
+  RhythmItem,
+  sounds,
+  totalUnits,
+} from '../rhythm';
 import { Clip, ClipNote } from './clip';
 import { beatIntervalMs } from './tempo';
 
@@ -29,25 +39,46 @@ export interface RhythmClipOptions {
   pulse?: boolean;
 }
 
+export interface ItemsClipOptions extends RhythmClipOptions {
+  /**
+   * Lo que dura la línea entera, en semicorcheas, si es más que lo escrito:
+   * lo que sobra se oye como silencio (con el pulso, si lo lleva).
+   */
+  lengthUnits?: number;
+}
+
 /**
  * Figuras seguidas, cada una sonando EXACTAMENTE lo que vale (una semicorchea
  * a 72 BPM, ~208 ms; una redonda, ~3,3 s), una pegada a la otra: lo que se
  * oye entre dos notas es el ataque de la siguiente, nunca un silencio.
  */
-export function rhythmClip(
-  figures: readonly FigureId[],
-  { bpm = FIGURE_DEMO_BPM, pulse = false }: RhythmClipOptions = {},
+export function rhythmClip(figures: readonly FigureId[], options: RhythmClipOptions = {}): Clip {
+  return itemsClip(
+    figures.map((figure) => noteItem(figure)),
+    options,
+  );
+}
+
+/**
+ * Lo escrito con silencios, puntillos y ligaduras (Módulo 4): cada SONIDO es
+ * una nota que dura todo lo que vale, puntillo y notas ligadas incluidas (la
+ * ligada no se vuelve a tocar); un silencio deja pasar su tiempo sin sonar.
+ * El pulso, si lo lleva, sigue de principio a fin, también en los silencios.
+ */
+export function itemsClip(
+  items: readonly RhythmItem[],
+  { bpm = FIGURE_DEMO_BPM, pulse = false, lengthUnits = 0 }: ItemsClipOptions = {},
 ): Clip {
-  let atMs = 0;
-  const notes = figures.map((id) => {
-    const durationMs = figureDurationMs(figureById(id), bpm);
-    const note = { midi: FIGURE_DEMO_MIDI, atMs, durationMs };
-    atMs += durationMs;
-    return note;
-  });
+  const unitMs = beatIntervalMs(bpm) / QUARTER_UNITS;
+  const notes = sounds(items).map((sound) => ({
+    midi: FIGURE_DEMO_MIDI,
+    atMs: sound.start * unitMs,
+    durationMs: sound.units * unitMs,
+  }));
+  const lengthMs = Math.max(totalUnits(items), lengthUnits) * unitMs;
   return pulse
-    ? { kind: 'rhythm', notes, pulseOnsetsMs: pulseOnsetsWithin(atMs, bpm) }
-    : { kind: 'rhythm', notes };
+    ? { kind: 'rhythm', notes, pulseOnsetsMs: pulseOnsetsWithin(lengthMs, bpm), lengthMs }
+    : { kind: 'rhythm', notes, lengthMs };
 }
 
 /**

@@ -1,5 +1,6 @@
 import { FigureId } from '../figures';
 import {
+  barItems,
   emptyBar,
   figureSpans,
   fits,
@@ -11,6 +12,8 @@ import {
   removeFigure,
   RhythmBar,
   stickyInsertionIndex,
+  toggleDot,
+  toggleTie,
   usedUnits,
 } from '../rhythmBar';
 
@@ -90,5 +93,45 @@ describe('barra rítmica', () => {
     expect(stickyInsertionIndex(bar, 8.5, 2, 1)).toBe(1);
     // Un sitio que ya no existe en la barra se descarta.
     expect(stickyInsertionIndex(bar, 1, 5, 1)).toBe(0);
+  });
+});
+
+describe('barra rítmica con silencios, puntillo y ligadura (Módulo 4)', () => {
+  it('un silencio ocupa lo mismo que su figura', () => {
+    const bar = insertFigure(emptyBar(16), 'half', 0, { rest: true });
+    expect(bar).not.toBeNull();
+    expect(usedUnits(bar as RhythmBar)).toBe(8);
+    expect(barItems(bar as RhythmBar)[0].rest).toBe(true);
+  });
+
+  it('el puntillo se pone si cabe, y se quita', () => {
+    const bar = barOf('half', 'quarter');
+    const key = bar.figures[0].key;
+    const dotted = toggleDot(bar, key);
+    expect(dotted).not.toBeNull();
+    expect(usedUnits(dotted as RhythmBar)).toBe(16);
+    expect(figureSpans(dotted as RhythmBar)[1].start).toBe(12);
+    // Ya llena: a la negra no le cabe su puntillo.
+    expect(toggleDot(dotted as RhythmBar, bar.figures[1].key)).toBeNull();
+    expect(usedUnits(toggleDot(dotted as RhythmBar, key) as RhythmBar)).toBe(12);
+  });
+
+  it('se liga una nota con la siguiente, nunca con un silencio ni la última', () => {
+    const withRest = insertFigure(barOf('quarter', 'quarter'), 'quarter', 2, { rest: true });
+    const bar = withRest as RhythmBar;
+    const [first, second, rest] = bar.figures.map((placed) => placed.key);
+    const tied = toggleTie(bar, first) as RhythmBar;
+    expect(figureSpans(tied)[0].tied).toBe(true);
+    expect(toggleTie(bar, second)).toBeNull();
+    expect(toggleTie(bar, rest)).toBeNull();
+    // Volver a tocarla la desliga.
+    expect(figureSpans(toggleTie(tied, first) as RhythmBar)[0].tied).toBe(false);
+  });
+
+  it('una ligadura que se queda sin nota siguiente deja de contar', () => {
+    const bar = barOf('quarter', 'quarter');
+    const tied = toggleTie(bar, bar.figures[0].key) as RhythmBar;
+    const alone = removeFigure(tied, bar.figures[1].key);
+    expect(barItems(alone)[0].tied).toBe(false);
   });
 });

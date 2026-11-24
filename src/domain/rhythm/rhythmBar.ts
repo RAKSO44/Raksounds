@@ -1,4 +1,5 @@
-import { figureById, FigureId } from './figures';
+import { FigureId } from './figures';
+import { canTie, itemUnits, RhythmItem } from './rhythmItem';
 
 /**
  * Una barra rítmica: una línea con una duración máxima que se llena con
@@ -16,6 +17,12 @@ export interface PlacedFigure {
   readonly figure: FigureId;
   /** Venía puesta (la barra de un ejercicio a completar): no se quita ni se mueve. */
   readonly locked?: boolean;
+  /** Un silencio en vez de una nota (Módulo 4). */
+  readonly rest?: boolean;
+  /** Con puntillo: dura la mitad más. */
+  readonly dotted?: boolean;
+  /** Ligada a la siguiente (solo vale si las dos son notas). */
+  readonly tied?: boolean;
 }
 
 export interface RhythmBar {
@@ -25,9 +32,8 @@ export interface RhythmBar {
 }
 
 /** Lo que ocupa una figura colocada, en semicorcheas desde el inicio de la barra. */
-export interface FigureSpan {
+export interface FigureSpan extends RhythmItem {
   readonly key: number;
-  readonly figure: FigureId;
   readonly locked: boolean;
   readonly start: number;
   readonly units: number;
@@ -47,7 +53,7 @@ export function lockedBar(capacity: number, figures: readonly FigureId[]): Rhyth
 
 /** Semicorcheas ocupadas. */
 export function usedUnits(bar: RhythmBar): number {
-  return bar.figures.reduce((sum, placed) => sum + figureById(placed.figure).units, 0);
+  return bar.figures.reduce((sum, placed) => sum + placedUnits(placed), 0);
 }
 
 export function remainingUnits(bar: RhythmBar): number {
@@ -58,18 +64,39 @@ export function isFull(bar: RhythmBar): boolean {
   return remainingUnits(bar) === 0;
 }
 
-export function fits(bar: RhythmBar, figure: FigureId): boolean {
-  return figureById(figure).units <= remainingUnits(bar);
+/** Lo que ocupa una figura colocada (con su puntillo). */
+function placedUnits(placed: PlacedFigure): number {
+  return itemUnits({ figure: placed.figure, dotted: placed.dotted === true });
+}
+
+export function fits(bar: RhythmBar, figure: FigureId, dotted = false): boolean {
+  return itemUnits({ figure, dotted }) <= remainingUnits(bar);
+}
+
+/**
+ * Lo escrito en la barra, en orden, como elementos rítmicos: lo que se dibuja
+ * y lo que suena. Una ligadura que ya no vale (la siguiente se quitó o es un
+ * silencio) simplemente no cuenta.
+ */
+export function barItems(bar: RhythmBar): RhythmItem[] {
+  const items = bar.figures.map((placed) => ({
+    figure: placed.figure,
+    rest: placed.rest === true,
+    dotted: placed.dotted === true,
+    tied: placed.tied === true,
+  }));
+  return items.map((item, index) => ({ ...item, tied: item.tied && canTie(items, index) }));
 }
 
 /** Dónde empieza y cuánto ocupa cada figura (para dibujarlas a escala). */
 export function figureSpans(bar: RhythmBar): FigureSpan[] {
   let start = 0;
-  return bar.figures.map((placed) => {
-    const units = figureById(placed.figure).units;
+  const items = barItems(bar);
+  return bar.figures.map((placed, index) => {
+    const units = placedUnits(placed);
     const span = {
+      ...items[index],
       key: placed.key,
-      figure: placed.figure,
       locked: placed.locked === true,
       start,
       units,
@@ -88,13 +115,65 @@ export function nextKey(bar: RhythmBar): number {
  * Pone una figura en la posición `index` (0 = al principio; más allá del
  * final = al final) y corre las que vienen detrás. `null` si no cabe.
  */
-export function insertFigure(bar: RhythmBar, figure: FigureId, index: number): RhythmBar | null {
+export function insertFigure(
+  bar: RhythmBar,
+  figure: FigureId,
+  index: number,
+  { rest = false }: { rest?: boolean } = {},
+): RhythmBar | null {
   if (!fits(bar, figure)) return null;
   const at = Math.max(0, Math.min(index, bar.figures.length));
-  const placed: PlacedFigure = { key: nextKey(bar), figure };
+  const placed: PlacedFigure = rest
+    ? { key: nextKey(bar), figure, rest }
+    : { key: nextKey(bar), figure };
   return {
     ...bar,
     figures: [...bar.figures.slice(0, at), placed, ...bar.figures.slice(at)],
+  };
+}
+
+/**
+ * Pone o quita el puntillo de una figura colocada. `null` si con él ya no
+ * cabe, o si es fija.
+ */
+export function toggleDot(bar: RhythmBar, key: number): RhythmBar | null {
+  const placed = bar.figures.find((candidate) => candidate.key === key);
+  if (placed === undefined || placed.locked === true) return null;
+  const dotted = placed.dotted !== true;
+  if (
+    dotted &&
+    itemUnits({ figure: placed.figure, dotted: true }) - placedUnits(placed) > remainingUnits(bar)
+  ) {
+    return null;
+  }
+  return {
+    ...bar,
+    figures: bar.figures.map((candidate) =>
+      candidate === placed ? { ...placed, dotted } : candidate,
+    ),
+  };
+}
+
+/**
+ * Liga una figura colocada con la siguiente, o quita esa ligadura. `null` si
+ * no se puede: un silencio no se liga, y hace falta una nota después.
+ */
+export function toggleTie(bar: RhythmBar, key: number): RhythmBar | null {
+  const index = bar.figures.findIndex((candidate) => candidate.key === key);
+  if (index < 0) return null;
+  const items = barItems(bar);
+  if (items[index].tied) {
+    return {
+      ...bar,
+      figures: bar.figures.map((placed, at) =>
+        at === index ? { ...placed, tied: false } : placed,
+      ),
+    };
+  }
+  if (!canTie(items, index)) return null;
+  return {
+    ...bar,
+    figures: bar.figures.map((placed, at) => (at === index ? { ...placed, tied: true } : placed)),
   };
 }
 

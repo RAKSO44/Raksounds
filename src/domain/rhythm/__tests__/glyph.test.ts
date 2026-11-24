@@ -1,5 +1,5 @@
 import { FIGURES, figureById } from '../figures';
-import { beamedGlyph, figureGlyph } from '../glyph';
+import { beamedGlyph, figureGlyph, itemGlyph, phraseGlyph, restGlyph, tieDepth } from '../glyph';
 
 describe('figureGlyph', () => {
   it('arma cada figura con una pieza por cabeza, plica y corchete', () => {
@@ -109,5 +109,70 @@ describe('centro óptico (tinta)', () => {
     };
     expect(shift('eighth')).toBeGreaterThan(0.2);
     expect(shift('sixteenth')).toBeGreaterThan(shift('eighth'));
+  });
+});
+
+describe('silencios, puntillo y ligadura (Módulo 4)', () => {
+  const inBox = (glyph: ReturnType<typeof itemGlyph>) =>
+    [...glyph.paths, ...glyph.marks].every((d) =>
+      (d.match(/-?\d+(\.\d+)?,-?\d+(\.\d+)?/g) ?? []).every((pair) => {
+        const [x, y] = pair.split(',').map(Number);
+        return x >= -0.001 && x <= glyph.width + 0.001 && y >= -0.001 && y <= glyph.height + 0.001;
+      }),
+    );
+  const frameAbove = Math.max(...FIGURES.map((figure) => figureGlyph(figure).head.y));
+  const frameBelow = Math.max(
+    ...FIGURES.map((figure) => figureGlyph(figure).height - figureGlyph(figure).head.y),
+  );
+
+  it('cada silencio sale de las propiedades de su figura y cae dentro de su caja', () => {
+    FIGURES.forEach((figure) => {
+      const rest = restGlyph(figure, { ledger: true });
+      expect(rest.paths.length).toBeGreaterThan(0);
+      expect(rest.marks).toHaveLength(0);
+      expect(inBox(rest)).toBe(true);
+      // Apoyados en la misma línea que las figuras, caben en su mismo marco.
+      expect(rest.head.y).toBeLessThanOrEqual(frameAbove + 0.001);
+      expect(rest.height - rest.head.y).toBeLessThanOrEqual(frameBelow + 0.001);
+    });
+  });
+
+  it('el de redonda cuelga de la línea y el de blanca se sienta sobre ella', () => {
+    const whole = restGlyph(figureById('whole'));
+    const half = restGlyph(figureById('half'));
+    expect(whole.head.y).toBeCloseTo(0, 3);
+    expect(whole.height).toBeCloseTo(0.5, 3);
+    expect(half.head.y).toBeCloseTo(0.5, 3);
+    expect(half.height - half.head.y).toBeCloseTo(0, 3);
+  });
+
+  it('los de corchea y semicorchea tienen una bolita por corchete', () => {
+    // palito + (bolita + bracito) por cada corchete
+    expect(restGlyph(figureById('eighth')).paths).toHaveLength(1 + 2);
+    expect(restGlyph(figureById('sixteenth')).paths).toHaveLength(1 + 2 * 2);
+  });
+
+  it('el puntillo es una marca aparte, a la derecha, y ensancha el dibujo', () => {
+    FIGURES.forEach((figure) => {
+      [false, true].forEach((rest) => {
+        const plain = itemGlyph({ figure, rest, dotted: false });
+        const dotted = itemGlyph({ figure, rest, dotted: true });
+        expect(dotted.paths).toHaveLength(plain.paths.length);
+        expect(dotted.marks).toHaveLength(1);
+        expect(dotted.width).toBeGreaterThan(plain.width);
+        expect(inBox(dotted)).toBe(true);
+      });
+    });
+  });
+
+  it('la ligadura se curva hacia abajo y une dos figuras en una ficha', () => {
+    const quarter = { figure: figureById('quarter'), rest: false, dotted: false };
+    const tied = phraseGlyph([quarter, quarter], [true]);
+    const loose = phraseGlyph([quarter, quarter], []);
+    expect(tied.marks).toHaveLength(1);
+    expect(loose.marks).toHaveLength(0);
+    expect(tied.height).toBeGreaterThan(loose.height);
+    expect(inBox(tied)).toBe(true);
+    expect(tieDepth(1)).toBeLessThan(tieDepth(4));
   });
 });

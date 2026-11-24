@@ -24,6 +24,11 @@ export type Clip =
       readonly notes: readonly ClipNote[];
       /** Golpes del pulso que suenan de fondo (ms desde el inicio), si los lleva. */
       readonly pulseOnsetsMs?: readonly number[];
+      /**
+       * Lo que dura entero, si sigue después de la última nota (un silencio al
+       * final también dura). Sin esto, termina con la última nota.
+       */
+      readonly lengthMs?: number;
     }
   /** Golpes de metrónomo, programados con precisión de muestra. */
   | { readonly kind: 'pulse'; readonly onsetsMs: readonly number[] };
@@ -49,7 +54,8 @@ export function clipEventTimes(clip: Clip): number[] {
 /** Cuándo termina el clip, en ms desde su inicio. */
 export function clipDurationMs(clip: Clip): number {
   if (clip.kind !== 'pulse') {
-    return Math.max(0, ...clip.notes.map((note) => note.atMs + note.durationMs));
+    const lastNote = Math.max(0, ...clip.notes.map((note) => note.atMs + note.durationMs));
+    return clip.kind === 'rhythm' ? Math.max(lastNote, clip.lengthMs ?? 0) : lastNote;
   }
   // Un golpe es instantáneo: se deja un margen corto para que se oiga la cola.
   return Math.max(0, ...clip.onsetsMs) + PULSE_TAIL_MS;

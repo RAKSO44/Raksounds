@@ -1,5 +1,5 @@
 import { RandomSource } from '../../ear-training';
-import { figureById, figureDurationMs, FigureId, FIGURES } from '../../rhythm';
+import { figureById, figureDurationMs, FigureId, FIGURES, noteItem, restItem } from '../../rhythm';
 import { clipDurationMs } from '../clip';
 import {
   FIGURE_DEMO_BPM,
@@ -7,6 +7,7 @@ import {
   figureClip,
   figureNotesInBeat,
   pulseOnsetsWithin,
+  itemsClip,
   rhythmClip,
 } from '../figureTheory';
 import { firstSequenceError, isAnswerCorrect } from '../exercise';
@@ -382,5 +383,42 @@ describe('sonido de las figuras (Módulo 3)', () => {
     expect(at('whole', 0)).toEqual([[0, 4000]]);
     expect([1, 2, 3].map((n) => at('whole', n))).toEqual([[], [], []]);
     expect(at('whole', 4)).toEqual([[0, 4000]]);
+  });
+});
+
+describe('sonido de silencios, puntillo y ligadura (Módulo 4)', () => {
+  const beat = 1000;
+  const at60 = { bpm: 60, pulse: true } as const;
+  const notesOf = (clip: ReturnType<typeof itemsClip>) => {
+    if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
+    return clip.notes.map((note) => [note.atMs, note.durationMs]);
+  };
+
+  it('un silencio no suena, pero el pulso sigue y el clip dura lo mismo', () => {
+    const clip = itemsClip(
+      [noteItem('quarter'), restItem('quarter'), noteItem('quarter'), restItem('quarter')],
+      at60,
+    );
+    expect(notesOf(clip)).toEqual([
+      [0, beat],
+      [2 * beat, beat],
+    ]);
+    if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(clip.pulseOnsetsMs).toEqual([0, 1000, 2000, 3000]);
+    expect(clipDurationMs(clip)).toBe(4 * beat);
+  });
+
+  it('el puntillo alarga la nota y la ligadura no vuelve a tocar la segunda', () => {
+    expect(notesOf(itemsClip([noteItem('half', { dotted: true })], at60))).toEqual([[0, 3 * beat]]);
+    expect(
+      notesOf(itemsClip([noteItem('half', { tied: true }), noteItem('eighth')], at60)),
+    ).toEqual([[0, 2.5 * beat]]);
+  });
+
+  it('una línea más larga que lo escrito suena entera (con pulso) hasta el final', () => {
+    const clip = itemsClip([noteItem('half')], { ...at60, lengthUnits: 16 });
+    if (clip.kind !== 'rhythm') throw new Error('clip de ritmo');
+    expect(clip.pulseOnsetsMs).toHaveLength(4);
+    expect(clipDurationMs(clip)).toBe(4 * beat);
   });
 });
